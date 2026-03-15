@@ -61,8 +61,8 @@ def mprf_form(request, pk=None):
         return redirect('mprf_list')
     return render(request, 'recruitment/manpower_form.html', {
         'instance': instance,
-        'departments': Department.objects.filter(aktif=True),
-        'positions': Position.objects.all(),
+        'departments': Department.objects.filter(company=getattr(request, 'company', None), aktif=True),
+        'positions': Position.objects.filter(company=getattr(request, 'company', None), aktif=True).select_related('department'),
     })
 
 
