@@ -161,6 +161,25 @@ def dashboard(request):
         ctx['absen_7hari_labels']   = json.dumps(labels7)
         ctx['absen_7hari_datasets'] = json.dumps(datasets)
 
+        # ── Missing stat cards ──
+        from apps.recruitment.models import Candidate, ManpowerRequest
+        from apps.industrial.models import Violation
+        ctx['kandidat_proses'] = Candidate.objects.filter(
+            mprf__company=company
+        ).exclude(status__in=['Hired', 'Rejected', 'Withdrawn']).count() + \
+        Candidate.objects.filter(
+            mprf__isnull=True
+        ).exclude(status__in=['Hired', 'Rejected', 'Withdrawn']).count() + \
+        Candidate.objects.filter(
+            mprf__isnull=True
+        ).exclude(status__in=['Hired', 'Rejected', 'Withdrawn']).count()
+        ctx['pelanggaran_pending'] = Violation.objects.filter(
+            employee__company=company, status='Pending'
+        ).count()
+        ctx['mprf_open'] = ManpowerRequest.objects.filter(
+            company=company, status__in=['Open', 'In Process']
+        ).count()
+
         # ── Recent data ──
         ctx['recent_employees'] = Employee.objects.filter(
             company=company, status='Aktif'
