@@ -70,21 +70,110 @@ def _hr_required(view_func):
 @login_required
 def dashboard(request):
     from apps.employees.models import Employee
-    from apps.attendance.models import Leave
+    from apps.attendance.models import Leave, Attendance
     from apps.contracts.models import Contract
     from django.utils import timezone
-    company = _get_company(request)
+    from django.db.models import Count
+    from datetime import timedelta
+    import json
 
-    ctx = {}
+    company = _get_company(request)
+    today   = timezone.now().date()
+    ctx     = {'today': today}
+
     if company:
-        ctx['total_karyawan'] = Employee.objects.filter(company=company, status='Aktif').count()
-        ctx['pending_cuti']   = Leave.objects.filter(
+        # ── Basic stats ──
+        ctx['total_karyawan']  = Employee.objects.filter(company=company, status='Aktif').count()
+        ctx['pending_cuti']    = Leave.objects.filter(
             employee__company=company, status='Pending').count()
         ctx['kontrak_expired'] = Contract.objects.filter(
             employee__company=company,
-            tanggal_selesai__lte=timezone.now().date() + timezone.timedelta(days=30),
+            tanggal_selesai__lte=today + timezone.timedelta(days=30),
             status='Aktif',
         ).count()
+
+        # ── Chart: Status Perjanjian Kerja ──
+        kontrak_qs = Contract.objects.filter(employee__company=company, status='Aktif') \
+            .values('tipe_kontrak').annotate(n=Count('id')).order_by('-n')
+        if kontrak_qs:
+            ctx['chart_contract_labels'] = json.dumps([k['tipe_kontrak'] for k in kontrak_qs])
+            ctx['chart_contract_data']   = json.dumps([k['n'] for k in kontrak_qs])
+
+        # ── Chart: Komposisi Status Karyawan (PKWT/PKWTT/PHL) ──
+        pkwt_qs = Employee.objects.filter(company=company, status='Aktif') \
+            .values('status_karyawan').annotate(n=Count('id')).order_by('-n')
+        if pkwt_qs:
+            ctx['chart_pkwt_labels'] = json.dumps([k['status_karyawan'] for k in pkwt_qs])
+            ctx['chart_pkwt_data']   = json.dumps([k['n'] for k in pkwt_qs])
+
+        # ── Chart: Populasi per Provinsi ──
+        prov_qs = Employee.objects.filter(
+            company=company, status='Aktif', provinsi__isnull=False
+        ).values('provinsi__nama').annotate(n=Count('id')).order_by('-n')[:10]
+        if prov_qs:
+            ctx['chart_prov_labels'] = json.dumps([k['provinsi__nama'] for k in prov_qs])
+            ctx['chart_prov_data']   = json.dumps([k['n'] for k in prov_qs])
+
+        # ── Rekap Absensi per Periode ──
+        def rekap_absensi(start, end):
+            qs = Attendance.objects.filter(
+                employee__company=company,
+                tanggal__gte=start, tanggal__lte=end
+            ).values('status').annotate(n=Count('id'))
+            return {k['status']: k['n'] for k in qs}
+
+        ctx['rekap_hari_ini']  = rekap_absensi(today, today)
+        ctx['rekap_7hari']     = rekap_absensi(today - timedelta(days=7), today)
+        ctx['rekap_bulan_ini'] = rekap_absensi(today.replace(day=1), today)
+        ctx['rekap_tahun_ini'] = rekap_absensi(today.replace(month=1, day=1), today)
+
+        # ── Trend Absensi 7 Hari ──
+        STATUS_WARNA = {
+            'Hadir': '#22c55e', 'Tidak Hadir': '#ef4444',
+            'Izin': '#f59e0b', 'Sakit': '#3b82f6',
+            'Cuti': '#a855f7', 'WFH': '#06b6d4',
+        }
+        days7   = [today - timedelta(days=i) for i in range(6, -1, -1)]
+        labels7 = [d.strftime('%d %b') for d in days7]
+
+        trend_raw = Attendance.objects.filter(
+            employee__company=company,
+            tanggal__gte=days7[0], tanggal__lte=today,
+            status__in=list(STATUS_WARNA.keys())
+        ).values('tanggal', 'status').annotate(n=Count('id'))
+
+        trend_map = {}
+        for row in trend_raw:
+            trend_map.setdefault(row['status'], {})[row['tanggal']] = row['n']
+
+        datasets = []
+        for status, warna in STATUS_WARNA.items():
+            if status in trend_map:
+                datasets.append({
+                    'label': status,
+                    'data': [trend_map[status].get(d, 0) for d in days7],
+                    'borderColor': warna,
+                    'backgroundColor': warna + '22',
+                    'tension': 0.4, 'fill': False,
+                    'pointRadius': 4, 'borderWidth': 2,
+                })
+
+        ctx['absen_7hari_labels']   = json.dumps(labels7)
+        ctx['absen_7hari_datasets'] = json.dumps(datasets)
+
+        # ── Recent data ──
+        ctx['recent_employees'] = Employee.objects.filter(
+            company=company, status='Aktif'
+        ).select_related('department', 'jabatan').order_by('-id')[:5]
+        ctx['expiring_contracts'] = Contract.objects.filter(
+            employee__company=company,
+            tanggal_selesai__lte=today + timezone.timedelta(days=30),
+            status='Aktif'
+        ).select_related('employee')[:5]
+        ctx['pending_leaves'] = Leave.objects.filter(
+            employee__company=company, status='Pending'
+        ).select_related('employee')[:5]
+
     return render(request, 'core/dashboard.html', ctx)
 
 
