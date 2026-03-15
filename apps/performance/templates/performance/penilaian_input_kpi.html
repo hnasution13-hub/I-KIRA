@@ -1,0 +1,206 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Input KPI — {{ penilaian.employee.nama }}{% endblock %}
+{% block breadcrumb %}Performance / Input KPI{% endblock %}
+
+{% block extra_css %}
+<style>
+.kpi-card { background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px; }
+.kpi-card .form-control, .kpi-card .form-select { background:var(--surface);border-color:var(--border);color:var(--text);font-size:.85rem; }
+.bobot-total { font-size:.8rem;padding:6px 12px;border-radius:6px;transition:background .2s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="fw-bold mb-0">Input KPI & Target</h5>
+    <small class="text-muted">{{ penilaian.employee.nama }} — {{ penilaian.periode.nama }}</small>
+  </div>
+  <a href="{% url 'penilaian_detail' penilaian.pk %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags }} alert-dismissible mb-3">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+{% endfor %}
+{% endif %}
+
+<form method="post" id="kpiForm">
+{% csrf_token %}
+<div class="row g-3">
+  <div class="col-12 col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-bullseye me-2 text-danger"></i>Daftar KPI</h6>
+        <span class="bobot-total" id="bobotInfo">Total Bobot: <strong id="totalBobot">0</strong>%</span>
+      </div>
+      <div class="card-body" id="kpiList">
+        {% for item in kpi_items %}
+        <div class="kpi-card" id="kpiCard_{{ item.pk }}">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="fw-semibold" style="font-size:.88rem;">{{ item.nama_kpi }}</div>
+            <form method="post" action="{% url 'kpi_item_delete' item.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus KPI ini?')"
+                style="padding:2px 8px;font-size:.72rem;">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+          </div>
+          <div class="row g-2">
+            <div class="col-6 col-md-2">
+              <label style="font-size:.72rem;color:var(--muted);">Bobot (%)</label>
+              <input type="number" name="bobot_{{ item.pk }}" value="{{ item.bobot }}" min="0" max="100" step="0.01"
+                class="form-control bobot-input" onchange="updateTotalBobot()">
+            </div>
+            <div class="col-6 col-md-3">
+              <label style="font-size:.72rem;color:var(--muted);">Target ({{ item.satuan }})</label>
+              <input type="number" name="target_{{ item.pk }}" value="{{ item.target }}" step="0.01"
+                class="form-control" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label style="font-size:.72rem;color:var(--muted);">Realisasi ({{ item.satuan }})</label>
+              <input type="number" name="realisasi_{{ item.pk }}" value="{{ item.realisasi|default:'' }}" step="0.01"
+                class="form-control realisasi-input" data-target="{{ item.target }}" data-arah="{{ item.arah }}"
+                data-pk="{{ item.pk }}" onchange="updatePencapaian(this)">
+            </div>
+            <div class="col-6 col-md-2">
+              <label style="font-size:.72rem;color:var(--muted);">Pencapaian</label>
+              <div id="pencapaian_{{ item.pk }}" class="fw-bold mt-1" style="font-size:1rem;">
+                {% if item.pencapaian_persen is not None %}{{ item.pencapaian_persen|floatformat:1 }}%{% else %}—{% endif %}
+              </div>
+            </div>
+            <div class="col-12 col-md-2">
+              <label style="font-size:.72rem;color:var(--muted);">Catatan</label>
+              <input type="text" name="catatan_{{ item.pk }}" value="{{ item.catatan }}" class="form-control"
+                placeholder="Opsional">
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-muted text-center py-3" id="emptyMsg">Belum ada KPI. Tambah dari panel kanan.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Catatan Karyawan -->
+    <div class="card">
+      <div class="card-header"><h6 class="mb-0"><i class="fas fa-comment me-2"></i>Catatan Karyawan</h6></div>
+      <div class="card-body">
+        <textarea name="catatan_karyawan" class="form-control" rows="3"
+          placeholder="Tambahkan catatan atau penjelasan tambahan..."
+          style="background:var(--surface);border-color:var(--border);color:var(--text);">{{ penilaian.catatan_karyawan }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Kanan -->
+  <div class="col-12 col-lg-4">
+    <!-- Tambah KPI Manual -->
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0"><i class="fas fa-plus-circle me-2 text-success"></i>Tambah KPI</h6></div>
+      <div class="card-body">
+        <form method="post" action="{% url 'kpi_item_add' penilaian.pk %}">
+          {% csrf_token %}
+          <div class="mb-2">
+            <label style="font-size:.78rem;color:var(--muted);">Nama KPI *</label>
+            <input type="text" name="nama_kpi" class="form-control form-control-sm" required
+              style="background:var(--surface);border-color:var(--border);color:var(--text);">
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label style="font-size:.78rem;color:var(--muted);">Satuan</label>
+              <select name="satuan" class="form-select form-select-sm" style="background:var(--surface);border-color:var(--border);color:var(--text);">
+                <option value="%">%</option>
+                <option value="angka">Angka</option>
+                <option value="rupiah">Rupiah</option>
+                <option value="hari">Hari</option>
+                <option value="unit">Unit</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label style="font-size:.78rem;color:var(--muted);">Arah</label>
+              <select name="arah" class="form-select form-select-sm" style="background:var(--surface);border-color:var(--border);color:var(--text);">
+                <option value="tinggi">↑ Semakin Tinggi</option>
+                <option value="rendah">↓ Semakin Rendah</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label style="font-size:.78rem;color:var(--muted);">Bobot (%)</label>
+              <input type="number" name="bobot" value="20" min="1" max="100" class="form-control form-control-sm"
+                style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            </div>
+            <div class="col-6">
+              <label style="font-size:.78rem;color:var(--muted);">Target</label>
+              <input type="number" name="target" value="0" step="0.01" class="form-control form-control-sm"
+                style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success btn-sm w-100">
+            <i class="fas fa-plus me-1"></i>Tambah KPI
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Simpan & Submit -->
+    <div class="card" style="position:sticky;top:80px;">
+      <div class="card-body">
+        <div class="d-flex gap-2 flex-column">
+          <button type="submit" name="action" value="save" class="btn btn-outline-secondary">
+            <i class="fas fa-save me-1"></i>Simpan Draft
+          </button>
+          <button type="submit" name="action" value="submit" class="btn btn-danger"
+            onclick="return confirm('Ajukan penilaian ke atasan? Setelah diajukan tidak bisa diedit.')">
+            <i class="fas fa-paper-plane me-1"></i>Ajukan ke Atasan
+          </button>
+        </div>
+        <hr>
+        <div class="text-muted" style="font-size:.76rem;">
+          <i class="fas fa-info-circle me-1"></i>
+          Pastikan total bobot KPI = <strong>100%</strong> sebelum mengajukan.
+        </div>
+        <div class="mt-2" style="font-size:.8rem;">
+          Total Bobot: <strong id="totalBobotBottom">—</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</form>
+
+<script>
+function updateTotalBobot() {
+  const inputs = document.querySelectorAll('.bobot-input');
+  let total = 0;
+  inputs.forEach(i => total += parseFloat(i.value) || 0);
+  document.getElementById('totalBobot').textContent = total.toFixed(1);
+  document.getElementById('totalBobotBottom').textContent = total.toFixed(1) + '%';
+  const info = document.getElementById('bobotInfo');
+  info.style.background = Math.abs(total - 100) < 0.5 ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)';
+  info.style.color = Math.abs(total - 100) < 0.5 ? '#22c55e' : '#ef4444';
+}
+
+function updatePencapaian(el) {
+  const pk      = el.dataset.pk;
+  const target  = parseFloat(el.dataset.target) || 0;
+  const arah    = el.dataset.arah;
+  const real    = parseFloat(el.value);
+  const el2     = document.getElementById('pencapaian_' + pk);
+  if (!el2) return;
+  if (isNaN(real) || target === 0) { el2.textContent = '—'; return; }
+  let pct = arah === 'tinggi' ? (real / target * 100) : (target / real * 100);
+  pct = Math.min(pct, 120);
+  el2.textContent = pct.toFixed(1) + '%';
+  el2.style.color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444';
+}
+
+// Init on load
+updateTotalBobot();
+document.querySelectorAll('.realisasi-input').forEach(el => {
+  if (el.value) updatePencapaian(el);
+});
+</script>
+{% endblock %}

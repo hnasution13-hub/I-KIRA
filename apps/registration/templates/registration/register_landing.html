@@ -1,0 +1,230 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coba Gratis — HRIS SmartDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red:     #e63329;
+      --red-dark:#b01f17;
+      --bg:      #080808;
+      --bg2:     #101010;
+      --bg3:     #161616;
+      --surface: #1c1c1c;
+      --border:  #2a2a2a;
+      --border2: #333;
+      --text:    #f0f0f0;
+      --muted:   #888;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; opacity: .4;
+    }
+
+    /* NAVBAR */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 64px;
+      background: rgba(8,8,8,.9);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-icon {
+      width: 32px; height: 32px; background: var(--red); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue'; font-size: 1.2rem; color: #fff;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .nav-logo-icon img { width: 32px; height: 32px; object-fit: contain; display: none; }
+    .nav-logo-icon span { line-height: 1; }
+    .nav-logo-text { font-weight: 600; font-size: .88rem; color: var(--text); line-height: 1.2; }
+    .nav-logo-text span { display: block; font-size: .68rem; color: var(--muted); font-weight: 400; }
+    .nav-back {
+      color: var(--muted); text-decoration: none; font-size: .82rem;
+      border: 1px solid var(--border2); padding: 7px 18px; border-radius: 6px;
+      transition: all .2s;
+    }
+    .nav-back:hover { color: var(--text); border-color: var(--muted); }
+
+    /* HERO */
+    .hero {
+      text-align: center; padding: 64px 24px 48px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(230,51,41,.1) 0%, transparent 65%);
+      top: -200px; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(230,51,41,.1); border: 1px solid rgba(230,51,41,.3);
+      border-radius: 20px; padding: 5px 14px;
+      font-size: .72rem; font-weight: 600; color: var(--red);
+      letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .hero-eyebrow::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--red); box-shadow: 0 0 8px var(--red);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .hero h1 {
+      font-family: 'Bebas Neue'; font-size: clamp(2.8rem, 6vw, 5rem);
+      letter-spacing: 3px; line-height: 1; margin-bottom: 14px;
+    }
+    .hero h1 span { color: var(--red); }
+    .hero p { color: var(--muted); font-size: 1rem; }
+
+    /* CARDS */
+    .cards-wrap {
+      display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+      padding: 0 24px 64px; max-width: 900px; margin: 0 auto; width: 100%;
+    }
+    .card-paket {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 16px; padding: 36px 32px;
+      flex: 1; min-width: 280px; max-width: 380px;
+      display: flex; flex-direction: column;
+      transition: border-color .2s, transform .2s;
+      position: relative;
+    }
+    .card-paket:hover { border-color: var(--border2); transform: translateY(-4px); }
+    .card-paket.featured { border-color: var(--red); background: linear-gradient(135deg, var(--bg3) 0%, rgba(230,51,41,.05) 100%); }
+    .badge-popular {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--red); color: #fff;
+      font-size: .65rem; font-weight: 700; letter-spacing: 1.5px;
+      padding: 4px 14px; border-radius: 20px; white-space: nowrap;
+    }
+    .card-icon { font-size: 3rem; text-align: center; margin-bottom: 16px; }
+    .card-title {
+      font-family: 'Bebas Neue'; font-size: 2rem; letter-spacing: 2px;
+      text-align: center; margin-bottom: 6px;
+    }
+    .card-desc { color: var(--muted); font-size: .88rem; text-align: center; margin-bottom: 24px; }
+    .card-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 20px; }
+    .feature-list { list-style: none; margin-bottom: 28px; flex: 1; }
+    .feature-list li {
+      font-size: .88rem; color: var(--muted); padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .feature-list li:last-child { border: none; }
+    .feature-list li .check { color: var(--red); font-weight: 700; flex-shrink: 0; }
+    .feature-list li .dash  { color: var(--border2); flex-shrink: 0; }
+    .feature-list li.dim    { color: var(--border2); }
+    .btn-cta {
+      display: block; text-align: center; padding: 14px;
+      border-radius: 8px; font-weight: 600; font-size: .92rem;
+      text-decoration: none; transition: all .2s; letter-spacing: .5px;
+    }
+    .btn-fill { background: var(--red); color: #fff; }
+    .btn-fill:hover { background: var(--red-dark); }
+    .btn-outline { border: 1px solid var(--border2); color: var(--muted); }
+    .btn-outline:hover { border-color: var(--red); color: var(--text); }
+
+    /* FOOTER NOTE */
+    .footer-note {
+      text-align: center; padding: 0 24px 40px;
+      font-size: .85rem; color: var(--muted);
+    }
+    .footer-note a { color: var(--red); text-decoration: none; }
+    .footer-note a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'login' %}" class="nav-logo">
+    <div class="nav-logo-icon"><img class="reg-logo-img" alt="Logo"><span class="reg-logo-fb">H</span></div>
+    <div class="nav-logo-text">
+      HRIS SmartDesk
+      <span>Human Resource Information System</span>
+    </div>
+  </a>
+  <a href="{% url 'login' %}" class="nav-back">← Sudah punya akun?</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">Coba Gratis</div>
+  <h1>PILIH <span>PAKET</span><br>ANDA</h1>
+  <p>Tidak perlu kartu kredit. Mulai eksplorasi hari ini.</p>
+</div>
+
+<div class="cards-wrap">
+
+  <!-- Demo -->
+  <div class="card-paket">
+    <div class="card-icon">🎮</div>
+    <div class="card-title">Demo</div>
+    <div class="card-desc">Eksplorasi tanpa batas dengan data dummy siap pakai</div>
+    <hr class="card-divider">
+    <ul class="feature-list">
+      <li><span class="check">✓</span> Data dummy sudah terisi</li>
+      <li><span class="check">✓</span> Bisa edit & coba semua fitur</li>
+      <li><span class="check">✓</span> Reset otomatis (daily/weekly)</li>
+      <li><span class="check">✓</span> Semua modul aktif</li>
+      <li class="dim"><span class="dash">—</span> Tidak untuk data nyata</li>
+    </ul>
+    <a href="{% url 'registration:demo' %}" class="btn-cta btn-outline">Mulai Demo →</a>
+  </div>
+
+  <!-- Trial -->
+  <div class="card-paket featured">
+    <div class="badge-popular">★ POPULER</div>
+    <div class="card-icon">🚀</div>
+    <div class="card-title">Trial</div>
+    <div class="card-desc">Gunakan dengan data perusahaan Anda sendiri</div>
+    <hr class="card-divider">
+    <ul class="feature-list">
+      <li><span class="check">✓</span> Input data nyata perusahaan</li>
+      <li><span class="check">✓</span> Full akses semua modul</li>
+      <li><span class="check">✓</span> Durasi trial (konfigurasi admin)</li>
+      <li><span class="check">✓</span> Support onboarding</li>
+      <li><span class="check">✓</span> Upgrade ke langganan kapan saja</li>
+    </ul>
+    <a href="{% url 'registration:trial' %}" class="btn-cta btn-fill">Mulai Trial Gratis →</a>
+  </div>
+
+</div>
+
+<div class="footer-note">
+  Sudah punya akun? <a href="{% url 'login' %}">Login di sini</a>
+  &nbsp;·&nbsp;
+  <a href="/">← Kembali ke beranda</a>
+</div>
+
+<script>
+(function(){
+  var logoUrl="/static/images/Logo.png";
+  document.querySelectorAll(".reg-logo-img").forEach(function(img){
+    var fb=img.nextElementSibling;
+    img.src=logoUrl;
+    img.onload=function(){img.style.display="block";if(fb)fb.style.display="none";};
+    img.onerror=function(){img.style.display="none";if(fb)fb.style.display="";};
+  });
+})();
+</script>
+</body>
+</html>

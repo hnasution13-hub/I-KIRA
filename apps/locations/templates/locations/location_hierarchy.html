@@ -1,0 +1,32 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Hierarki Lokasi{% endblock %}
+{% block breadcrumb %}Asset Management / Hierarki Lokasi{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'locations:location_list' %}" class="text-secondary text-decoration-none small"><i class="fas fa-arrow-left me-1"></i>Lokasi</a>
+    <h4 class="text-white mb-0 mt-1"><i class="fas fa-sitemap me-2 text-primary"></i>Hierarki Lokasi</h4>
+</div>
+<div class="card bg-dark border-secondary"><div class="card-body">
+{% for loc in locations %}
+<div class="mb-3">
+    <div class="d-flex align-items-center p-2 rounded" style="background:#1e293b">
+        <i class="fas fa-building me-2 text-primary"></i>
+        <strong class="text-white">{{ loc.name }}</strong>
+        <span class="badge bg-secondary ms-2">{{ loc.code }}</span>
+        <span class="badge bg-info ms-1 text-dark">{{ loc.type }}</span>
+    </div>
+    {% for child in loc.children.all %}
+    <div class="ms-4 mt-2 d-flex align-items-center p-2 rounded" style="background:#111827">
+        <i class="fas fa-angle-right me-2 text-secondary"></i>
+        <a href="{% url 'locations:location_detail' child.pk %}" class="text-white text-decoration-none">{{ child.name }}</a>
+        <span class="badge bg-secondary ms-2">{{ child.code }}</span>
+        <span class="text-secondary ms-2 small">({{ child.asset_set.count }} aset)</span>
+    </div>
+    {% endfor %}
+</div>
+{% empty %}
+<p class="text-secondary text-center py-4">Belum ada lokasi</p>
+{% endfor %}
+</div></div>
+{% endblock %}

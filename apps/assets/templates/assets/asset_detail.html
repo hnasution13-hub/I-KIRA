@@ -1,0 +1,74 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}{{ asset.name }}{% endblock %}
+{% block breadcrumb %}Asset Management / Detail Asset{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>{{ asset.tag }} - {{ asset.name }}</h4>
+            <div>
+                <a href="{% url 'assets:asset_update' asset.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                <a href="{% url 'assets:asset_delete' asset.pk %}" class="btn btn-danger btn-sm">Delete</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    {% if asset.photo %}
+                    <img src="{{ asset.photo.url }}" class="img-fluid rounded" alt="{{ asset.name }}">
+                    {% else %}
+                    <img src="{% static 'img/default-asset.jpg' %}" class="img-fluid rounded" alt="Default">
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <table class="table">
+                        <tr><th>Category</th><td>{{ asset.category.get_full_path }}</td></tr>
+                        <tr><th>Status</th><td>{{ asset.get_status_display }}</td></tr>
+                        <tr><th>Assigned To</th><td>{{ asset.assigned_to|default:"-" }}</td></tr>
+                        <tr><th>Location</th><td>{{ asset.location|default:"-" }}</td></tr>
+                        <tr><th>Purchase Date</th><td>{{ asset.purchase_date }}</td></tr>
+                        <tr><th>Purchase Cost</th><td>${{ asset.purchase_cost|floatformat:2 }}</td></tr>
+                        <tr><th>Current Value</th><td>${{ asset.current_value|floatformat:2 }}</td></tr>
+                        <tr><th>Salvage Value</th><td>${{ asset.salvage_value|floatformat:2 }}</td></tr>
+                        <tr><th>Useful Life</th><td>{{ asset.useful_life_years }} years</td></tr>
+                        <tr><th>Depreciation Method</th><td>{{ asset.get_depreciation_method_display }}</td></tr>
+                        <tr><th>Vendor</th><td>{{ asset.vendor|default:"-" }}</td></tr>
+                        <tr><th>Warranty Expiry</th><td>{{ asset.warranty_expiry|default:"-" }}</td></tr>
+                        <tr><th>Serial Number</th><td>{{ asset.serial_number|default:"-" }}</td></tr>
+                        <tr><th>Model</th><td>{{ asset.model|default:"-" }}</td></tr>
+                        <tr><th>Manufacturer</th><td>{{ asset.manufacturer|default:"-" }}</td></tr>
+                    </table>
+                    <h5>Description</h5>
+                    <p>{{ asset.description|linebreaks }}</p>
+                    <h5>Notes</h5>
+                    <p>{{ asset.notes|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Movement History -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Recent Movements</h5>
+        </div>
+        <div class="card-body">
+            {% if movements %}
+            <ul class="list-group">
+                {% for movement in movements %}
+                <li class="list-group-item">
+                    {{ movement.movement_date }} - {{ movement.get_movement_type_display }} -
+                    {% if movement.from_location %}{{ movement.from_location }}{% endif %}
+                    to {% if movement.to_location %}{{ movement.to_location }}{% endif %}
+                    {% if movement.assigned_to %}({{ movement.assigned_to }}){% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted">No movements recorded.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

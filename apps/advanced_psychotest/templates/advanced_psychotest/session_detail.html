@@ -1,0 +1,396 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Detail Advanced Test - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Advanced Test / Detail Sesi{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-chart-bar me-2" style="color:#7b1fa2;"></i>Profil Hasil Advanced Test
+    </h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'adv_session_print' session.pk %}" target="_blank"
+           class="btn btn-outline-success btn-sm">
+            <i class="fas fa-print me-1"></i>Cetak / PDF
+        </a>
+        <a href="{{ peserta_url }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-user me-1"></i>Profil {{ session.candidate|yesno:"Kandidat,Karyawan" }}
+        </a>
+        <a href="{% url 'adv_session_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Kembali
+        </a>
+    </div>
+</div>
+
+<!-- ═══ ROW 1: Kandidat + Skor Ringkasan ═══ -->
+<div class="row g-3 mb-3">
+
+    <!-- Info kandidat -->
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold text-white mb-2"
+                         style="width:60px;height:60px;background:#7b1fa2;font-size:1.5rem;">
+                        {{ session.get_peserta_nama|first }}
+                    </div>
+                    <div class="fw-bold">{{ session.get_peserta_nama }}</div>
+                    {% if session.candidate %}
+                    <small class="text-muted">{{ session.candidate.jabatan_dilamar|default:"-" }}</small>
+                    {% elif session.employee %}
+                    <small class="text-muted">{{ session.employee.jabatan|default:"-" }}</small>
+                    {% endif %}
+                </div>
+                <hr>
+                <div class="mb-2"><small class="text-muted d-block">Status</small>
+                    {% if session.status == 'completed' %}<span class="badge bg-success">✓ Selesai</span>
+                    {% elif session.status == 'started' %}<span class="badge bg-warning text-dark">Berjalan</span>
+                    {% elif session.status == 'expired' %}<span class="badge bg-danger">Expired</span>
+                    {% else %}<span class="badge bg-secondary">Pending</span>{% endif %}
+                </div>
+                <div class="mb-2"><small class="text-muted d-block">Dibuat</small>{{ session.created_at|date:"d/m/Y" }}</div>
+                <div class="mb-2"><small class="text-muted d-block">Selesai</small>{{ session.completed_at|date:"d/m/Y H:i"|default:"-" }}</div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Paket Tes</small>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        {% for pr in paket_results %}
+                        <span class="badge rounded-pill" style="background:#7b1fa2;font-size:.75rem;">{{ pr.label }}</span>
+                        {% empty %}
+                        <span class="badge rounded-pill" style="background:#7b1fa2;">{{ session.get_test_type_display }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if session.is_accessible %}
+                <hr>
+                <small class="text-muted d-block mb-1">Link Tes</small>
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="linkInput" value="{{ link_full }}" readonly>
+                    <button class="btn btn-outline-secondary" type="button"
+                        onclick="navigator.clipboard.writeText(document.getElementById('linkInput').value);this.innerHTML='<i class=\'fas fa-check\'></i>'">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Skor ringkasan per tes (donut chart kecil) -->
+    <div class="col-md-9">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">
+                <i class="fas fa-tachometer-alt me-2" style="color:#7b1fa2;"></i>Ringkasan Skor Paket
+            </div>
+            <div class="card-body">
+                {% if paket_results %}
+                <div class="row g-3 text-center">
+                    {% for pr in paket_results %}
+                    <div class="col">
+                        <div style="position:relative;width:110px;height:110px;margin:0 auto;">
+                            <canvas id="donut_{{ pr.tipe }}" width="110" height="110"></canvas>
+                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.2;">
+                                {% if pr.result and pr.result.skor_total is not None %}
+                                <div class="fw-bold" style="font-size:1.2rem;color:{% if pr.result.grade == 'A' %}#388e3c{% elif pr.result.grade == 'B' %}#1976d2{% elif pr.result.grade == 'C' %}#f57c00{% else %}#c62828{% endif %};">
+                                    {{ pr.result.skor_total }}%
+                                </div>
+                                <div style="font-size:.65rem;color:#888;">Grade {{ pr.result.grade }}</div>
+                                {% else %}
+                                <div style="font-size:.75rem;color:#aaa;">—</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-2 fw-semibold" style="font-size:.82rem;">{{ pr.label }}</div>
+                        {% if pr.result and pr.result.percentile %}
+                        <div style="font-size:.75rem;" class="text-muted">~{{ pr.result.percentile }}th pctl</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-hourglass-half fa-2x mb-2 opacity-25 d-block"></i>
+                    Belum ada hasil — kandidat belum menyelesaikan tes.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ ROW 2: Grafik per Tes ═══ -->
+{% for pr in paket_results %}
+{% if pr.result %}
+<div class="card mb-3">
+    <div class="card-header fw-semibold d-flex align-items-center gap-2">
+        <span>
+            {% if pr.tipe == 'raven' %}🔲{% elif pr.tipe == 'cogspeed' %}⚡{% elif pr.tipe == 'bigfive' %}⭐{% elif pr.tipe == 'sjt' %}⚖️{% elif pr.tipe == 'cfit' %}🌐{% endif %}
+        </span>
+        {{ pr.label }}
+        <span class="ms-auto badge {% if pr.result.grade == 'A' %}bg-success{% elif pr.result.grade == 'B' %}bg-primary{% elif pr.result.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+            Grade {{ pr.result.grade }} — {{ pr.result.skor_total }}%
+        </span>
+    </div>
+    <div class="card-body">
+
+        <!-- ── BIG FIVE: Radar + Bar ── -->
+        {% if pr.tipe == 'bigfive' and pr.result.ocean_o is not None %}
+        <div class="row g-4 align-items-center">
+            <div class="col-md-5 text-center">
+                <canvas id="radar_{{ pr.tipe }}" height="260"></canvas>
+            </div>
+            <div class="col-md-7">
+                <div class="mb-2 fw-semibold" style="font-size:.9rem;">Skor per Dimensi</div>
+                {% for dim, label in ocean_labels.items %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.85rem;">
+                        <span>
+                            {% if dim == 'O' %}🔵{% elif dim == 'C' %}🟢{% elif dim == 'E' %}🟠{% elif dim == 'A' %}🟣{% else %}🔴{% endif %}
+                            <strong>{{ label }}</strong>
+                            <span class="text-muted ms-1" style="font-size:.78rem;">
+                                {% if dim == 'O' %}(Keterbukaan){% elif dim == 'C' %}(Kedisiplinan){% elif dim == 'E' %}(Ekstroversi){% elif dim == 'A' %}(Keramahan){% else %}(Stabilitas Emosi){% endif %}
+                            </span>
+                        </span>
+                        <span class="fw-bold">
+                            {% if dim == 'O' %}{{ pr.result.ocean_o }}{% elif dim == 'C' %}{{ pr.result.ocean_c }}{% elif dim == 'E' %}{{ pr.result.ocean_e }}{% elif dim == 'A' %}{{ pr.result.ocean_a }}{% elif dim == 'N' %}{{ pr.result.ocean_n }}{% endif %}%
+                        </span>
+                    </div>
+                    <div class="progress" style="height:12px;border-radius:6px;">
+                        <div class="progress-bar" style="border-radius:6px;
+                            width:{% if dim == 'O' %}{{ pr.result.ocean_o }}{% elif dim == 'C' %}{{ pr.result.ocean_c }}{% elif dim == 'E' %}{{ pr.result.ocean_e }}{% elif dim == 'A' %}{{ pr.result.ocean_a }}{% elif dim == 'N' %}{{ pr.result.ocean_n }}{% endif %}%;
+                            background:{% if dim == 'O' %}#1976d2{% elif dim == 'C' %}#388e3c{% elif dim == 'E' %}#f57c00{% elif dim == 'A' %}#7b1fa2{% else %}#c62828{% endif %};">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- ── RAVEN / COGSPEED / CFIT / SJT: Bar Chart + Stats ── -->
+        {% else %}
+        <div class="row g-4 align-items-center">
+            <div class="col-md-6">
+                <canvas id="bar_{{ pr.tipe }}" height="200"></canvas>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2 text-center">
+                    <div class="col-4">
+                        <div class="card border-0 bg-light rounded-3 p-3">
+                            <div class="fw-bold fs-4" style="color:#7b1fa2;">{{ pr.result.skor_total }}%</div>
+                            <small class="text-muted">Skor</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card border-0 bg-light rounded-3 p-3">
+                            <div class="fw-bold fs-4
+                                {% if pr.result.grade == 'A' %}text-success
+                                {% elif pr.result.grade == 'B' %}text-primary
+                                {% elif pr.result.grade == 'C' %}text-warning
+                                {% else %}text-danger{% endif %}">
+                                {{ pr.result.grade }}
+                            </div>
+                            <small class="text-muted">Grade</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card border-0 bg-light rounded-3 p-3">
+                            <div class="fw-bold fs-4 text-secondary">
+                                {% if pr.result.percentile %}{{ pr.result.percentile }}<sup style="font-size:.6rem;">th</sup>{% else %}—{% endif %}
+                            </div>
+                            <small class="text-muted">Percentile</small>
+                        </div>
+                    </div>
+                </div>
+                {% if pr.result.detail %}
+                <div class="mt-3 p-3 rounded-3 bg-light">
+                    <div class="fw-semibold mb-1" style="font-size:.85rem;">Detail Jawaban</div>
+                    {% if pr.result.detail.benar is not None %}
+                    <div class="d-flex justify-content-between" style="font-size:.85rem;">
+                        <span class="text-success">✓ Benar</span><strong>{{ pr.result.detail.benar }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between" style="font-size:.85rem;">
+                        <span class="text-danger">✗ Salah / Kosong</span>
+                        <strong>{{ pr.result.detail.total|default:0|add:0 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between" style="font-size:.85rem;">
+                        <span class="text-muted">Total Soal</span>
+                        <strong>{{ pr.result.detail.total|default:0 }}</strong>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                <div class="mt-3 p-3 rounded-3" style="background:#f3e5f5;font-size:.83rem;">
+                    {% if pr.result.grade == 'A' %}
+                    <i class="fas fa-star text-success me-1"></i><strong>Sangat Baik</strong> — Kandidat unggul dalam tes ini, performa di atas rata-rata populasi.
+                    {% elif pr.result.grade == 'B' %}
+                    <i class="fas fa-thumbs-up text-primary me-1"></i><strong>Baik</strong> — Performa di atas rata-rata, kandidat kompeten di area ini.
+                    {% elif pr.result.grade == 'C' %}
+                    <i class="fas fa-minus-circle text-warning me-1"></i><strong>Cukup</strong> — Performa rata-rata, ada potensi yang bisa dikembangkan.
+                    {% else %}
+                    <i class="fas fa-exclamation-triangle text-danger me-1"></i><strong>Perlu Perhatian</strong> — Di bawah rata-rata, pertimbangkan pelatihan atau posisi yang sesuai.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Interpretasi -->
+        {% if pr.result.interpretasi %}
+        <div class="mt-3 pt-3 border-top">
+            <div class="fw-semibold mb-2" style="font-size:.88rem;">
+                <i class="fas fa-lightbulb text-warning me-1"></i>Interpretasi
+            </div>
+            <pre style="white-space:pre-wrap;font-family:inherit;font-size:.84rem;color:#555;margin:0;background:#fffde7;padding:.8rem 1rem;border-radius:8px;">{{ pr.result.interpretasi }}</pre>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- ═══ Catatan HR ═══ -->
+{% if result and result.catatan_hr %}
+<div class="card mb-3">
+    <div class="card-header fw-semibold"><i class="fas fa-comment me-2"></i>Catatan HR</div>
+    <div class="card-body"><p class="mb-0 text-muted">{{ result.catatan_hr }}</p></div>
+</div>
+{% endif %}
+
+<!-- ═══ Belum ada hasil ═══ -->
+{% if not paket_results or not result %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="fas fa-hourglass-half fa-3x mb-3 d-block opacity-25"></i>
+        {% if session.status == 'expired' %}Sesi kadaluarsa sebelum diselesaikan.
+        {% elif session.status == 'completed' %}Tes selesai, hasil sedang diproses.
+        {% else %}Menunggu kandidat mengerjakan tes.{% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ Chart.js ═══ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family = "'Segoe UI', sans-serif";
+
+const gradeColor = {
+    A: '#388e3c', B: '#1976d2', C: '#f57c00', D: '#c62828'
+};
+
+// ── Donut skor utama per tes ──────────────────────────────────────────────
+{% for pr in paket_results %}
+{% if pr.result and pr.result.skor_total is not None %}
+(function(){
+    const skor  = {{ pr.result.skor_total }};
+    const grade = "{{ pr.result.grade }}";
+    const color = gradeColor[grade] || '#9e9e9e';
+    new Chart(document.getElementById('donut_{{ pr.tipe }}'), {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [skor, 100 - skor],
+                backgroundColor: [color, '#f0f0f0'],
+                borderWidth: 0,
+                hoverOffset: 0,
+            }]
+        },
+        options: {
+            cutout: '72%',
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            animation: { duration: 800, easing: 'easeOutQuart' },
+        }
+    });
+})();
+{% endif %}
+{% endfor %}
+
+// ── Radar Big Five ────────────────────────────────────────────────────────
+{% for pr in paket_results %}
+{% if pr.tipe == 'bigfive' and pr.result and pr.result.ocean_o is not None %}
+(function(){
+    new Chart(document.getElementById('radar_{{ pr.tipe }}'), {
+        type: 'radar',
+        data: {
+            labels: ['Openness','Conscientiousness','Extraversion','Agreeableness','Neuroticism'],
+            datasets: [{
+                label: 'Skor OCEAN',
+                data: [
+                    {{ pr.result.ocean_o|default:0 }},
+                    {{ pr.result.ocean_c|default:0 }},
+                    {{ pr.result.ocean_e|default:0 }},
+                    {{ pr.result.ocean_a|default:0 }},
+                    {{ pr.result.ocean_n|default:0 }}
+                ],
+                backgroundColor: 'rgba(123,31,162,0.15)',
+                borderColor: '#7b1fa2',
+                borderWidth: 2,
+                pointBackgroundColor: '#7b1fa2',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+            }]
+        },
+        options: {
+            scales: {
+                r: {
+                    min: 0, max: 100,
+                    ticks: { stepSize: 25, font: { size: 10 }, color: '#aaa' },
+                    grid: { color: '#eee' },
+                    pointLabels: {
+                        font: { size: 11, weight: '600' },
+                        color: ['#1976d2','#388e3c','#f57c00','#7b1fa2','#c62828'],
+                    }
+                }
+            },
+            plugins: { legend: { display: false } },
+            animation: { duration: 900, easing: 'easeOutQuart' },
+        }
+    });
+})();
+{% endif %}
+{% endfor %}
+
+// ── Bar Chart untuk non-bigfive ───────────────────────────────────────────
+{% for pr in paket_results %}
+{% if pr.tipe != 'bigfive' and pr.result and pr.result.skor_total is not None %}
+(function(){
+    const skor  = {{ pr.result.skor_total }};
+    const grade = "{{ pr.result.grade }}";
+    const color = gradeColor[grade] || '#7b1fa2';
+    // Bar chart: perbandingan skor vs benchmark
+    new Chart(document.getElementById('bar_{{ pr.tipe }}'), {
+        type: 'bar',
+        data: {
+            labels: ['Skor Kandidat', 'Rata-rata', 'Target Ideal'],
+            datasets: [{
+                label: '{{ pr.label }}',
+                data: [skor, 60, 75],
+                backgroundColor: [color, '#e0e0e0', '#b0bec5'],
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    min: 0, max: 100,
+                    grid: { color: '#f0f0f0' },
+                    ticks: { callback: v => v + '%' }
+                },
+                y: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: { label: ctx => ' ' + ctx.parsed.x + '%' }
+                }
+            },
+            animation: { duration: 800, easing: 'easeOutQuart' },
+        }
+    });
+})();
+{% endif %}
+{% endfor %}
+</script>
+
+{% endblock %}

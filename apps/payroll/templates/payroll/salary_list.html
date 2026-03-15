@@ -1,0 +1,82 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Data Upah & Benefit{% endblock %}
+{% block breadcrumb %}Payroll / Upah & Benefit{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-money-bill-wave me-2 text-success"></i>Data Upah & Benefit</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'export_salary' %}" class="btn btn-outline-success btn-sm">
+            <i class="fas fa-file-excel me-1"></i>Export Excel
+        </a>
+        <a href="{% url 'import_salary' %}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-file-import me-1"></i>Import Gaji
+        </a>
+        <a href="{% url 'salary_add' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>Tambah Data Upah
+        </a>
+    </div>
+</div>
+<div class="card"><div class="card-body p-0">
+    <div class="table-responsive-wrap">
+<table class="table table-hover datatable mb-0" id="tbl-salary">
+        <thead class="table-light">
+            <tr>
+                <th>NIK</th>
+                <th>Nama</th>
+                <th>Jabatan</th>
+                <th>Departemen</th>
+                <th>Jenis Upah</th>
+                <th class="text-end">Gaji Pokok</th>
+                <th class="text-end">Tunjangan Tetap</th>
+                <th class="text-end">Take Home Pay</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in salaries %}
+            <tr>
+                <td><small class="text-muted">{{ s.employee.nik }}</small></td>
+                <td class="fw-semibold">{{ s.employee.nama }}</td>
+                <td><small>{{ s.employee.jabatan|default:"-" }}</small></td>
+                <td><small>{{ s.employee.department|default:"-" }}</small></td>
+                <td>
+                    <span class="badge {% if s.jenis_pengupahan == 'bulanan' %}bg-primary{% elif s.jenis_pengupahan == 'mingguan' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                        {{ s.get_jenis_pengupahan_display }}
+                    </span>
+                    {% if s.status_gaji == 'all_in' %}
+                    <span class="badge bg-danger ms-1" title="Gaji All-In: lembur tidak dihitung">All-In</span>
+                    {% endif %}
+                    {% if s.custom_aktif %}
+                    <span class="badge bg-warning text-dark ms-1" title="Menggunakan konfigurasi payroll custom"><i class="fas fa-cog"></i> Custom</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">Rp {{ s.gaji_pokok|floatformat:"0g" }}</td>
+                <td class="text-end">Rp {{ s.total_tunjangan_tetap|floatformat:"0g" }}</td>
+                <td class="text-end fw-bold text-success">Rp {{ s.total_take_home_pay|floatformat:"0g" }}</td>
+                <td>
+                    <a href="{% url 'salary_edit' s.employee.pk %}" class="btn btn-sm btn-outline-primary" title="Edit"><i class="fas fa-edit"></i></a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr class="dt-empty">
+                <tr class="dt-empty">
+                    <td colspan="9" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-sliders"></i></div>
+                            <div class="empty-state-title">Belum ada komponen gaji</div>
+                            <div class="empty-state-desc">Tambah komponen gaji seperti gaji pokok, tunjangan, dan potongan.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'salary_add' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Komponen</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                    Belum ada data upah. <a href="{% url 'salary_add' %}">Tambah sekarang</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div></div>
+{% endblock %}

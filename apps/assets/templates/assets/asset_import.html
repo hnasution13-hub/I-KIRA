@@ -1,0 +1,137 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Import Data Aset{% endblock %}
+{% block breadcrumb %}Asset Management / Import Aset{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0">
+    <i class="fas fa-file-import me-2 text-warning"></i>Import Data Aset
+  </h4>
+  <a href="{% url 'assets:asset_list' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>Kembali
+  </a>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}danger{% endif %} alert-dismissible fade show" role="alert">
+    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-4">
+
+  <!-- Langkah 1 -->
+  <div class="col-md-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body text-center p-4">
+        <div class="mb-3">
+          <span class="badge bg-primary rounded-circle p-3 fs-5">1</span>
+        </div>
+        <h5 class="fw-bold">Download Template</h5>
+        <p class="text-muted small">Download template Excel, isi data aset sesuai format yang disediakan.</p>
+        <a href="{% url 'assets:asset_import_template' %}" class="btn btn-outline-success w-100">
+          <i class="fas fa-download me-2"></i>Download Template Excel
+        </a>
+        <div class="mt-3 text-start">
+          <small class="text-muted">
+            <strong>Kolom wajib (merah):</strong><br>
+            Nama Aset, Tanggal Beli, Harga Beli
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Langkah 2 -->
+  <div class="col-md-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body p-4">
+        <div class="text-center mb-3">
+          <span class="badge bg-warning text-dark rounded-circle p-3 fs-5">2</span>
+        </div>
+        <h5 class="fw-bold text-center">Isi Data</h5>
+        <ul class="list-unstyled small text-muted mt-3">
+          <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Format tanggal: <code>DD/MM/YYYY</code></li>
+          <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Harga: angka saja tanpa titik/koma</li>
+          <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Kategori dibuat otomatis jika belum ada</li>
+          <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Kode aset kosong = auto-generate</li>
+          <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Depresiasi digenerate otomatis</li>
+          <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Lokasi & Vendor: dicocokkan ke DB</li>
+          <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>PIC: isi NIK karyawan</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Langkah 3 -->
+  <div class="col-md-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body p-4">
+        <div class="text-center mb-3">
+          <span class="badge bg-success rounded-circle p-3 fs-5">3</span>
+        </div>
+        <h5 class="fw-bold text-center">Upload File</h5>
+        <form method="post" enctype="multipart/form-data" class="mt-3">
+          {% csrf_token %}
+
+          {% if is_developer %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-danger">
+              <i class="fas fa-building me-1"></i>Pilih Company Tujuan <span class="text-danger">*</span>
+            </label>
+            <select name="company_id" class="form-select" required>
+              <option value="">-- Pilih Company --</option>
+              {% for c in companies %}
+              <option value="{{ c.pk }}">{{ c.nama }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text text-danger">Wajib dipilih karena Anda login sebagai Developer.</div>
+          </div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Pilih File Excel</label>
+            <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+            <div class="form-text">Format: .xlsx atau .xls, maks 10MB</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-upload me-2"></i>Upload & Import
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Info tambahan -->
+<div class="card mt-4 border-warning border-opacity-50">
+  <div class="card-header bg-warning bg-opacity-10">
+    <i class="fas fa-info-circle me-2 text-warning"></i>
+    <strong>Info: Lokasi & Vendor</strong>
+  </div>
+  <div class="card-body small text-muted">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <strong>Lokasi</strong><br>
+        Pastikan nama lokasi di file Excel sudah ada di sistem
+        (<a href="{% url 'locations:location_list' %}">Asset &rsaquo; Lokasi</a>).
+        Jika tidak ditemukan, kolom lokasi dilewati — aset tetap diimport.
+      </div>
+      <div class="col-md-6">
+        <strong>Vendor</strong><br>
+        Pastikan nama vendor di file Excel sudah ada di sistem
+        (<a href="{% url 'vendors:vendor_list' %}">Asset &rsaquo; Vendor</a>).
+        Jika tidak ditemukan, kolom vendor dilewati — aset tetap diimport.
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

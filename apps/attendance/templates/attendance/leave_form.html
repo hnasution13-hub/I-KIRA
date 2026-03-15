@@ -1,0 +1,136 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Ajukan Cuti{% endblock %}
+{% block breadcrumb %}Cuti &amp; Ijin / Ajukan Cuti{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-calendar-plus me-2 text-primary" aria-hidden="true"></i>Pengajuan Cuti / Ijin</h4>
+    <a href="{% url 'leave_list' %}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left me-1" aria-hidden="true"></i>Kembali</a>
+</div>
+<div class="row g-4">
+<div class="col-md-8">
+<div class="card"><div class="card-body">
+    <form method="post" enctype="multipart/form-data" id="leaveForm" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+            <div class="label-with-help">
+                <label class="form-label fw-semibold" for="sel_employee">Karyawan <span class="text-danger">*</span></label>
+                <div class="hris-tooltip-wrap">
+                    <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span>
+                    <div class="hris-tooltip-box" role="tooltip">Pilih karyawan yang mengajukan. Setelah dipilih, alur persetujuan tampil otomatis.</div>
+                </div>
+            </div>
+            <select name="employee" class="form-select" required id="sel_employee" aria-required="true">
+                <option value="">-- Pilih Karyawan --</option>
+                {% for emp in employees %}<option value="{{ emp.pk }}">{{ emp.nik }} - {{ emp.nama }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <div class="label-with-help">
+                <label class="form-label fw-semibold" for="id_tipe_cuti">Tipe Cuti <span class="text-danger">*</span></label>
+                <div class="hris-tooltip-wrap">
+                    <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span>
+                    <div class="hris-tooltip-box" role="tooltip"><strong>Cuti Tahunan</strong>: 12 hari/tahun. <strong>Cuti Sakit</strong>: perlu surat dokter ≥3 hari. <strong>Cuti Melahirkan</strong>: 3 bulan ibu / 2 hari ayah.</div>
+                </div>
+            </div>
+            <select name="tipe_cuti" class="form-select" required id="id_tipe_cuti" aria-required="true">
+                <option value="Cuti Tahunan">Cuti Tahunan</option>
+                <option value="Cuti Sakit">Cuti Sakit</option>
+                <option value="Cuti Melahirkan">Cuti Melahirkan</option>
+                <option value="Cuti Besar">Cuti Besar</option>
+                <option value="Cuti Penting">Cuti Penting</option>
+                <option value="Ijin">Ijin</option>
+            </select>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-5">
+                <label class="form-label fw-semibold" for="tgl_mulai">Tanggal Mulai <span class="text-danger">*</span></label>
+                <input type="date" name="tanggal_mulai" class="form-control" required id="tgl_mulai" aria-required="true">
+            </div>
+            <div class="col-md-5">
+                <label class="form-label fw-semibold" for="tgl_selesai">Tanggal Selesai <span class="text-danger">*</span></label>
+                <input type="date" name="tanggal_selesai" class="form-control" required id="tgl_selesai" aria-required="true">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" for="jml_hari">Hari</label>
+                <input type="number" name="jumlah_hari" class="form-control" min="1" value="1" id="jml_hari" readonly style="background:var(--surface2);" aria-label="Dihitung otomatis">
+                <div class="form-help"><i class="fas fa-calculator" aria-hidden="true"></i> Otomatis</div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <div class="label-with-help">
+                <label class="form-label fw-semibold" for="id_alasan">Alasan <span class="text-danger">*</span></label>
+                <div class="hris-tooltip-wrap">
+                    <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span>
+                    <div class="hris-tooltip-box" role="tooltip">Jelaskan alasan singkat. Untuk cuti sakit, sebutkan kondisi atau diagnosa.</div>
+                </div>
+            </div>
+            <textarea name="alasan" class="form-control" rows="3" required id="id_alasan" aria-required="true" placeholder="Contoh: Pernikahan saudara kandung di Surabaya"></textarea>
+        </div>
+        <div class="mb-4">
+            <div class="label-with-help">
+                <label class="form-label fw-semibold" for="id_dokumen">Dokumen Pendukung</label>
+                <div class="hris-tooltip-wrap">
+                    <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span>
+                    <div class="hris-tooltip-box" role="tooltip"><strong>Wajib</strong> untuk Cuti Sakit ≥3 hari (surat dokter) dan Cuti Melahirkan. Format: PDF/JPG/PNG, maks 5MB.</div>
+                </div>
+            </div>
+            <input type="file" name="dokumen" class="form-control" id="id_dokumen" accept=".pdf,.jpg,.jpeg,.png" aria-describedby="dokumen-help">
+            <div class="form-help" id="dokumen-help"><i class="fas fa-info-circle" aria-hidden="true"></i> PDF atau gambar, maks 5 MB</div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-red px-4"><i class="fas fa-paper-plane me-1" aria-hidden="true"></i>Ajukan</button>
+            <a href="{% url 'leave_list' %}" class="btn btn-outline">Batal</a>
+        </div>
+    </form>
+</div></div>
+</div>
+<div class="col-md-4">
+  <div class="card" id="card_approval_chain" style="display:none;">
+    <div class="card-header fw-semibold small py-2">
+      <i class="fas fa-sitemap me-1 text-primary" aria-hidden="true"></i>Alur Persetujuan
+    </div>
+    <div class="card-body p-2" id="approval_chain_body" aria-live="polite"></div>
+  </div>
+  <div class="card mt-3" id="card_chain_empty" style="display:none;">
+    <div class="card-body text-muted text-center py-3" style="font-size:.82rem;">
+      <i class="fas fa-info-circle me-1" aria-hidden="true"></i>Belum ada alur persetujuan untuk jabatan ini.
+    </div>
+  </div>
+  <div class="card mt-3">
+    <div class="card-body" style="font-size:.8rem;color:var(--muted);line-height:1.6;">
+      <div style="font-weight:600;color:var(--text2);margin-bottom:8px;"><i class="fas fa-circle-info me-1" aria-hidden="true"></i>Info</div>
+      <ul style="padding-left:16px;margin:0;">
+        <li>Pengajuan diteruskan ke atasan untuk disetujui</li>
+        <li>Cuti Tahunan: ajukan minimal 1 hari sebelumnya</li>
+        <li>Cuti disetujui tidak dapat dibatalkan sendiri</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function hitungHari(){const m=new Date(document.getElementById('tgl_mulai').value),s=new Date(document.getElementById('tgl_selesai').value);if(m&&s&&s>=m)document.getElementById('jml_hari').value=Math.round((s-m)/(864e5))+1;}
+document.getElementById('tgl_mulai').addEventListener('change',hitungHari);
+document.getElementById('tgl_selesai').addEventListener('change',hitungHari);
+document.getElementById('sel_employee').addEventListener('change',function(){
+    const id=this.value,cC=document.getElementById('card_approval_chain'),cE=document.getElementById('card_chain_empty'),b=document.getElementById('approval_chain_body');
+    if(!id){cC.style.display='none';cE.style.display='none';return;}
+    cC.style.display='block';cE.style.display='none';
+    b.innerHTML='<div class="text-center text-muted py-3" style="font-size:.83rem;"><i class="fas fa-spinner fa-spin me-1"></i>Memuat...</div>';
+    fetch(`/api/approval-chain/?employee_id=${id}&modul=leave`).then(r=>r.json()).then(data=>{
+        if(!data.chain||!data.chain.length){cC.style.display='none';cE.style.display='block';return;}
+        let h='';data.chain.forEach(function(s,i){h+=`<div class="d-flex align-items-center gap-2 ${i<data.chain.length-1?'mb-1':''}"><div style="width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;">${i+1}</div><div><div style="font-size:.8rem;font-weight:600;">${s.label||s.role||'-'}</div><div style="font-size:.72rem;color:var(--muted);">${s.approver_name||s.name||'-'}</div></div></div>`;if(i<data.chain.length-1)h+='<div style="width:1px;height:10px;background:var(--border);margin-left:12px;"></div>';});
+        b.innerHTML=h;
+    }).catch(()=>{cC.style.display='none';});
+});
+document.getElementById('leaveForm').addEventListener('submit',function(e){
+    let ok=true;
+    this.querySelectorAll('[required]').forEach(el=>{if(!el.value.trim()){el.classList.add('is-invalid');ok=false;}else el.classList.remove('is-invalid');});
+    const m=document.getElementById('tgl_mulai').value,s=document.getElementById('tgl_selesai').value;
+    if(m&&s&&s<m){document.getElementById('tgl_selesai').classList.add('is-invalid');ok=false;}
+    if(!ok)e.preventDefault();
+});
+</script>
+{% endblock %}

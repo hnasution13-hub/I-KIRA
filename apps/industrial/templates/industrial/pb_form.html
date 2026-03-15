@@ -1,0 +1,574 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Buat Perjanjian Bersama{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  {# ── BREADCRUMB ─────────────────────────────────────────────────────────── #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'severance_list' %}">Pesangon</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'pb_list' %}">Perjanjian Bersama</a></li>
+      <li class="breadcrumb-item active">{% if pb %}Edit{% else %}Buat Baru{% endif %}</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex align-items-center mb-3 gap-2">
+    <span class="fs-4">🤝</span>
+    <h4 class="mb-0 fw-bold">Perjanjian Bersama PHK</h4>
+  </div>
+
+  {# ── PIPELINE STEP ──────────────────────────────────────────────────────── #}
+  <div class="d-flex align-items-center gap-0 mb-4">
+    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-start
+        {% if step == 1 %}bg-primary text-white{% else %}bg-light text-muted{% endif %}">
+      <span class="fw-bold">1</span>
+      <span class="small fw-semibold">Pilih Data Pesangon</span>
+    </div>
+    <div class="px-2 {% if step == 1 %}bg-primary{% else %}bg-success{% endif %}"
+         style="height:36px;width:20px;clip-path:polygon(0 0,100% 50%,0 100%);"></div>
+    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-end
+        {% if step == 2 %}bg-primary text-white{% else %}bg-light text-muted{% endif %}">
+      <span class="fw-bold">2</span>
+      <span class="small fw-semibold">Komponen & Draft PB</span>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+        {{ msg|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {# STEP 1 — Pilih Severance #}
+  {% if step == 1 %}
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white fw-semibold">
+      <i class="bi bi-search me-2"></i>Pilih Data Perhitungan Pesangon
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">
+        Perjanjian Bersama dibuat berdasarkan data perhitungan pesangon yang sudah tersimpan.
+        Pilih karyawan yang akan dibuatkan PB.
+      </p>
+
+      {# Filter #}
+      <form method="get" class="row g-2 mb-3">
+        <div class="col-md-4">
+          <input type="text" name="q" value="{{ request.GET.q }}"
+                 class="form-control form-control-sm" placeholder="Cari nama karyawan…">
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-sm btn-outline-secondary">Cari</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle datatable">
+          <thead class="table-light">
+            <tr>
+              <th>Karyawan</th>
+              <th>Status</th>
+              <th>Tgl PHK</th>
+              <th>Alasan</th>
+              <th>Dasar Pasal</th>
+              <th class="text-end">Total Pesangon</th>
+              <th class="text-center">PB</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sv in severances %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ sv.employee.nama }}</div>
+                <div class="text-muted small">{{ sv.employee.nik }}</div>
+              </td>
+              <td>
+                <span class="badge {% if sv.employee.status_karyawan == 'PKWT' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                  {{ sv.employee.status_karyawan }}
+                </span>
+              </td>
+              <td>{{ sv.tanggal_phk|date:"d/m/Y" }}</td>
+              <td class="small">{{ sv.alasan_phk }}</td>
+              <td><code class="small">{{ sv.dasar_pasal }}</code></td>
+              <td class="text-end fw-semibold">Rp {{ sv.total_pesangon|floatformat:"0g" }}</td>
+              <td class="text-center">
+                {% if sv.perjanjian_bersama %}
+                  <span class="badge bg-success">Ada</span>
+                {% else %}
+                  <span class="badge bg-secondary">Belum</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if sv.perjanjian_bersama %}
+                  <a href="{% url 'pb_detail' sv.perjanjian_bersama.pk %}"
+                     class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-eye"></i> Lihat PB
+                  </a>
+                {% else %}
+                  <a href="{% url 'pb_create' %}?severance={{ sv.pk }}"
+                     class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> Buat PB
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center text-muted py-4">
+                Belum ada data pesangon tersimpan.
+                <a href="{% url 'severance_calculator' %}">Hitung pesangon dulu →</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# STEP 2 — Form Komponen PB #}
+  {% if step == 2 %}
+  <form method="post" id="pb-form">
+    {% csrf_token %}
+    <input type="hidden" name="step" value="2">
+    <input type="hidden" name="severance_id" value="{{ severance.pk }}">
+
+    <div class="row g-3">
+
+      {# ── KOLOM KIRI ─────────────────────────────────────────────────────── #}
+      <div class="col-lg-5">
+
+        {# Info Karyawan (read-only) #}
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-light fw-semibold small">
+            <i class="bi bi-person-badge me-1"></i>Data Karyawan
+          </div>
+          <div class="card-body p-3">
+            <div class="row g-2 small">
+              <div class="col-5 text-muted">Nama</div>
+              <div class="col-7 fw-semibold">{{ severance.employee.nama }}</div>
+              <div class="col-5 text-muted">NIK</div>
+              <div class="col-7">{{ severance.employee.nik }}</div>
+              <div class="col-5 text-muted">Status</div>
+              <div class="col-7">
+                <span class="badge {% if severance.employee.status_karyawan == 'PKWT' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                  {{ severance.employee.status_karyawan }}
+                </span>
+              </div>
+              <div class="col-5 text-muted">Jabatan</div>
+              <div class="col-7">{{ severance.employee.jabatan }}</div>
+              <div class="col-5 text-muted">Departemen</div>
+              <div class="col-7">{{ severance.employee.department }}</div>
+              <div class="col-5 text-muted">Tgl Masuk</div>
+              <div class="col-7">{{ severance.employee.join_date|date:"d/m/Y" }}</div>
+              <div class="col-5 text-muted">Gaji Pokok</div>
+              <div class="col-7">Rp {{ severance.gaji_pokok|floatformat:"0g" }}</div>
+              <div class="col-5 text-muted">Tgl PHK</div>
+              <div class="col-7">{{ severance.tanggal_phk|date:"d/m/Y" }}</div>
+              <div class="col-5 text-muted">Dasar Pasal</div>
+              <div class="col-7"><code>{{ severance.dasar_pasal }}</code></div>
+            </div>
+          </div>
+        </div>
+
+        {# Ringkasan Pesangon (read-only) #}
+        <div class="card shadow-sm mb-3">
+          <div class="card-header fw-semibold small
+            {% if severance.employee.status_karyawan == 'PKWT' %}bg-warning text-dark{% else %}bg-primary text-white{% endif %}">
+            <i class="bi bi-calculator me-1"></i>
+            {% if severance.employee.status_karyawan == 'PKWT' %}Kompensasi PKWT{% else %}Pesangon{% endif %}
+          </div>
+          <div class="card-body p-3 small">
+            {% if severance.employee.status_karyawan == 'PKWTT' %}
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Uang Pesangon (UP)</span>
+              <span>Rp {{ severance.pesangon|floatformat:"0g" }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">UPMK</span>
+              <span>Rp {{ severance.upmk|floatformat:"0g" }}</span>
+            </div>
+            {% if severance.uang_pisah %}
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Uang Pisah</span>
+              <span>Rp {{ severance.uang_pisah|floatformat:"0g" }}</span>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Kompensasi Ps.61A</span>
+              <span>Rp {{ severance.kompensasi_pkwt|floatformat:"0g" }}</span>
+            </div>
+            {% endif %}
+            <hr class="my-2">
+            <div class="d-flex justify-content-between fw-bold">
+              <span>Total Pesangon</span>
+              <span class="text-primary">Rp {{ severance.total_pesangon|floatformat:"0g" }}</span>
+            </div>
+          </div>
+        </div>
+
+        {# Penandatangan & Metadata #}
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-light fw-semibold small">
+            <i class="bi bi-pen me-1"></i>Metadata PB
+          </div>
+          <div class="card-body p-3">
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Nomor PB</label>
+                <input type="text" name="nomor_pb" value="{{ pb.nomor_pb|default:'' }}"
+                       class="form-control form-control-sm" placeholder="Cth: 001/PB-PHK/IV/2025">
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Tanggal PB <span class="text-danger">*</span></label>
+                <input type="date" name="tanggal_pb"
+                       value="{{ pb.tanggal_pb|date:'Y-m-d'|default:today }}"
+                       class="form-control form-control-sm" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Tempat PB</label>
+                <input type="text" name="tempat_pb" value="{{ pb.tempat_pb|default:'' }}"
+                       class="form-control form-control-sm" placeholder="Cth: Jakarta">
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Nama Pihak Pertama (Perusahaan) <span class="text-danger">*</span></label>
+                <input type="text" name="nama_penandatangan"
+                       value="{{ pb.nama_penandatangan|default:'' }}"
+                       class="form-control form-control-sm" required
+                       placeholder="Cth: Budi Santoso">
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Jabatan Pihak Pertama <span class="text-danger">*</span></label>
+                <input type="text" name="jabatan_penandatangan"
+                       value="{{ pb.jabatan_penandatangan|default:'' }}"
+                       class="form-control form-control-sm" required
+                       placeholder="Cth: Direktur HRD">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>{# /kolom kiri #}
+
+      {# ── KOLOM KANAN ────────────────────────────────────────────────────── #}
+      <div class="col-lg-7">
+
+        {# Komponen Tambahan #}
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-success text-white fw-semibold small">
+            <i class="bi bi-list-check me-1"></i>Komponen Pembayaran PB
+          </div>
+          <div class="card-body p-3">
+
+            <div class="alert alert-info small py-2 mb-3">
+              <i class="bi bi-info-circle me-1"></i>
+              Pesangon sudah terisi otomatis dari perhitungan sebelumnya.
+              Lengkapi komponen tambahan di bawah ini.
+            </div>
+
+            {# Sisa Cuti Tahunan #}
+            <div class="border rounded p-3 mb-3">
+              <div class="fw-semibold small mb-2 text-success">
+                <i class="bi bi-calendar-check me-1"></i>Sisa Cuti Tahunan
+              </div>
+              <div class="row g-2 align-items-end">
+                <div class="col-5">
+                  <label class="form-label small">Sisa Cuti (hari)</label>
+                  <input type="number" name="sisa_cuti_tahunan" id="id_sisa_cuti_tahunan"
+                         value="{{ pb.sisa_cuti_tahunan|default:0 }}"
+                         min="0" class="form-control form-control-sm">
+                </div>
+                <div class="col-7">
+                  <label class="form-label small">
+                    Nilai = (Gaji/26) × sisa hari
+                    <span class="text-muted">(auto)</span>
+                  </label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text">Rp</span>
+                    <input type="number" name="nilai_cuti_tahunan" id="id_nilai_cuti_tahunan"
+                           value="{{ pb.nilai_cuti_tahunan|default:0 }}"
+                           class="form-control" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {# Sisa Cuti Roster (opsional) #}
+            <div class="border rounded p-3 mb-3">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-semibold small text-warning">
+                  <i class="bi bi-calendar2-week me-1"></i>Sisa Cuti Roster
+                </span>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" name="pakai_cuti_roster"
+                         id="id_pakai_cuti_roster"
+                         {% if pb.pakai_cuti_roster %}checked{% endif %}>
+                  <label class="form-check-label small" for="id_pakai_cuti_roster">Aktifkan</label>
+                </div>
+              </div>
+              <div id="section-cuti-roster"
+                   class="{% if not pb.pakai_cuti_roster %}d-none{% endif %}">
+                <div class="row g-2 align-items-end">
+                  <div class="col-5">
+                    <label class="form-label small">Sisa Cuti Roster (hari)</label>
+                    <input type="number" name="sisa_cuti_roster" id="id_sisa_cuti_roster"
+                           value="{{ pb.sisa_cuti_roster|default:0 }}"
+                           min="0" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-7">
+                    <label class="form-label small">
+                      Nilai = (Gaji/30) × sisa hari <span class="text-muted">(auto)</span>
+                    </label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">Rp</span>
+                      <input type="number" name="nilai_cuti_roster" id="id_nilai_cuti_roster"
+                             value="{{ pb.nilai_cuti_roster|default:0 }}"
+                             class="form-control" readonly>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {# Sisa Gaji Prorate #}
+            <div class="border rounded p-3 mb-3">
+              <div class="fw-semibold small mb-2 text-primary">
+                <i class="bi bi-cash-coin me-1"></i>Sisa Gaji Prorate
+              </div>
+              <div class="row g-2 align-items-end">
+                <div class="col-4">
+                  <label class="form-label small">Tgl Cut-Off</label>
+                  <input type="date" name="tanggal_cut_off"
+                         value="{{ pb.tanggal_cut_off|date:'Y-m-d'|default:'' }}"
+                         class="form-control form-control-sm" id="id_tanggal_cut_off">
+                </div>
+                <div class="col-3">
+                  <label class="form-label small">Sisa Hari</label>
+                  <input type="number" name="sisa_hari_kerja" id="id_sisa_hari"
+                         value="{{ pb.sisa_hari_kerja|default:0 }}"
+                         min="0" class="form-control form-control-sm">
+                </div>
+                <div class="col-5">
+                  <label class="form-label small">
+                    Nilai = (Gaji/26) × hari <span class="text-muted">(auto)</span>
+                  </label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text">Rp</span>
+                    <input type="number" name="nilai_sisa_gaji" id="id_nilai_sisa_gaji"
+                           value="{{ pb.nilai_sisa_gaji|default:0 }}"
+                           class="form-control" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {# Uang Transportasi (opsional) #}
+            <div class="border rounded p-3 mb-3">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-semibold small text-info">
+                  <i class="bi bi-truck me-1"></i>Uang Transportasi (POH)
+                </span>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" name="pakai_uang_transport"
+                         id="id_pakai_uang_transport"
+                         {% if pb.pakai_uang_transport %}checked{% endif %}>
+                  <label class="form-check-label small" for="id_pakai_uang_transport">Aktifkan</label>
+                </div>
+              </div>
+              <div id="section-transport"
+                   class="{% if not pb.pakai_uang_transport %}d-none{% endif %}">
+                <div class="row g-2 align-items-end">
+                  <div class="col-7">
+                    <label class="form-label small">Nilai Uang Transportasi</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">Rp</span>
+                      <input type="number" name="nilai_uang_transport"
+                             value="{{ pb.nilai_uang_transport|default:0 }}"
+                             min="0" class="form-control">
+                    </div>
+                    <div class="form-text">Uang transport kepulangan ke POH, berbeda dengan tunjangan transport rutin.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {# Jadwal Pembayaran #}
+            <div class="border rounded p-3 mb-3">
+              <div class="fw-semibold small mb-2">
+                <i class="bi bi-calendar-range me-1"></i>Jadwal Pembayaran
+              </div>
+              <textarea name="jadwal_pembayaran" rows="3"
+                        class="form-control form-control-sm"
+                        placeholder="Cth: Pesangon dibayarkan pada tanggal 30 April 2025 melalui transfer ke rekening yang ditunjuk Pihak Kedua.">{{ pb.jadwal_pembayaran|default:'' }}</textarea>
+            </div>
+
+            {# Catatan #}
+            <div class="border rounded p-3">
+              <div class="fw-semibold small mb-2">
+                <i class="bi bi-sticky me-1"></i>Catatan Tambahan
+              </div>
+              <textarea name="catatan" rows="2"
+                        class="form-control form-control-sm"
+                        placeholder="Catatan opsional…">{{ pb.catatan|default:'' }}</textarea>
+            </div>
+
+          </div>
+        </div>
+
+        {# ── SUMMARY GRAND TOTAL ─────────────────────────────────────────── #}
+        <div class="card border-primary shadow-sm mb-3">
+          <div class="card-header bg-primary text-white fw-semibold small">
+            <i class="bi bi-calculator-fill me-1"></i>Ringkasan Total PB
+          </div>
+          <div class="card-body p-3 small">
+            {% if severance.employee.status_karyawan == 'PKWTT' %}
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Uang Pesangon (UP)</span>
+              <span id="row-up">Rp {{ severance.pesangon|floatformat:"0g" }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">UPMK</span>
+              <span id="row-upmk">Rp {{ severance.upmk|floatformat:"0g" }}</span>
+            </div>
+            {% if severance.uang_pisah %}
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Uang Pisah</span>
+              <span>Rp {{ severance.uang_pisah|floatformat:"0g" }}</span>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Kompensasi PKWT (Ps.61A)</span>
+              <span>Rp {{ severance.kompensasi_pkwt|floatformat:"0g" }}</span>
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Sisa Cuti Tahunan</span>
+              <span id="display-cuti-tahunan">Rp 0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1" id="row-cuti-roster">
+              <span class="text-muted">Sisa Cuti Roster</span>
+              <span id="display-cuti-roster">Rp 0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Sisa Gaji Prorate</span>
+              <span id="display-sisa-gaji">Rp 0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1" id="row-transport">
+              <span class="text-muted">Uang Transportasi</span>
+              <span id="display-transport">Rp 0</span>
+            </div>
+            <hr class="my-2">
+            <div class="d-flex justify-content-between fw-bold fs-6 text-primary">
+              <span>Grand Total</span>
+              <span id="display-grand-total">Rp {{ severance.total_pesangon|floatformat:"0g" }}</span>
+            </div>
+            <div class="text-muted mt-1" id="display-terbilang" style="font-style:italic;font-size:11px;"></div>
+          </div>
+        </div>
+
+        {# Tombol Aksi #}
+        <div class="d-flex gap-2 justify-content-end">
+          <a href="{% url 'pb_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle me-1"></i>Batal
+          </a>
+          <button type="submit" name="action" value="draft" class="btn btn-outline-primary">
+            <i class="bi bi-floppy me-1"></i>Simpan Draft
+          </button>
+          <button type="submit" name="action" value="final" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Simpan & Final
+          </button>
+        </div>
+
+      </div>{# /kolom kanan #}
+    </div>{# /row #}
+  </form>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if step == 2 %}
+<script>
+(function() {
+  const gajiPokok = {{ severance.gaji_pokok|default:0 }};
+  const totalPesangon = {{ severance.total_pesangon|default:0 }};
+  const isStatusPKWT = "{{ severance.employee.status_karyawan }}" === "PKWT";
+
+  function fmt(n) {
+    return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+  }
+
+  function terbilangClient(angka) {
+    // Sederhana: tampilkan nilai numerik saja
+    return '(' + Math.round(angka).toLocaleString('id-ID') + ')';
+  }
+
+  function recalc() {
+    const sisaCutiTahunan = parseInt(document.getElementById('id_sisa_cuti_tahunan').value) || 0;
+    const nilaiCutiTahunan = Math.round((gajiPokok / 26) * sisaCutiTahunan);
+    document.getElementById('id_nilai_cuti_tahunan').value = nilaiCutiTahunan;
+    document.getElementById('display-cuti-tahunan').textContent = fmt(nilaiCutiTahunan);
+
+    const pakaiRoster = document.getElementById('id_pakai_cuti_roster').checked;
+    const sisaRoster = parseInt(document.getElementById('id_sisa_cuti_roster').value) || 0;
+    const nilaiRoster = pakaiRoster ? Math.round((gajiPokok / 30) * sisaRoster) : 0;
+    document.getElementById('id_nilai_cuti_roster').value = nilaiRoster;
+    document.getElementById('display-cuti-roster').textContent = fmt(nilaiRoster);
+    document.getElementById('row-cuti-roster').style.display = pakaiRoster ? 'flex' : 'none';
+
+    const sisaHari = parseInt(document.getElementById('id_sisa_hari').value) || 0;
+    const nilaiSisaGaji = Math.round((gajiPokok / 26) * sisaHari);
+    document.getElementById('id_nilai_sisa_gaji').value = nilaiSisaGaji;
+    document.getElementById('display-sisa-gaji').textContent = fmt(nilaiSisaGaji);
+
+    const pakaiTransport = document.getElementById('id_pakai_uang_transport').checked;
+    const nilaiTransport = pakaiTransport
+      ? parseInt(document.querySelector('[name=nilai_uang_transport]').value) || 0
+      : 0;
+    document.getElementById('display-transport').textContent = fmt(nilaiTransport);
+    document.getElementById('row-transport').style.display = pakaiTransport ? 'flex' : 'none';
+
+    // UPMK only for PKWTT
+    const upmkEl = document.getElementById('row-upmk');
+    const upmkVal = {{ severance.upmk|default:0 }};
+
+    let grandTotal = totalPesangon + nilaiCutiTahunan + nilaiSisaGaji;
+    if (!isStatusPKWT) grandTotal += 0; // pesangon already includes UP+UPMK+uang_pisah in total_pesangon
+    if (pakaiRoster) grandTotal += nilaiRoster;
+    if (pakaiTransport) grandTotal += nilaiTransport;
+
+    document.getElementById('display-grand-total').textContent = fmt(grandTotal);
+    document.getElementById('display-terbilang').textContent = terbilangClient(grandTotal);
+  }
+
+  // Toggle sections
+  document.getElementById('id_pakai_cuti_roster').addEventListener('change', function() {
+    document.getElementById('section-cuti-roster').classList.toggle('d-none', !this.checked);
+    recalc();
+  });
+  document.getElementById('id_pakai_uang_transport').addEventListener('change', function() {
+    document.getElementById('section-transport').classList.toggle('d-none', !this.checked);
+    recalc();
+  });
+
+  // Listen all inputs
+  ['id_sisa_cuti_tahunan','id_sisa_cuti_roster','id_sisa_hari'].forEach(id => {
+    document.getElementById(id).addEventListener('input', recalc);
+  });
+  document.querySelector('[name=nilai_uang_transport]').addEventListener('input', recalc);
+
+  recalc();
+})();
+</script>
+{% endif %}
+{% endblock %}

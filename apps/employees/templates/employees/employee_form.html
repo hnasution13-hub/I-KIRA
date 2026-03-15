@@ -1,0 +1,1076 @@
+{% extends 'base_dashboard.html' %}
+{% block extra_head %}
+<style>
+#tl_wrapper { position: relative; }
+#tl_results {
+    display: none;
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    background: #fff;
+    border: 1px solid #86b7fe;
+    border-top: none;
+    border-radius: 0 0 .375rem .375rem;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 9999;
+    box-shadow: 0 4px 8px rgba(0,0,0,.1);
+}
+#tl_results li {
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: .875rem;
+    list-style: none;
+    border-bottom: 1px solid #f0f0f0;
+}
+#tl_results li:hover, #tl_results li.active { background: #e8f0fe; }
+.emp-form-progress{border-bottom:1px solid var(--border);padding-bottom:0;}
+.emp-progress-steps{display:flex;gap:0;overflow-x:auto;}
+.emp-step{display:flex;align-items:center;gap:8px;padding:12px 20px;border-bottom:2px solid transparent;text-decoration:none;color:var(--muted);font-size:.82rem;font-weight:500;white-space:nowrap;transition:all .15s;position:relative;}
+.emp-step:hover{color:var(--text);border-bottom-color:var(--border2);}
+.emp-step.active{color:var(--red);border-bottom-color:var(--red);font-weight:600;}
+.emp-step.has-error{color:#f87171;}
+.emp-step.has-error .emp-step-num{background:rgba(248,113,113,.15);color:#f87171;border-color:#f87171;}
+.emp-step-num{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;transition:all .15s;}
+.emp-step.active .emp-step-num{background:var(--red);color:#fff;border-color:var(--red);}
+.emp-step-label{flex:1;}
+.emp-step-dot{display:none;}
+@media(max-width:600px){
+  .emp-step-label span:not(.emp-step-num){display:none;}
+  .emp-step{padding:10px 14px;}
+}
+</style>
+{% endblock %}
+{% block title %}{% if instance %}Edit{% else %}Tambah{% endif %} Karyawan{% endblock %}
+{% block breadcrumb %}Karyawan / {% if instance %}Edit: {{ instance.nama }}{% else %}Tambah{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-{% if instance %}edit{% else %}user-plus{% endif %} me-2 text-primary"></i>
+        {% if instance %}Edit: {{ instance.nama }}{% else %}Tambah Karyawan Baru{% endif %}
+    </h4>
+    <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="employeeForm">
+    {% csrf_token %}
+    <!-- Progress tab indicator -->
+    <div class="emp-form-progress mb-3" role="navigation" aria-label="Langkah formulir" id="empTabNav">
+        <div class="emp-progress-steps" role="tablist">
+            <a role="tab" class="emp-step active" data-tab="tab-utama" href="#tab-utama" data-empstep="true" aria-current="step">
+                <span class="emp-step-num">1</span>
+                <span class="emp-step-label"><i class="fas fa-id-badge me-1" aria-hidden="true"></i>Data Utama</span>
+                <span class="emp-step-dot" aria-hidden="true"></span>
+            </a>
+            <a role="tab" class="emp-step" data-tab="tab-pribadi" href="#tab-pribadi" data-empstep="true">
+                <span class="emp-step-num">2</span>
+                <span class="emp-step-label"><i class="fas fa-user me-1" aria-hidden="true"></i>Data Pribadi</span>
+                <span class="emp-step-dot" aria-hidden="true"></span>
+            </a>
+            <a role="tab" class="emp-step" data-tab="tab-keluarga" href="#tab-keluarga" data-empstep="true">
+                <span class="emp-step-num">3</span>
+                <span class="emp-step-label"><i class="fas fa-users me-1" aria-hidden="true"></i>Keluarga</span>
+                <span class="emp-step-dot" aria-hidden="true"></span>
+            </a>
+            <a role="tab" class="emp-step" data-tab="tab-alamat" href="#tab-alamat" data-empstep="true">
+                <span class="emp-step-num">4</span>
+                <span class="emp-step-label"><i class="fas fa-map-marker-alt me-1" aria-hidden="true"></i>Alamat</span>
+                <span class="emp-step-dot" aria-hidden="true"></span>
+            </a>
+            <a role="tab" class="emp-step" data-tab="tab-kontak" href="#tab-kontak" data-empstep="true">
+                <span class="emp-step-num">5</span>
+                <span class="emp-step-label"><i class="fas fa-phone me-1" aria-hidden="true"></i>Kontak &amp; Bank</span>
+                <span class="emp-step-dot" aria-hidden="true"></span>
+            </a>
+        </div>
+    </div>
+
+
+
+    <div class="tab-content" id="empTabContent">
+
+        <!-- ═══════════════ TAB DATA UTAMA ═══════════════ -->
+        <div class="tab-pane fade show active" id="tab-utama" role="tabpanel">
+            <div class="card mb-3"><div class="card-header fw-semibold text-primary">Informasi Pekerjaan</div><div class="card-body"><div class="row g-3">
+                <div class="col-md-3">
+                    <div class="label-with-help">
+                        <label class="form-label fw-semibold" for="id_nik">NIK <span class="text-danger" aria-label="wajib diisi">*</span></label>
+                        <div class="hris-tooltip-wrap">
+                            <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan: NIK">?</span>
+                            <div class="hris-tooltip-box" role="tooltip">Nomor Induk Karyawan internal perusahaan. Harus unik per karyawan. Contoh: <strong>EMP-001</strong> atau <strong>0001</strong></div>
+                        </div>
+                    </div>
+                    <input type="text" id="id_nik" name="nik" class="form-control" value="{{ instance.nik|default:'' }}" required aria-required="true" aria-describedby="nik-help">
+                    <div class="form-help" id="nik-help"><i class="fas fa-info-circle" aria-hidden="true"></i> Nomor unik identitas karyawan di perusahaan ini</div>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+                    <input type="text" name="nama" class="form-control" value="{{ instance.nama|default:'' }}" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="Aktif"       {% if instance.status == 'Aktif'       or not instance %}selected{% endif %}>Aktif</option>
+                        <option value="Tidak Aktif" {% if instance.status == 'Tidak Aktif'                %}selected{% endif %}>Tidak Aktif</option>
+                        <option value="Resign"      {% if instance.status == 'Resign'                     %}selected{% endif %}>Resign</option>
+                        <option value="PHK"         {% if instance.status == 'PHK'                        %}selected{% endif %}>PHK</option>
+                        <option value="Pensiun"     {% if instance.status == 'Pensiun'                    %}selected{% endif %}>Pensiun</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Foto</label>
+                    <input type="file" name="foto" class="form-control" accept="image/*">
+                    {% if instance.foto %}<small class="text-muted d-block mt-1">{{ instance.foto.name }}</small>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Departemen</label>
+                    <select name="department" class="form-select">
+                        <option value="">-- Pilih --</option>
+                        {% for d in departments %}<option value="{{ d.id }}" {% if instance.department_id == d.id %}selected{% endif %}>{{ d.nama }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Jabatan</label>
+                    <select name="jabatan" class="form-select">
+                        <option value="">-- Pilih --</option>
+                        {% for p in positions %}<option value="{{ p.id }}" {% if instance.jabatan_id == p.id %}selected{% endif %}>{{ p.nama }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="label-with-help">
+                        <label class="form-label fw-semibold" for="id_status_karyawan">Status Karyawan</label>
+                        <div class="hris-tooltip-wrap">
+                            <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan: Status Karyawan">?</span>
+                            <div class="hris-tooltip-box" role="tooltip"><strong>PKWT</strong> = kontrak waktu tertentu. <strong>PKWTT</strong> = karyawan tetap. <strong>PHL</strong> = harian lepas. <strong>Borongan</strong> = berdasarkan hasil kerja.</div>
+                        </div>
+                    </div>
+                    <select id="id_status_karyawan" name="status_karyawan" class="form-select">
+                        <option value="Borongan" {% if instance.status_karyawan == 'Borongan'              %}selected{% endif %}>Borongan</option>
+                        <option value="PHL"      {% if instance.status_karyawan == 'PHL'                   %}selected{% endif %}>PHL (Pekerja Harian Lepas)</option>
+                        <option value="PKWT"     {% if instance.status_karyawan == 'PKWT' or not instance  %}selected{% endif %}>PKWT (Kontrak)</option>
+                        <option value="PKWTT"    {% if instance.status_karyawan == 'PKWTT'                 %}selected{% endif %}>PKWTT (Permanen)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold" for="id_join_date">Tanggal Masuk <span class="text-danger" aria-label="wajib diisi">*</span></label>
+                    <input type="date" id="id_join_date" name="join_date" class="form-control" value="{{ instance.join_date|date:'Y-m-d'|default:'' }}" required aria-required="true" aria-describedby="join-date-help">
+                    <div class="form-help" id="join-date-help"><i class="fas fa-info-circle" aria-hidden="true"></i> Tanggal mulai bekerja di perusahaan ini</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Point of Hire</label>
+                    <select name="point_of_hire" class="form-select">
+                        <option value="">-- Pilih --</option>
+                        {% for p in poh_list %}<option value="{{ p.id }}" {% if instance.point_of_hire_id == p.id %}selected{% endif %}>{{ p.nama }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Job Site</label>
+                    <select name="job_site" class="form-select">
+                        <option value="">-- Pilih --</option>
+                        {% for j in jobsite_list %}<option value="{{ j.id }}" {% if instance.job_site_id == j.id %}selected{% endif %}>{{ j.nama }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div></div></div>
+        </div>
+
+        <!-- ═══════════════ TAB DATA PRIBADI ═══════════════ -->
+        <div class="tab-pane fade" id="tab-pribadi" role="tabpanel">
+            <div class="card mb-3"><div class="card-header fw-semibold text-primary">Identitas Diri</div><div class="card-body"><div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Jenis Kelamin</label>
+                    <select name="jenis_kelamin" class="form-select">
+                        <option value="">--</option>
+                        <option value="L" {% if instance.jenis_kelamin == 'L' %}selected{% endif %}>Laki-laki</option>
+                        <option value="P" {% if instance.jenis_kelamin == 'P' %}selected{% endif %}>Perempuan</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Tempat Lahir (Kab/Kota)</label>
+                    <input type="hidden" name="tempat_lahir_id" id="tl_val" value="{{ instance.tempat_lahir_id|default:'' }}">
+                    <div id="tl_wrapper">
+                        <input type="text" id="tl_input" class="form-control"
+                               autocomplete="off"
+                               placeholder="Ketik nama kota/kabupaten..."
+                               value="{% if instance.tempat_lahir %}{{ instance.tempat_lahir.nama }}{% endif %}">
+                        <ul id="tl_results"></ul>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Tanggal Lahir</label>
+                    <input type="date" name="tanggal_lahir" class="form-control" value="{{ instance.tanggal_lahir|date:'Y-m-d'|default:'' }}">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label fw-semibold">Umur</label>
+                    <input type="text" class="form-control bg-light" id="umur_display" value="{{ instance.umur|default:'-' }}" readonly>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Golongan Darah</label>
+                    <select name="golongan_darah" class="form-select">
+                        <option value="">--</option>
+                        {% for v in golongan_darah_list %}
+                        <option value="{{ v }}" {% if instance.golongan_darah == v %}selected{% endif %}>{{ v }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Agama</label>
+                    <select name="agama" class="form-select">
+                        <option value="">--</option>
+                        <option value="Islam"    {% if instance.agama == 'Islam'    %}selected{% endif %}>Islam</option>
+                        <option value="Kristen"  {% if instance.agama == 'Kristen'  %}selected{% endif %}>Kristen</option>
+                        <option value="Katolik"  {% if instance.agama == 'Katolik'  %}selected{% endif %}>Katolik</option>
+                        <option value="Hindu"    {% if instance.agama == 'Hindu'    %}selected{% endif %}>Hindu</option>
+                        <option value="Buddha"   {% if instance.agama == 'Buddha'   %}selected{% endif %}>Buddha</option>
+                        <option value="Konghucu" {% if instance.agama == 'Konghucu' %}selected{% endif %}>Konghucu</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Pendidikan Terakhir</label>
+                    <select name="pendidikan" class="form-select">
+                        <option value="">--</option>
+                        <option value="SD"      {% if instance.pendidikan == 'SD'      %}selected{% endif %}>SD</option>
+                        <option value="SMP"     {% if instance.pendidikan == 'SMP'     %}selected{% endif %}>SMP</option>
+                        <option value="SMA/SMK" {% if instance.pendidikan == 'SMA/SMK' %}selected{% endif %}>SMA/SMK</option>
+                        <option value="D1"      {% if instance.pendidikan == 'D1'      %}selected{% endif %}>D1</option>
+                        <option value="D2"      {% if instance.pendidikan == 'D2'      %}selected{% endif %}>D2</option>
+                        <option value="D3"      {% if instance.pendidikan == 'D3'      %}selected{% endif %}>D3</option>
+                        <option value="D4/S1"   {% if instance.pendidikan == 'D4/S1'   %}selected{% endif %}>D4/S1</option>
+                        <option value="S2"      {% if instance.pendidikan == 'S2'      %}selected{% endif %}>S2</option>
+                        <option value="S3"      {% if instance.pendidikan == 'S3'      %}selected{% endif %}>S3</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Etnis/Suku</label>
+                    <input type="text" name="etnis" class="form-control" value="{{ instance.etnis|default:'' }}" placeholder="Jawa, Sunda, dll.">
+                </div>
+            </div></div></div>
+
+            <div class="card mb-3"><div class="card-header fw-semibold text-primary">Dokumen &amp; Identitas</div><div class="card-body"><div class="row g-3">
+                <div class="col-md-4">
+                    <div class="label-with-help">
+                        <label class="form-label fw-semibold" for="id_no_ktp">No. KTP (16 digit)</label>
+                        <div class="hris-tooltip-wrap">
+                            <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan: No. KTP">?</span>
+                            <div class="hris-tooltip-box" role="tooltip">Nomor KTP 16 digit sesuai e-KTP. Dimulai dari kode wilayah. Contoh: <strong>3578xxxxxxxxxxxx</strong></div>
+                        </div>
+                    </div>
+                    <input type="text" id="id_no_ktp" name="no_ktp" class="form-control" maxlength="16" value="{{ instance.no_ktp|default:'' }}" placeholder="3271xxxxxxxxxx" aria-describedby="ktp-help" pattern="[0-9]{16}" title="KTP harus 16 digit angka">
+                    <div class="form-help" id="ktp-help"><i class="fas fa-info-circle" aria-hidden="true"></i> 16 digit angka tanpa spasi atau strip</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="label-with-help">
+                        <label class="form-label fw-semibold" for="id_npwp">No. NPWP</label>
+                        <div class="hris-tooltip-wrap">
+                            <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan: NPWP">?</span>
+                            <div class="hris-tooltip-box" role="tooltip">Format NPWP lama: <strong>00.000.000.0-000.000</strong>. NPWP baru (16 digit): sama dengan NIK. Wajib untuk karyawan dengan penghasilan di atas PTKP.</div>
+                        </div>
+                    </div>
+                    <input type="text" name="no_npwp" id="id_npwp" class="form-control" value="{{ instance.no_npwp|default:'' }}" placeholder="00.000.000.0-000.000">
+                </div>
+                <div class="col-md-4">
+                    <div class="label-with-help">
+                        <label class="form-label fw-semibold" for="id_no_kk">No. Kartu Keluarga (16 digit)</label>
+                        <div class="hris-tooltip-wrap">
+                            <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan: No. KK">?</span>
+                            <div class="hris-tooltip-box" role="tooltip">Nomor KK 16 digit yang tercantum pada Kartu Keluarga. Diperlukan untuk data keluarga dan BPJS Kesehatan.</div>
+                        </div>
+                    </div>
+                    <input type="text" id="id_no_kk" name="no_kk" class="form-control" maxlength="16" value="{{ instance.no_kk|default:'' }}" placeholder="xxxxxxxxxxxxxxxx">
+                </div>
+                <div class="col-md-4">
+                    <div class="label-with-help">
+                        <label class="form-label fw-semibold" for="id_no_bpjs_tk">No. BPJS Ketenagakerjaan</label>
+                        <div class="hris-tooltip-wrap">
+                            <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan: BPJS TK">?</span>
+                            <div class="hris-tooltip-box" role="tooltip">Nomor kepesertaan BPJS Ketenagakerjaan (JHT/JKK/JKM). Diterbitkan oleh BPJSTK setelah pendaftaran. Format: 11 digit.</div>
+                        </div>
+                    </div>
+                    <input type="text" id="id_no_bpjs_tk" name="no_bpjs_tk" class="form-control" value="{{ instance.no_bpjs_tk|default:'' }}" placeholder="xxxxxxxxxxxxx">
+                </div>
+                <div class="col-md-4">
+                    <div class="label-with-help">
+                        <label class="form-label fw-semibold" for="id_no_bpjs_kes">No. BPJS Kesehatan</label>
+                        <div class="hris-tooltip-wrap">
+                            <span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan: BPJS Kesehatan">?</span>
+                            <div class="hris-tooltip-box" role="tooltip">Nomor kartu BPJS Kesehatan (JKN). Format: 13 digit. Jika belum terdaftar, kosongkan dan isi setelah pendaftaran.</div>
+                        </div>
+                    </div>
+                    <input type="text" id="id_no_bpjs_kes" name="no_bpjs_kes" class="form-control" value="{{ instance.no_bpjs_kes|default:'' }}" placeholder="xxxxxxxxxxxxx">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" for="id_no_skck">No. SKCK <small class="text-muted">(opsional)</small></label>
+                    <input type="text" id="id_no_skck" name="no_skck" class="form-control" value="{{ instance.no_skck|default:'' }}">
+                </div>
+            </div></div></div>
+
+            <div class="card mb-3"><div class="card-header fw-semibold text-primary">Surat Izin Mengemudi</div><div class="card-body"><div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Jenis SIM</label>
+                    <select name="jenis_sim" id="id_jenis_sim" class="form-select">
+                        <option value="">-- Tidak Ada --</option>
+                        <option value="A"  {% if instance.jenis_sim == 'A'  %}selected{% endif %}>SIM A</option>
+                        <option value="B1" {% if instance.jenis_sim == 'B1' %}selected{% endif %}>SIM B1</option>
+                        <option value="B2" {% if instance.jenis_sim == 'B2' %}selected{% endif %}>SIM B2</option>
+                        <option value="C"  {% if instance.jenis_sim == 'C'  %}selected{% endif %}>SIM C</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">No. SIM</label>
+                    <input type="text" name="no_sim" id="id_no_sim" class="form-control" value="{{ instance.no_sim|default:'' }}"
+                           {% if not instance.jenis_sim %}disabled placeholder="Pilih jenis SIM terlebih dahulu"{% endif %}>
+                </div>
+            </div></div></div>
+        </div>
+
+        <!-- ═══════════════ TAB KELUARGA ═══════════════ -->
+        <div class="tab-pane fade" id="tab-keluarga" role="tabpanel">
+            <div class="card mb-3"><div class="card-header fw-semibold text-primary">Status Pernikahan & Keluarga</div><div class="card-body"><div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Status Pernikahan</label>
+                    <select name="status_nikah" id="id_status_nikah" class="form-select">
+                        <option value="">--</option>
+                        <option value="Lajang"  {% if instance.status_nikah == 'Lajang'  %}selected{% endif %}>Lajang</option>
+                        <option value="Menikah" {% if instance.status_nikah == 'Menikah' %}selected{% endif %}>Menikah</option>
+                        <option value="Cerai"   {% if instance.status_nikah == 'Cerai'   %}selected{% endif %}>Cerai</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Nama Suami/Istri</label>
+                    <input type="text" name="nama_pasangan" id="id_nama_pasangan" class="form-control"
+                           value="{{ instance.nama_pasangan|default:'' }}"
+                           {% if instance.status_nikah == 'Lajang' or not instance.status_nikah %}disabled{% endif %}>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">PTKP</label>
+                    <select name="ptkp" class="form-select">
+                        <option value="">-- Pilih --</option>
+                        <option value="TK/0"  {% if instance.ptkp == 'TK/0'  %}selected{% endif %}>TK/0  — Tidak Kawin, 0 tanggungan</option>
+                        <option value="TK/1"  {% if instance.ptkp == 'TK/1'  %}selected{% endif %}>TK/1  — Tidak Kawin, 1 tanggungan</option>
+                        <option value="TK/2"  {% if instance.ptkp == 'TK/2'  %}selected{% endif %}>TK/2  — Tidak Kawin, 2 tanggungan</option>
+                        <option value="TK/3"  {% if instance.ptkp == 'TK/3'  %}selected{% endif %}>TK/3  — Tidak Kawin, 3 tanggungan</option>
+                        <option value="K/0"   {% if instance.ptkp == 'K/0'   %}selected{% endif %}>K/0   — Kawin, 0 tanggungan</option>
+                        <option value="K/1"   {% if instance.ptkp == 'K/1'   %}selected{% endif %}>K/1   — Kawin, 1 tanggungan</option>
+                        <option value="K/2"   {% if instance.ptkp == 'K/2'   %}selected{% endif %}>K/2   — Kawin, 2 tanggungan</option>
+                        <option value="K/3"   {% if instance.ptkp == 'K/3'   %}selected{% endif %}>K/3   — Kawin, 3 tanggungan</option>
+                        <option value="K/I/0" {% if instance.ptkp == 'K/I/0' %}selected{% endif %}>K/I/0 — Kawin, istri digabung, 0 tanggungan</option>
+                        <option value="K/I/1" {% if instance.ptkp == 'K/I/1' %}selected{% endif %}>K/I/1 — Kawin, istri digabung, 1 tanggungan</option>
+                        <option value="K/I/2" {% if instance.ptkp == 'K/I/2' %}selected{% endif %}>K/I/2 — Kawin, istri digabung, 2 tanggungan</option>
+                        <option value="K/I/3" {% if instance.ptkp == 'K/I/3' %}selected{% endif %}>K/I/3 — Kawin, istri digabung, 3 tanggungan</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Nama Bapak Kandung</label>
+                    <input type="text" name="nama_bapak" class="form-control" value="{{ instance.nama_bapak|default:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Nama Ibu Kandung</label>
+                    <input type="text" name="nama_ibu" class="form-control" value="{{ instance.nama_ibu|default:'' }}">
+                </div>
+
+                <!-- Data Anak -->
+                <div class="col-12 mt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-semibold mb-0"><i class="fas fa-child me-1 text-info"></i>Data Anak</label>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-tambah-anak">
+                            <i class="fas fa-plus me-1"></i>Tambah Anak
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered" id="tabel-anak">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:50px">Ke-</th>
+                                    <th>Nama Anak <span class="text-danger">*</span></th>
+                                    <th style="width:130px">Tgl Lahir</th>
+                                    <th style="width:100px">JK</th>
+                                    <th>No. BPJS Kes.</th>
+                                    <th style="width:90px" class="text-center">Tanggungan</th>
+                                    <th style="width:50px"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="anak-rows">
+                                {% for anak in instance.anak_list.all %}
+                                <tr class="anak-row">
+                                    <td class="text-center anak-urutan fw-semibold">{{ anak.urutan }}</td>
+                                    <td><input type="text" name="anak_nama[]" class="form-control form-control-sm" value="{{ anak.nama }}" required></td>
+                                    <td><input type="date" name="anak_tgl_lahir[]" class="form-control form-control-sm" value="{{ anak.tgl_lahir|date:'Y-m-d'|default:'' }}"></td>
+                                    <td>
+                                        <select name="anak_jk[]" class="form-select form-select-sm">
+                                            <option value="">-</option>
+                                            <option value="L" {% if anak.jenis_kelamin == 'L' %}selected{% endif %}>Laki-laki</option>
+                                            <option value="P" {% if anak.jenis_kelamin == 'P' %}selected{% endif %}>Perempuan</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" name="anak_bpjs[]" class="form-control form-control-sm" value="{{ anak.no_bpjs_kes }}" placeholder="No. BPJS"></td>
+                                    <td class="text-center"><input type="checkbox" name="anak_tanggungan[]" value="{{ forloop.counter0 }}" class="form-check-input" {% if anak.tanggungan_bpjs %}checked{% endif %}></td>
+                                    <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-hapus-anak"><i class="fas fa-times"></i></button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div id="anak-empty" class="text-muted fst-italic small {% if instance.anak_list.all %}d-none{% endif %}">Belum ada data anak. Klik "Tambah Anak" untuk menambahkan.</div>
+                    </div>
+                </div>
+            </div></div></div>
+        </div>
+
+        <!-- ═══════════════ TAB ALAMAT ═══════════════ -->
+        <div class="tab-pane fade" id="tab-alamat" role="tabpanel">
+            <div class="card mb-3">
+                <div class="card-header fw-semibold text-primary"><i class="fas fa-id-card me-1"></i>Alamat KTP</div>
+                <div class="card-body"><div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Alamat (Jalan / No. / Blok)</label>
+                        <textarea name="alamat" class="form-control" rows="2">{{ instance.alamat|default:'' }}</textarea>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">RT</label>
+                        <input type="text" name="rt" class="form-control" value="{{ instance.rt|default:'' }}" placeholder="003">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">RW</label>
+                        <input type="text" name="rw" class="form-control" value="{{ instance.rw|default:'' }}" placeholder="005">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Provinsi</label>
+                        <select name="provinsi_id" id="id_provinsi" class="form-select">
+                            <option value="">-- Pilih Provinsi --</option>
+                            {% for prov in provinsi_list %}
+                            <option value="{{ prov.id }}" {% if instance.provinsi_id == prov.id %}selected{% endif %}>{{ prov.nama }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Kabupaten / Kota</label>
+                        <select name="kabupaten_id" id="id_kabupaten" class="form-select" disabled>
+                            <option value="">-- Pilih Kabupaten --</option>
+                            {% if instance.kabupaten %}<option value="{{ instance.kabupaten_id }}" selected>{{ instance.kabupaten.nama }}</option>{% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Kecamatan</label>
+                        <select name="kecamatan_id" id="id_kecamatan" class="form-select" disabled>
+                            <option value="">-- Pilih Kecamatan --</option>
+                            {% if instance.kecamatan %}<option value="{{ instance.kecamatan_id }}" selected>{{ instance.kecamatan.nama }}</option>{% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Kelurahan / Desa</label>
+                        <select name="kelurahan_id" id="id_kelurahan" class="form-select" disabled>
+                            <option value="">-- Pilih Kelurahan --</option>
+                            {% if instance.kelurahan %}<option value="{{ instance.kelurahan_id }}" selected>{{ instance.kelurahan.nama }}</option>{% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Kode Pos</label>
+                        <input type="text" name="kode_pos" id="id_kode_pos" class="form-control" value="{{ instance.kode_pos|default:'' }}" placeholder="12345">
+                    </div>
+                </div></div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header fw-semibold text-primary d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-home me-1"></i>Alamat Domisili</span>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="domisili_sama_chk" name="domisili_sama" value="1"
+                               {% if instance.domisili_sama or not instance %}checked{% endif %}>
+                        <label class="form-check-label" for="domisili_sama_chk">Sama dengan Alamat KTP</label>
+                    </div>
+                </div>
+                <div class="card-body" id="div_domisili" {% if instance.domisili_sama or not instance %}style="display:none"{% endif %}>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Alamat Domisili (Jalan / No. / Blok)</label>
+                            <textarea name="alamat_domisili" class="form-control" rows="2">{{ instance.alamat_domisili|default:'' }}</textarea>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">RT</label>
+                            <input type="text" name="rt_domisili" class="form-control" value="{{ instance.rt_domisili|default:'' }}" placeholder="003">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">RW</label>
+                            <input type="text" name="rw_domisili" class="form-control" value="{{ instance.rw_domisili|default:'' }}" placeholder="005">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Provinsi</label>
+                            <select name="provinsi_domisili_id" id="id_provinsi_dom" class="form-select">
+                                <option value="">-- Pilih Provinsi --</option>
+                                {% for prov in provinsi_list %}
+                                <option value="{{ prov.id }}" {% if instance.provinsi_domisili_id == prov.id %}selected{% endif %}>{{ prov.nama }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Kabupaten / Kota</label>
+                            <select name="kabupaten_domisili_id" id="id_kabupaten_dom" class="form-select" disabled>
+                                <option value="">-- Pilih Kabupaten --</option>
+                                {% if instance.kabupaten_domisili %}<option value="{{ instance.kabupaten_domisili_id }}" selected>{{ instance.kabupaten_domisili.nama }}</option>{% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Kecamatan</label>
+                            <select name="kecamatan_domisili_id" id="id_kecamatan_dom" class="form-select" disabled>
+                                <option value="">-- Pilih Kecamatan --</option>
+                                {% if instance.kecamatan_domisili %}<option value="{{ instance.kecamatan_domisili_id }}" selected>{{ instance.kecamatan_domisili.nama }}</option>{% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Kelurahan / Desa</label>
+                            <select name="kelurahan_domisili_id" id="id_kelurahan_dom" class="form-select" disabled>
+                                <option value="">-- Pilih Kelurahan --</option>
+                                {% if instance.kelurahan_domisili %}<option value="{{ instance.kelurahan_domisili_id }}" selected>{{ instance.kelurahan_domisili.nama }}</option>{% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Kode Pos</label>
+                            <input type="text" name="kode_pos_domisili" id="id_kode_pos_dom" class="form-control" value="{{ instance.kode_pos_domisili|default:'' }}" placeholder="12345">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════ TAB KONTAK & BANK ═══════════════ -->
+        <div class="tab-pane fade" id="tab-kontak" role="tabpanel">
+            <div class="card mb-3"><div class="card-header fw-semibold text-primary">Kontak</div><div class="card-body"><div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">No. HP / Telp (Utama) <span class="text-danger">*</span></label>
+                    <input type="text" name="no_hp" class="form-control" value="{{ instance.no_hp|default:'' }}" required placeholder="08xxxxxxxxxx">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">No. HP / Telp (Alternatif) <small class="text-muted">opsional</small></label>
+                    <input type="text" name="no_hp_2" class="form-control" value="{{ instance.no_hp|default:'' }}" placeholder="08xxxxxxxxxx">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Email</label>
+                    <input type="email" name="email" class="form-control" value="{{ instance.email|default:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">No. Darurat 1</label>
+                    <input type="text" name="no_darurat" class="form-control" value="{{ instance.hp_darurat|default:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">No. Darurat 2</label>
+                    <input type="text" name="no_darurat_2" class="form-control" value="{{ instance.no_darurat_2|default:'' }}">
+                </div>
+            </div></div></div>
+
+            <div class="card mb-3"><div class="card-header fw-semibold text-primary">Bank</div><div class="card-body"><div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Nama Bank</label>
+                    <select name="bank_name" id="id_bank_name" class="form-select">
+                        <option value="">-- Pilih Bank --</option>
+                        {% for bank in bank_list %}
+                        <option value="{{ bank.nama }}"
+                            {% if instance.nama_bank == bank.nama %}selected{% endif %}>
+                            {{ bank.nama }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">No. Rekening</label>
+                    <input type="text" name="bank_account" class="form-control" value="{{ instance.no_rek|default:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">A/N Rekening</label>
+                    <input type="text" name="bank_account_name" class="form-control" value="{{ instance.nama_rek|default:'' }}">
+                </div>
+            </div></div></div>
+        </div>
+
+    </div><!-- end tab-content -->
+
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>Simpan</button>
+        <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary px-4">Batal</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Manual Tab Switcher (Bootstrap-independent) ────────────────
+(function() {
+  function activateTab(targetId) {
+    document.querySelectorAll('.tab-pane').forEach(function(pane) {
+      pane.classList.remove('show', 'active');
+    });
+    var target = document.getElementById(targetId);
+    if (target) { target.classList.add('show', 'active'); }
+    document.querySelectorAll('.emp-step').forEach(function(link) {
+      var isActive = (link.getAttribute('href') || '').replace('#','') === targetId ||
+                     link.dataset.tab === targetId;
+      link.classList.toggle('active', isActive);
+      link.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      if (isActive) link.setAttribute('aria-current', 'step');
+      else link.removeAttribute('aria-current');
+    });
+  }
+
+  document.querySelectorAll('.emp-step[data-empstep]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var targetId = (this.getAttribute('href') || '').replace('#','') || this.dataset.tab;
+      if (targetId) activateTab(targetId);
+    });
+  });
+
+  window._empActivateTab = activateTab;
+})();
+
+
+// ── Tempat Lahir Autocomplete ───────────────────────────────────
+(function() {
+    const inp = document.getElementById('tl_input');
+    const val = document.getElementById('tl_val');
+    const res = document.getElementById('tl_results');
+    let timer, selected = false;
+
+    inp.addEventListener('input', function() {
+        selected = false;
+        val.value = '';
+        clearTimeout(timer);
+        const q = this.value.trim();
+        if (q.length < 2) { res.style.display = 'none'; res.innerHTML = ''; return; }
+        timer = setTimeout(() => {
+            fetch(`{% url 'api_search_kabupaten' %}?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(data => {
+                    res.innerHTML = '';
+                    if (!data.results || !data.results.length) {
+                        res.innerHTML = '<li style="color:#6c757d;cursor:default">Tidak ditemukan</li>';
+                        res.style.display = 'block';
+                        return;
+                    }
+                    data.results.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item.text;
+                        li.dataset.id  = item.id;
+                        li.dataset.name = item.text;
+                        li.addEventListener('mousedown', e => {
+                            e.preventDefault();
+                            inp.value = item.text;
+                            val.value = item.id;
+                            selected  = true;
+                            res.style.display = 'none';
+                            res.innerHTML = '';
+                        });
+                        res.appendChild(li);
+                    });
+                    res.style.display = 'block';
+                });
+        }, 300);
+    });
+
+    inp.addEventListener('blur', () => {
+        setTimeout(() => { res.style.display = 'none'; }, 200);
+    });
+
+    document.addEventListener('click', e => {
+        if (!document.getElementById('tl_wrapper').contains(e.target)) {
+            res.style.display = 'none';
+        }
+    });
+})();
+
+// ── Cascade Wilayah KTP ─────────────────────────────────────────
+// Global unhandled fetch error handler
+window.addEventListener('unhandledrejection', function(e) {
+  console.warn('[HRIS] Fetch error:', e.reason);
+});
+
+const WILAYAH_URLS = {
+    kabupaten : "{% url 'api_kabupaten' %}",
+    kecamatan : "{% url 'api_kecamatan' %}",
+    kelurahan : "{% url 'api_kelurahan' %}",
+};
+
+function populateSelect(id, data, placeholder) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = `<option value="">${placeholder}</option>`;
+    data.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id; opt.textContent = item.nama;
+        sel.appendChild(opt);
+    });
+    sel.disabled = data.length === 0;
+}
+
+function resetBelow(level, prefix='') {
+    if (level <= 1) populateSelect('id_kabupaten'+prefix, [], '-- Pilih Kabupaten --');
+    if (level <= 2) populateSelect('id_kecamatan'+prefix, [], '-- Pilih Kecamatan --');
+    if (level <= 3) {
+        populateSelect('id_kelurahan'+prefix, [], '-- Pilih Kelurahan --');
+        if (!prefix) document.getElementById('id_kode_pos').value = '';
+        else document.getElementById('id_kode_pos_dom').value = '';
+    }
+}
+
+document.getElementById('id_provinsi').addEventListener('change', function() {
+    resetBelow(1);
+    if (!this.value) return;
+    fetch(`${WILAYAH_URLS.kabupaten}?provinsi_id=${this.value}`).then(r=>r.json())
+        .then(data => populateSelect('id_kabupaten', data, '-- Pilih Kabupaten --'));
+});
+document.getElementById('id_kabupaten').addEventListener('change', function() {
+    resetBelow(2);
+    if (!this.value) return;
+    fetch(`${WILAYAH_URLS.kecamatan}?kabupaten_id=${this.value}`).then(r=>r.json())
+        .then(data => populateSelect('id_kecamatan', data, '-- Pilih Kecamatan --'));
+});
+document.getElementById('id_kecamatan').addEventListener('change', function() {
+    resetBelow(3);
+    if (!this.value) return;
+    fetch(`${WILAYAH_URLS.kelurahan}?kecamatan_id=${this.value}`).then(r=>r.json())
+        .then(data => populateSelect('id_kelurahan', data, '-- Pilih Kelurahan --'));
+});
+document.getElementById('id_kelurahan').addEventListener('change', function() {
+    if (!this.value) return;
+    const kecId = document.getElementById('id_kecamatan').value;
+    fetch(`${WILAYAH_URLS.kelurahan}?kecamatan_id=${kecId}`).then(r=>r.json()).then(data => {
+        const found = data.find(d => d.id == this.value);
+        if (found && found.kode_pos) document.getElementById('id_kode_pos').value = found.kode_pos;
+    });
+});
+
+// ── Cascade Wilayah Domisili ────────────────────────────────────
+document.getElementById('id_provinsi_dom').addEventListener('change', function() {
+    resetBelow(1,'_dom');
+    if (!this.value) return;
+    fetch(`${WILAYAH_URLS.kabupaten}?provinsi_id=${this.value}`).then(r=>r.json())
+        .then(data => populateSelect('id_kabupaten_dom', data, '-- Pilih Kabupaten --'));
+});
+document.getElementById('id_kabupaten_dom').addEventListener('change', function() {
+    resetBelow(2,'_dom');
+    if (!this.value) return;
+    fetch(`${WILAYAH_URLS.kecamatan}?kabupaten_id=${this.value}`).then(r=>r.json())
+        .then(data => populateSelect('id_kecamatan_dom', data, '-- Pilih Kecamatan --'));
+});
+document.getElementById('id_kecamatan_dom').addEventListener('change', function() {
+    resetBelow(3,'_dom');
+    if (!this.value) return;
+    fetch(`${WILAYAH_URLS.kelurahan}?kecamatan_id=${this.value}`).then(r=>r.json())
+        .then(data => populateSelect('id_kelurahan_dom', data, '-- Pilih Kelurahan --'));
+});
+document.getElementById('id_kelurahan_dom').addEventListener('change', function() {
+    if (!this.value) return;
+    const kecId = document.getElementById('id_kecamatan_dom').value;
+    fetch(`${WILAYAH_URLS.kelurahan}?kecamatan_id=${kecId}`).then(r=>r.json()).then(data => {
+        const found = data.find(d => d.id == this.value);
+        if (found && found.kode_pos) document.getElementById('id_kode_pos_dom').value = found.kode_pos;
+    });
+});
+
+// ── Domisili toggle ─────────────────────────────────────────────
+document.getElementById('domisili_sama_chk').addEventListener('change', function() {
+    document.getElementById('div_domisili').style.display = this.checked ? 'none' : '';
+});
+
+// ── SIM lock ────────────────────────────────────────────────────
+document.getElementById('id_jenis_sim').addEventListener('change', function() {
+    const noSim = document.getElementById('id_no_sim');
+    if (this.value) {
+        noSim.disabled = false; noSim.placeholder = '';
+    } else {
+        noSim.disabled = true; noSim.value = ''; noSim.placeholder = 'Pilih jenis SIM terlebih dahulu';
+    }
+});
+
+// ── Status Nikah lock ───────────────────────────────────────────
+document.getElementById('id_status_nikah').addEventListener('change', function() {
+    const isLajang = this.value === 'Lajang' || !this.value;
+    const pasangan = document.getElementById('id_nama_pasangan');
+    if (pasangan) { pasangan.disabled = isLajang; if (isLajang) pasangan.value = ''; }
+    const btnTambah = document.getElementById('btn-tambah-anak');
+    if (btnTambah) btnTambah.disabled = isLajang;
+});
+
+// ── Dynamic tambah/hapus anak ───────────────────────────────────
+function updateAnakUrutan() {
+    document.querySelectorAll('#anak-rows .anak-urutan').forEach((el, i) => {
+        el.textContent = i + 1;
+        // update value checkbox tanggungan
+        const cb = el.closest('tr').querySelector('input[type=checkbox]');
+        if (cb) cb.value = i;
+    });
+    const rows = document.querySelectorAll('#anak-rows .anak-row');
+    document.getElementById('anak-empty').classList.toggle('d-none', rows.length > 0);
+}
+
+document.getElementById('btn-tambah-anak').addEventListener('click', function() {
+    const tbody = document.getElementById('anak-rows');
+    const idx   = tbody.querySelectorAll('.anak-row').length;
+    const row   = document.createElement('tr');
+    row.className = 'anak-row';
+    row.innerHTML = `
+        <td class="text-center anak-urutan fw-semibold">${idx + 1}</td>
+        <td><input type="text" name="anak_nama[]" class="form-control form-control-sm" placeholder="Nama anak" required></td>
+        <td><input type="date" name="anak_tgl_lahir[]" class="form-control form-control-sm"></td>
+        <td>
+            <select name="anak_jk[]" class="form-select form-select-sm">
+                <option value="">-</option>
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+            </select>
+        </td>
+        <td><input type="text" name="anak_bpjs[]" class="form-control form-control-sm" placeholder="No. BPJS"></td>
+        <td class="text-center"><input type="checkbox" name="anak_tanggungan[]" value="${idx}" class="form-check-input" checked></td>
+        <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-hapus-anak"><i class="fas fa-times"></i></button></td>
+    `;
+    tbody.appendChild(row);
+    updateAnakUrutan();
+});
+
+document.getElementById('anak-rows').addEventListener('click', function(e) {
+    if (e.target.closest('.btn-hapus-anak')) {
+        e.target.closest('tr').remove();
+        updateAnakUrutan();
+    }
+});
+
+// ── Hitung Umur otomatis ────────────────────────────────────────
+document.querySelector('[name="tanggal_lahir"]').addEventListener('change', function() {
+    if (!this.value) return;
+    const born = new Date(this.value);
+    const today = new Date();
+    let age = today.getFullYear() - born.getFullYear();
+    const m = today.getMonth() - born.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < born.getDate())) age--;
+    document.getElementById('umur_display').value = age + ' th';
+});
+
+// ── Format NPWP otomatis ────────────────────────────────────────
+document.getElementById('id_npwp').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '').substring(0, 15);
+    let f = '';
+    if (v.length > 0)  f += v.substring(0, 2);
+    if (v.length > 2)  f += '.' + v.substring(2, 5);
+    if (v.length > 5)  f += '.' + v.substring(5, 8);
+    if (v.length > 8)  f += '.' + v.substring(8, 9);
+    if (v.length > 9)  f += '-' + v.substring(9, 12);
+    if (v.length > 12) f += '.' + v.substring(12, 15);
+    this.value = f;
+});
+
+// ── Load cascade saat edit ──────────────────────────────────────
+(function() {
+    const provId = document.getElementById('id_provinsi').value;
+    const kabId  = '{{ instance.kabupaten_id|default:"" }}';
+    const kecId  = '{{ instance.kecamatan_id|default:"" }}';
+    const kelId  = '{{ instance.kelurahan_id|default:"" }}';
+    if (provId) {
+        fetch(`${WILAYAH_URLS.kabupaten}?provinsi_id=${provId}`).then(r=>r.json()).then(data => {
+            populateSelect('id_kabupaten', data, '-- Pilih Kabupaten --');
+            if (!kabId) return;
+            document.getElementById('id_kabupaten').value = kabId;
+            return fetch(`${WILAYAH_URLS.kecamatan}?kabupaten_id=${kabId}`).then(r=>r.json()).then(data2 => {
+                populateSelect('id_kecamatan', data2, '-- Pilih Kecamatan --');
+                if (!kecId) return;
+                document.getElementById('id_kecamatan').value = kecId;
+                return fetch(`${WILAYAH_URLS.kelurahan}?kecamatan_id=${kecId}`).then(r=>r.json()).then(data3 => {
+                    populateSelect('id_kelurahan', data3, '-- Pilih Kelurahan --');
+                    if (kelId) document.getElementById('id_kelurahan').value = kelId;
+                });
+            });
+        });
+    }
+
+    const provDomId = document.getElementById('id_provinsi_dom').value;
+    const kabDomId  = '{{ instance.kabupaten_domisili_id|default:"" }}';
+    const kecDomId  = '{{ instance.kecamatan_domisili_id|default:"" }}';
+    const kelDomId  = '{{ instance.kelurahan_domisili_id|default:"" }}';
+    if (provDomId) {
+        fetch(`${WILAYAH_URLS.kabupaten}?provinsi_id=${provDomId}`).then(r=>r.json()).then(data => {
+            populateSelect('id_kabupaten_dom', data, '-- Pilih Kabupaten --');
+            if (!kabDomId) return;
+            document.getElementById('id_kabupaten_dom').value = kabDomId;
+            return fetch(`${WILAYAH_URLS.kecamatan}?kabupaten_id=${kabDomId}`).then(r=>r.json()).then(data2 => {
+                populateSelect('id_kecamatan_dom', data2, '-- Pilih Kecamatan --');
+                if (!kecDomId) return;
+                document.getElementById('id_kecamatan_dom').value = kecDomId;
+                return fetch(`${WILAYAH_URLS.kelurahan}?kecamatan_id=${kecDomId}`).then(r=>r.json()).then(data3 => {
+                    populateSelect('id_kelurahan_dom', data3, '-- Pilih Kelurahan --');
+                    if (kelDomId) document.getElementById('id_kelurahan_dom').value = kelDomId;
+                });
+            });
+        });
+    }
+})();
+
+// ── Bank searchable dropdown (native, tanpa library tambahan) ────
+(function() {
+    const sel = document.getElementById('id_bank_name');
+    if (!sel) return;
+
+    // Sembunyikan select asli
+    sel.style.display = 'none';
+
+    // Ambil semua opsi
+    const opts = Array.from(sel.options);
+
+    // Buat wrapper
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:relative';
+    sel.parentNode.insertBefore(wrapper, sel);
+    wrapper.appendChild(sel);
+
+    // Input tampilan
+    const input = document.createElement('input');
+    input.type        = 'text';
+    input.className   = 'form-control';
+    input.placeholder = 'Ketik untuk cari bank...';
+    input.autocomplete = 'off';
+    // Set nilai awal jika sudah ada pilihan
+    const selectedOpt = opts.find(o => o.selected && o.value);
+    if (selectedOpt) input.value = selectedOpt.text;
+    wrapper.insertBefore(input, sel);
+
+    // Dropdown list
+    const list = document.createElement('ul');
+    list.style.cssText = [
+        'position:absolute','z-index:9999','top:100%','left:0','right:0',
+        'max-height:220px','overflow-y:auto','background:#1e1e2e',
+        'border:1px solid #444','border-radius:6px','margin:2px 0 0',
+        'padding:4px 0','list-style:none','display:none','box-shadow:0 4px 12px rgba(0,0,0,.4)'
+    ].join(';');
+    wrapper.appendChild(list);
+
+    function renderList(q) {
+        list.innerHTML = '';
+        const filtered = opts.filter(o => !o.value || !q || o.text.toLowerCase().includes(q.toLowerCase()));
+        if (!filtered.length) {
+            const li = document.createElement('li');
+            li.textContent = 'Tidak ada hasil';
+            li.style.cssText = 'padding:8px 12px;color:#888;font-size:.875rem';
+            list.appendChild(li);
+        }
+        filtered.forEach(o => {
+            const li = document.createElement('li');
+            li.textContent  = o.text;
+            li.dataset.value = o.value;
+            li.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:.875rem;color:#e0e0e0';
+            li.addEventListener('mouseenter', () => li.style.background = '#2a2a3e');
+            li.addEventListener('mouseleave', () => li.style.background = '');
+            li.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                sel.value   = o.value;
+                input.value = o.text;
+                list.style.display = 'none';
+            });
+            list.appendChild(li);
+        });
+        list.style.display = 'block';
+    }
+
+    input.addEventListener('focus', () => renderList(input.value));
+    input.addEventListener('input', () => { sel.value = ''; renderList(input.value); });
+    input.addEventListener('blur',  () => setTimeout(() => { list.style.display = 'none'; }, 150));
+
+    // Klik di luar
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) list.style.display = 'none';
+    });
+})();
+// ── Validasi inline & tab error indicator ──────────────────────────────────
+(function() {
+  const form = document.getElementById('employeeForm');
+  if (!form) return;
+
+  // Tandai tab yang punya required field belum terisi
+  function checkTabErrors() {
+    document.querySelectorAll('.tab-pane').forEach(function(pane) {
+      const tabId = pane.id;
+      const link = document.querySelector('.emp-step[data-tab="' + tabId + '"]');
+      if (!link) return;
+      const hasEmpty = Array.from(pane.querySelectorAll('[required]')).some(function(el) {
+        return !el.value.trim();
+      });
+      link.classList.toggle('has-error', hasEmpty);
+    });
+  }
+
+  // Real-time validation feedback
+  form.querySelectorAll('.form-control[required], .form-select[required]').forEach(function(el) {
+    el.addEventListener('blur', function() {
+      if (this.value.trim()) {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+        const fb = this.parentElement.querySelector('.invalid-feedback');
+        if (fb) fb.remove();
+      } else {
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+        if (!this.parentElement.querySelector('.invalid-feedback')) {
+          const fb = document.createElement('div');
+          fb.className = 'invalid-feedback';
+          fb.textContent = 'Field ini wajib diisi';
+          this.parentElement.appendChild(fb);
+        }
+      }
+      checkTabErrors();
+    });
+    el.addEventListener('input', function() {
+      if (this.value.trim() && this.classList.contains('is-invalid')) {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+        const fb = this.parentElement.querySelector('.invalid-feedback');
+        if (fb) fb.remove();
+        checkTabErrors();
+      }
+    });
+  });
+
+  // KTP harus 16 digit
+  const ktpEl = document.getElementById('id_no_ktp');
+  if (ktpEl) {
+    ktpEl.addEventListener('blur', function() {
+      const v = this.value.replace(/\D/g, '');
+      let fb = this.parentElement.querySelector('.invalid-feedback');
+      if (this.value && v.length !== 16) {
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+        if (!fb) { fb = document.createElement('div'); fb.className = 'invalid-feedback'; this.parentElement.appendChild(fb); }
+        fb.textContent = 'No. KTP harus tepat 16 digit angka';
+      } else if (this.value && v.length === 16) {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+        if (fb) fb.remove();
+      }
+    });
+  }
+
+  // Saat submit, cek semua required field
+  form.addEventListener('submit', function(e) {
+    let firstError = null;
+    form.querySelectorAll('[required]').forEach(function(el) {
+      if (!el.value.trim()) {
+        el.classList.add('is-invalid');
+        if (!el.parentElement.querySelector('.invalid-feedback')) {
+          const fb = document.createElement('div');
+          fb.className = 'invalid-feedback';
+          fb.textContent = 'Field ini wajib diisi';
+          el.parentElement.appendChild(fb);
+        }
+        if (!firstError) firstError = el;
+      }
+    });
+    checkTabErrors();
+    if (firstError) {
+      e.preventDefault();
+      // Pindah ke tab yang punya error pertama
+      const pane = firstError.closest('.tab-pane');
+      if (pane) {
+        const tabLink = document.querySelector('.emp-step[data-tab="' + pane.id + '"]');
+        if (tabLink) { (window._empActivateTab && window._empActivateTab(pane.id)) || tabLink.click(); }
+        setTimeout(function() { firstError.focus(); firstError.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+      }
+    }
+  });
+
+  // Tab active state dihandle oleh manual tab switcher
+
+  checkTabErrors();
+})();
+</script>
+{% endblock %}

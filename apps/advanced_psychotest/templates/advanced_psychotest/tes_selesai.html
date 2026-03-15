@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tes Selesai — {{ session.get_peserta_nama }}</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body { background:#f4f6fb; font-family:'Segoe UI',sans-serif; }
+.done-card  { border-radius:16px; border:none; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+.tes-row    { border-radius:10px; border:2px solid #43a047; background:#f1f8f1;
+              padding:.9rem 1.1rem; margin-bottom:.6rem; }
+.circle-score { width:72px; height:72px; border-radius:50%; display:flex;
+                flex-direction:column; align-items:center; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="container py-5" style="max-width:560px;">
+    <div class="card done-card text-center p-4 p-md-5">
+        <div style="font-size:3.5rem; margin-bottom:.75rem;">🎉</div>
+        <h2 class="fw-bold mb-1">Semua Tes Selesai!</h2>
+        <p class="text-muted mb-4">
+            Terima kasih, <strong>{{ session.get_peserta_nama }}</strong>.<br>
+            <span style="font-size:.9rem;">Jawaban Anda telah tersimpan dan akan ditinjau oleh tim HR.</span>
+        </p>
+
+        <!-- Ringkasan hasil per tes -->
+        {% if paket_results %}
+        <div class="text-start mb-4">
+            <h6 class="fw-semibold mb-3">
+                <i class="fas fa-clipboard-check me-2 text-success"></i>Ringkasan Paket Tes
+            </h6>
+            {% for pr in paket_results %}
+            <div class="tes-row d-flex align-items-center gap-3">
+                <div class="text-success fw-bold fs-5">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold" style="font-size:.92rem;">{{ pr.label }}</div>
+                    {% if pr.result and pr.result.skor_total is not None %}
+                    <small class="text-muted">
+                        Skor: <strong>{{ pr.result.skor_total }}%</strong>
+                        &nbsp;|&nbsp;Grade: <strong>{{ pr.result.grade }}</strong>
+                    </small>
+                    {% else %}
+                    <small class="text-muted">Selesai dikerjakan</small>
+                    {% endif %}
+                </div>
+                {% if pr.result and pr.result.skor_total is not None %}
+                <div class="circle-score"
+                     style="background:{% if pr.result.grade == 'A' %}#e8f5e9{% elif pr.result.grade == 'B' %}#e3f2fd{% elif pr.result.grade == 'C' %}#fff8e1{% else %}#fce4ec{% endif %};">
+                    <span class="fw-bold" style="font-size:1rem;
+                        color:{% if pr.result.grade == 'A' %}#388e3c{% elif pr.result.grade == 'B' %}#1976d2{% elif pr.result.grade == 'C' %}#f57c00{% else %}#c62828{% endif %};">
+                        {{ pr.result.skor_total }}%
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="alert alert-light text-start" style="font-size:.88rem;">
+            <i class="fas fa-info-circle text-primary me-2"></i>
+            Tim HR akan menghubungi Anda untuk tahap selanjutnya. Hasil tidak dapat diubah.
+        </div>
+
+        <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">
+            Diselesaikan: {{ session.completed_at|date:"d/m/Y H:i"|default:"Baru saja" }}
+        </p>
+    </div>
+</div>
+</body>
+</html>

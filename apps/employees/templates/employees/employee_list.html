@@ -1,0 +1,140 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Database Karyawan - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Struktur Organisasi / Database Karyawan{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-database me-2 text-primary"></i>Database Karyawan</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'employee_export' %}{% if status_filter %}?status={{ status_filter }}{% endif %}"
+           class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel me-1"></i>Export Excel
+        </a>
+        <a href="{% url 'employee_import' %}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-file-import me-1"></i>Import
+        </a>
+        <a href="{% url 'employee_add' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>Tambah Karyawan
+        </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm"
+                       placeholder="Cari nama, NIK, email...">
+            </div>
+            <div class="col-md-3">
+                <select name="dept" class="form-select form-select-sm">
+                    <option value="">Semua Departemen</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}">{{ dept.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="Aktif" {% if status_filter == 'Aktif' %}selected{% endif %}>Aktif</option>
+                    <option value="" {% if not status_filter %}selected{% endif %}>Semua</option>
+                    <option value="Tidak Aktif">Tidak Aktif</option>
+                    <option value="Resign">Resign</option>
+                </select>
+            </div>
+            {% if job_sites %}
+            <div class="col-md-2">
+                <select name="job_site" class="form-select form-select-sm">
+                    <option value="">Semua Job Site</option>
+                    {% for js in job_sites %}
+                    <option value="{{ js.id }}" {% if job_site_filter == js.id|stringformat:'s' %}selected{% endif %}>{{ js.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-search me-1"></i>Cari
+                </button>
+                <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary btn-sm ms-1">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive-wrap">
+<table class="table table-hover datatable mb-0" id="tbl-karyawan">
+            <thead class="table-light">
+                <tr>
+                    <th class="col-hide-mobile">NIK</th>
+                    <th>Nama</th>
+                    <th>Departemen</th>
+                    <th>Jabatan</th>
+                    <th>Status</th>
+                    <th>Join</th>
+                    <th>Masa Kerja</th>
+                    <th style="width:100px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td><small class="text-muted">{{ emp.nik }}</small></td>
+                    <td>
+                        <a href="{% url 'employee_detail' emp.pk %}" class="fw-semibold text-decoration-none text-dark">
+                            {{ emp.nama }}
+                        </a>
+                        {% if emp.email and emp.email != '0' and '@' in emp.email %}<br><small class="text-muted">{{ emp.email }}</small>{% endif %}
+                    </td>
+                    <td>{{ emp.department|default:"-" }}</td>
+                    <td>{{ emp.jabatan|default:"-" }}</td>
+                    <td>
+                        <span class="badge {% if emp.status == 'Aktif' %}badge-aktif{% elif emp.status == 'Resign' %}badge-rejected{% else %}bg-secondary{% endif %}">
+                            {{ emp.status }}
+                        </span>
+                    </td>
+                    <td><small>{{ emp.join_date|date:"d/m/Y" }}</small></td>
+                    <td><small>{{ emp.masa_kerja_display }}</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'employee_detail' emp.pk %}" class="btn btn-outline-info" title="Detail">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'employee_edit' emp.pk %}" class="btn btn-outline-primary" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="dt-empty">
+                    <td colspan="8" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="empty-state-title">Belum ada data karyawan</div>
+                            <div class="empty-state-desc">
+                                Mulai dengan menambahkan karyawan pertama, atau import data massal dari file Excel.
+                            </div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'employee_add' %}" class="btn btn-red">
+                                    <i class="fas fa-user-plus" aria-hidden="true"></i> Tambah Karyawan
+                                </a>
+                                <a href="{% url 'employee_import' %}" class="btn btn-outline">
+                                    <i class="fas fa-file-import" aria-hidden="true"></i> Import dari Excel
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+    </div>
+</div>
+{% endblock %}

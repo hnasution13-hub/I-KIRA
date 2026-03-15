@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PKWTT — {{ contract.employee.nama }}</title>
+<style>
+  body { margin: 0; background: #e8e8e8; font-family: 'Segoe UI', sans-serif; }
+  .toolbar {
+    background: #2c3e50; color: #fff;
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; gap: 12px;
+  }
+  .toolbar .title { font-size: .9rem; font-weight: 600; color: #adb5bd; }
+  .toolbar .title strong { color: #fff; }
+  .toolbar .btn-group { display: flex; gap: 8px; }
+  .toolbar a, .toolbar button {
+    padding: 7px 16px; border-radius: 6px; font-size: .82rem; font-weight: 600;
+    cursor: pointer; border: none; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-back  { background: rgba(255,255,255,.12); color: #fff; }
+  .btn-edit  { background: rgba(255,255,255,.12); color: #fff; }
+  .btn-print { background: #c0392b; color: #fff; }
+  .btn-back:hover, .btn-edit:hover { background: rgba(255,255,255,.2); }
+  .btn-print:hover { background: #a93226; }
+  .page-wrap { display: flex; justify-content: center; padding: 32px 16px 48px; }
+  #document {
+    width: 210mm; min-height: 297mm;
+    background: #fff;
+    box-shadow: 0 4px 32px rgba(0,0,0,.18);
+    padding: 14mm 16mm 16mm;
+    font-family: Arial, sans-serif;
+    font-size: 10pt; color: #000;
+    box-sizing: border-box;
+  }
+  .doc-main-title {
+    text-align: center; font-size: 13pt; font-weight: bold;
+    letter-spacing: .5px; margin-bottom: 4px; text-transform: uppercase;
+  }
+  .doc-nomor { text-align: center; font-size: 10pt; margin-bottom: 16px; }
+  .doc-intro { font-size: 10pt; margin-bottom: 12px; line-height: 1.6; }
+  .pihak-label { font-weight: bold; margin: 10px 0 4px; }
+  .pihak-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10pt; }
+  .pihak-table td { padding: 2px 4px; vertical-align: top; }
+  .pihak-table td:first-child { width: 38%; }
+  .pihak-table td:nth-child(2) { width: 4%; }
+  .pasal-title { font-weight: bold; text-align: center; margin: 14px 0 2px; font-size: 10pt; }
+  .pasal-sub   { font-weight: bold; text-align: center; margin-bottom: 8px; font-size: 10pt; }
+  .pasal-body { font-size: 10pt; line-height: 1.65; margin-bottom: 6px; }
+  .pasal-body ol { margin: 4px 0; padding-left: 22px; }
+  .pasal-body ol li { margin-bottom: 4px; }
+  .data-table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 10pt; }
+  .data-table td { padding: 2px 4px; vertical-align: top; }
+  .data-table td:first-child { width: 38%; }
+  .data-table td:nth-child(2) { width: 4%; }
+.sign-section { margin-top: 24px; }
+  .sign-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 24px;
+  }
+  .sign-col { text-align: center; }
+  .sign-col-right { text-align: center; }
+  .sign-date { text-align: right; font-size: 10pt; margin-bottom: 4px; }
+  .sign-role { font-weight: bold; font-size: 10pt; margin-bottom: 2px; }
+  .sign-space { height: 70px; }
+  .sign-name { font-size: 10pt; }
+  .sign-title { font-size: 10pt; }
+  @media print {
+    body { background: #fff; margin: 0; }
+    .toolbar { display: none !important; }
+    .page-wrap { padding: 0; }
+    #document { box-shadow: none; width: 100%; min-height: auto; padding: 10mm 14mm 14mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="title">
+    PKWTT &nbsp;/&nbsp; <strong>{{ contract.employee.nama }}</strong>
+    &nbsp;—&nbsp; {{ contract.nomor_kontrak }}
+  </div>
+  <div class="btn-group">
+    <a href="{% url 'contract_detail' contract.pk %}" class="btn-back">← Kembali</a>
+    <a href="{% url 'contract_edit' contract.pk %}" class="btn-edit">✏ Edit</a>
+    <button onclick="window.print()" class="btn-print">🖨 Print / Save PDF</button>
+  </div>
+</div>
+
+<div class="page-wrap">
+<div id="document">
+
+  <div class="doc-main-title">PERJANJIAN KERJA WAKTU TIDAK TERTENTU</div>
+  <div class="doc-nomor">No. {{ contract.nomor_kontrak }}</div>
+
+  <div class="doc-intro">
+    Pada hari ini
+    <strong>{{ contract.tanggal_mulai|date:"l" }}</strong>
+    Tanggal <strong>{{ contract.tanggal_mulai|date:"j" }}</strong>
+    Bulan <strong>{{ contract.tanggal_mulai|date:"F" }}</strong>
+    Tahun <strong>{{ contract.tanggal_mulai|date:"Y" }}</strong>,
+    yang bertanda-tangan di bawah ini :
+  </div>
+
+  <div class="pihak-label">I. PIHAK PERTAMA (PEMBERI KERJA)</div>
+  <table class="pihak-table">
+    <tr><td>Nama</td><td>:</td><td><strong>{{ contract.nama_penandatangan|default:"__________________" }}</strong></td></tr>
+    <tr><td>Jabatan</td><td>:</td><td>{{ contract.jabatan_penandatangan|default:"__________________" }}</td></tr>
+    <tr><td>Perusahaan</td><td>:</td><td><strong>{{ company.nama }}</strong></td></tr>
+    <tr><td>Alamat</td><td>:</td><td>{{ company.alamat|default:"__________________" }}</td></tr>
+  </table>
+  <div class="doc-intro">Selanjutnya disebut sebagai <strong>Perusahaan</strong> atau <strong>PIHAK PERTAMA</strong>.</div>
+
+  <div class="pihak-label">II. PIHAK KEDUA (PENERIMA KERJA)</div>
+  <table class="pihak-table">
+    <tr><td>Nama Pekerja</td><td>:</td><td><strong>{{ contract.employee.nama }}</strong></td></tr>
+    <tr><td>Tempat &amp; Tanggal Lahir</td><td>:</td>
+        <td>{{ contract.employee.tempat_lahir|default:"__________________" }}{% if contract.employee.tanggal_lahir %}, {{ contract.employee.tanggal_lahir|date:"d F Y" }}{% endif %}</td></tr>
+    <tr><td>Nomor KTP</td><td>:</td><td>{{ contract.employee.no_ktp|default:"__________________" }}</td></tr>
+    <tr><td>Nomor NPWP</td><td>:</td><td>{{ contract.employee.no_npwp|default:"__________________" }}</td></tr>
+    <tr><td>Alamat Sesuai KTP</td><td>:</td><td>{{ alamat_lengkap }}</td></tr>
+    <tr><td>Nomor Telepon</td><td>:</td><td>{{ contract.employee.no_hp|default:"__________________" }}</td></tr>
+    <tr><td>Pendidikan</td><td>:</td><td>{{ contract.employee.get_pendidikan_display|default:"__________________" }}</td></tr>
+  </table>
+  <div class="doc-intro">Selanjutnya disebut sebagai <strong>Pekerja</strong> atau <strong>PIHAK KEDUA</strong>.</div>
+
+  <div class="doc-intro">
+    Perusahaan dan Pekerja telah setuju dan sepakat untuk mengadakan Perjanjian Kerja Waktu Tidak Tertentu (PKWTT)
+    berdasarkan Undang-Undang No. 13 Tahun 2003 tentang Ketenagakerjaan sebagaimana telah diubah dengan
+    Undang-Undang No. 11 Tahun 2020 tentang Cipta Kerja dan peraturan pelaksanaannya.
+    Perjanjian ini diatur sebagai berikut:
+  </div>
+
+  <!-- PASAL 1 -->
+  <div class="pasal-title">PASAL 1</div>
+  <div class="pasal-sub">STATUS HUBUNGAN KERJA</div>
+  <div class="pasal-body">
+    <ol>
+      <li>Perusahaan menerima Pekerja sebagai karyawan tetap (Perjanjian Kerja Waktu Tidak Tertentu / PKWTT)
+          terhitung mulai tanggal <strong>{{ contract.tanggal_mulai|date:"j F Y" }}</strong>.</li>
+      <li>Hubungan kerja berdasarkan perjanjian ini tidak dibatasi oleh waktu tertentu dan hanya berakhir
+          atas dasar-dasar yang ditetapkan oleh peraturan perundang-undangan yang berlaku.</li>
+      <li>Perjanjian ini dapat didahului oleh masa percobaan selama 3 (tiga) bulan, di mana dalam masa
+          percobaan tersebut kedua belah pihak dapat mengakhiri hubungan kerja tanpa syarat apapun.</li>
+    </ol>
+  </div>
+
+  <!-- PASAL 2 -->
+  <div class="pasal-title">PASAL 2</div>
+  <div class="pasal-sub">TUGAS DAN PENEMPATAN</div>
+  <div class="pasal-body">
+    <ol>
+      <li>Perusahaan mempekerjakan Pekerja pada:
+        <table class="data-table" style="margin-top:6px;">
+          <tr><td>Jabatan</td><td>:</td><td><strong>{{ contract.jabatan|default:"__________________" }}</strong></td></tr>
+          <tr><td>Departemen</td><td>:</td><td><strong>{{ contract.departemen|default:"__________________" }}</strong></td></tr>
+        </table>
+      </li>
+      <li>Uraian pekerjaan dan tanggung jawab sebagaimana terlampir dalam Job Description yang merupakan bagian tidak terpisahkan dari perjanjian ini.</li>
+      <li>Pekerja harus melaksanakan tugas/pekerjaan dengan sebaik-baiknya sesuai dengan petunjuk/ketentuan Perusahaan.</li>
+      <li>Bila dipandang perlu, Perusahaan dapat memindahkan Pekerja pada jabatan, tugas, dan/atau lokasi kerja yang dibutuhkan dengan mempertimbangkan kompetensi Pekerja.</li>
+    </ol>
+  </div>
+
+  <!-- PASAL 3 -->
+  <div class="pasal-title">PASAL 3</div>
+  <div class="pasal-sub">GAJI (UPAH) DAN BENEFIT</div>
+  <div class="pasal-body">
+    <ol>
+      <li>Pekerja akan dibayarkan Gaji (Upah) sebesar
+          <strong>Rp {{ contract.gaji_pokok|floatformat:"0g" }},-</strong>
+          per bulan dengan status gaji <strong>{{ contract.get_status_gaji_display }}</strong>.</li>
+      <li>Gaji dibayarkan setiap bulannya paling lambat pada hari kerja terakhir bulan berjalan atau sesuai ketentuan Perusahaan.</li>
+      <li>Penyesuaian gaji dapat dilakukan berdasarkan evaluasi kinerja tahunan dan/atau kebijakan Perusahaan serta ketentuan Pemerintah yang berlaku.</li>
+      <li>Tunjangan Hari Raya diberikan sesuai dengan ketentuan ketenagakerjaan yang berlaku.</li>
+      <li>Perusahaan tidak akan membayar Gaji kepada Pekerja apabila Pekerja tidak melakukan pekerjaan, kecuali dalam hal-hal tertentu yang diatur perundang-undangan.</li>
+      <li>Pajak Penghasilan (PPh 21) menjadi beban dan tanggung jawab sesuai ketentuan peraturan perundang-undangan yang berlaku.</li>
+    </ol>
+  </div>
+
+  <!-- PASAL 4 -->
+  <div class="pasal-title">PASAL 4</div>
+  <div class="pasal-sub">WAKTU DAN JAM KERJA</div>
+  <div class="pasal-body">
+    <ol>
+      <li>Hari dan jam kerja mengikuti ketentuan/pengaturan Perusahaan yang berlaku, yaitu 40 jam/minggu atau sesuai pengaturan/ketentuan di lapangan.</li>
+      <li>Kelebihan dari Jam Kerja normal akan dihitung sebagai lembur sesuai peraturan perundang-undangan ketenagakerjaan yang berlaku.</li>
+      <li>Pekerja berhak atas cuti tahunan sebanyak 12 (dua belas) hari kerja setelah bekerja selama 12 bulan berturut-turut.</li>
+      <li>Hak cuti dan istirahat lainnya (cuti hamil, cuti sakit, dll.) diberikan sesuai ketentuan Undang-Undang yang berlaku.</li>
+    </ol>
+  </div>
+
+  <!-- PASAL 5 -->
+  <div class="pasal-title">PASAL 5</div>
+  <div class="pasal-sub">PROGRAM BPJS KETENAGAKERJAAN DAN BPJS KESEHATAN</div>
+  <div class="pasal-body">
+    <ol>
+      <li>Perusahaan akan mengikutsertakan Pekerja pada Program Jaminan Sosial Tenaga Kerja (BPJS Ketenagakerjaan) yang meliputi: Jaminan Hari Tua (JHT), Jaminan Kematian (JKM), Jaminan Kecelakaan Kerja (JKK), dan Jaminan Pensiun (JP).</li>
+      <li>Iuran BPJS Ketenagakerjaan dibayarkan sesuai ketentuan yang berlaku, dimana potongan iuran kepesertaan yang menjadi kewajiban Pekerja dipotong dari Gaji Pekerja.</li>
+      <li>Pekerja akan didaftarkan mengikuti Program BPJS Kesehatan sesuai dengan ketentuan yang berlaku.</li>
+    </ol>
+  </div>
+
+  <!-- PASAL 6 -->
+  <div class="pasal-title">PASAL 6</div>
+  <div class="pasal-sub">KEWAJIBAN DAN TATA TERTIB</div>
+  <div class="pasal-body">
+    <ol>
+      <li>Pekerja wajib menaati seluruh peraturan dan tata tertib Perusahaan yang berlaku maupun yang akan ditetapkan kemudian.</li>
+      <li>Pekerja bersedia diambil tindakan pendisiplinan/dikenakan sanksi sesuai Peraturan Perusahaan yang berlaku, yang dapat berakibat sampai Pemutusan Hubungan Kerja.</li>
+      <li>Perusahaan dapat memberikan Surat Peringatan I, II, atau III. Surat Peringatan tidak harus diberikan secara berurutan, tergantung pada berat ringannya pelanggaran yang dilakukan Pekerja.</li>
+      <li>Pekerja wajib menjaga kerahasiaan data, informasi, dan dokumen milik Perusahaan selama masa kerja maupun setelah berakhirnya hubungan kerja.</li>
+    </ol>
+  </div>
+
+  <!-- PASAL 7 -->
+  <div class="pasal-title">PASAL 7</div>
+  <div class="pasal-sub">PEMUTUSAN HUBUNGAN KERJA</div>
+  <div class="pasal-body">
+    <ol>
+      <li>Pemutusan Hubungan Kerja (PHK) dilakukan berdasarkan ketentuan peraturan perundang-undangan ketenagakerjaan yang berlaku.</li>
+      <li>Apabila Pekerja mengundurkan diri atas kemauan sendiri, Pekerja wajib menyampaikan surat pengunduran diri secara tertulis paling lambat 30 (tiga puluh) hari sebelum tanggal efektif pengunduran diri.</li>
+      <li>Hak-hak Pekerja atas PHK diatur sesuai ketentuan perundang-undangan yang berlaku pada saat terjadinya PHK.</li>
+    </ol>
+  </div>
+
+  <!-- PASAL 8 -->
+  <div class="pasal-title">PASAL 8</div>
+  <div class="pasal-sub">AZAS KEBERLAKUAN PERJANJIAN</div>
+  <div class="pasal-body">
+    Perusahaan dan Pekerja menegaskan bahwa hubungan kerja sebagaimana dimaksud dalam Perjanjian ini merupakan kesepakatan yang telah dibuat dan ditandatangani secara patut dan dalam kesetaraan para pihak, tidak ada paksaan dan tekanan dalam bentuk apapun. Perjanjian ini berlaku sebagai Peraturan bagi Perusahaan dan Pekerja secara penuh dan sempurna.
+  </div>
+
+  <!-- PASAL 9 -->
+  <div class="pasal-title">PASAL 9</div>
+  <div class="pasal-sub">PENYELESAIAN PERSELISIHAN</div>
+  <div class="pasal-body">
+    Perselisihan yang mungkin timbul tentang Perjanjian ini diselesaikan oleh kedua belah pihak secara musyawarah mufakat. Dalam hal penyelesaian secara musyawarah tidak tercapai, kedua belah pihak sepakat menempuh mekanisme penyelesaian perselisihan hubungan industrial sebagaimana diatur dalam peraturan perundang-undangan yang berlaku.
+  </div>
+
+  <!-- PASAL 10 -->
+  <div class="pasal-title">PASAL 10</div>
+  <div class="pasal-sub">LAIN-LAIN</div>
+  <div class="pasal-body">
+    <ol>
+      <li>Segala sesuatu yang belum tercantum dalam Perjanjian ini, apabila dianggap perlu, maka akan dibuatkan perjanjian tambahan yang mempunyai kekuatan hukum yang sama.</li>
+      <li>Dalam hal terdapat suatu ketentuan yang kemudian menjadi tidak sesuai dengan peraturan perundang-undangan yang berlaku, maka hanya ketentuan itu saja yang tidak berlaku sedangkan ketentuan lain tetap berlaku sebagaimana mestinya.</li>
+      <li>Perjanjian ini mengikat kedua belah pihak dan menggantikan semua persetujuan atau kesepakatan sebelumnya baik secara lisan maupun tertulis.</li>
+    </ol>
+  </div>
+
+  <!-- TTD -->
+  <div class="sign-section">
+    <div class="doc-intro" style="margin-bottom: 16px;">
+      Perjanjian ini dibuat dan ditandatangani oleh Kedua Belah Pihak dalam keadaan sehat dan sadar serta tanpa paksaan dari pihak manapun.
+    </div>
+    <div class="sign-grid">
+      <div class="sign-col">
+        <div class="sign-role">Penerima Kerja,</div>
+        <div class="sign-space"></div>
+        <div class="sign-name"><strong>{{ contract.employee.nama }}</strong></div>
+        <div class="sign-title">Pekerja</div>
+      </div>
+      <div class="sign-col sign-col-right">
+        <div class="sign-date">{% if contract.tanggal_mulai %}{{ contract.tanggal_mulai|date:"j F Y" }}{% endif %}</div>
+        <div class="sign-role">Pemberi Kerja,</div>
+        <div class="sign-space"></div>
+        <div class="sign-name"><strong>{{ contract.nama_penandatangan|default:"__________________" }}</strong></div>
+        <div class="sign-title">{{ contract.jabatan_penandatangan|default:"__________________" }}</div>
+        <div class="sign-title">{{ company.nama }}</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>

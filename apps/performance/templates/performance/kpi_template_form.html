@@ -1,0 +1,70 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{{ action }} Template KPI{% endblock %}
+{% block breadcrumb %}Performance / Template KPI / {{ action }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h5 class="fw-bold mb-0">{{ action }} Template KPI</h5>
+  <a href="{% url 'kpi_template_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+</div>
+<div class="card" style="max-width:560px;">
+  <div class="card-body">
+    <form method="post">{% csrf_token %}
+      {% if companies %}
+      <div class="mb-3">
+        <label class="form-label" style="font-size:.82rem;">Perusahaan *</label>
+        <select name="company_id" class="form-select" required style="background:var(--surface);border-color:var(--border);color:var(--text);">
+          {% for c in companies %}<option value="{{ c.pk }}">{{ c.nama }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="mb-3">
+        <label class="form-label" style="font-size:.82rem;">Nama KPI *</label>
+        <input type="text" name="nama" value="{{ obj.nama|default:'' }}" class="form-control" required
+          placeholder="Misal: Persentase Kehadiran, Revenue Target"
+          style="background:var(--surface);border-color:var(--border);color:var(--text);">
+      </div>
+      <div class="mb-3">
+        <label class="form-label" style="font-size:.82rem;">Deskripsi</label>
+        <textarea name="deskripsi" class="form-control" rows="2"
+          style="background:var(--surface);border-color:var(--border);color:var(--text);">{{ obj.deskripsi|default:'' }}</textarea>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label" style="font-size:.82rem;">Satuan *</label>
+          <select name="satuan" class="form-select" style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            <option value="%" {% if obj.satuan == '%' %}selected{% endif %}>% (Persentase)</option>
+            <option value="angka" {% if obj.satuan == 'angka' %}selected{% endif %}>Angka</option>
+            <option value="rupiah" {% if obj.satuan == 'rupiah' %}selected{% endif %}>Rupiah (Rp)</option>
+            <option value="hari" {% if obj.satuan == 'hari' %}selected{% endif %}>Hari</option>
+            <option value="jam" {% if obj.satuan == 'jam' %}selected{% endif %}>Jam</option>
+            <option value="unit" {% if obj.satuan == 'unit' %}selected{% endif %}>Unit</option>
+            <option value="lainnya" {% if obj.satuan == 'lainnya' %}selected{% endif %}>Lainnya</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" style="font-size:.82rem;">Arah Penilaian *</label>
+          <select name="arah" class="form-select" style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            <option value="tinggi" {% if obj.arah == 'tinggi' or not obj %}selected{% endif %}>↑ Semakin Tinggi Baik</option>
+            <option value="rendah" {% if obj.arah == 'rendah' %}selected{% endif %}>↓ Semakin Rendah Baik</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" style="font-size:.82rem;">Kategori/Perspektif</label>
+          <input type="text" name="kategori" value="{{ obj.kategori|default:'' }}" class="form-control"
+            placeholder="SDM, Keuangan..."
+            style="background:var(--surface);border-color:var(--border);color:var(--text);">
+        </div>
+      </div>
+      {% if obj %}
+      <div class="mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="aktif" id="aktif" {% if obj.aktif %}checked{% endif %}>
+          <label class="form-check-label" for="aktif" style="font-size:.84rem;">Template aktif (tampil di pilihan)</label>
+        </div>
+      </div>
+      {% endif %}
+      <button type="submit" class="btn btn-danger">{{ action }} Template</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

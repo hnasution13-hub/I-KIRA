@@ -1,0 +1,137 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit{% else %}Tambah{% endif %} Assignment Shift{% endblock %}
+{% block breadcrumb %}Shift / Assignment / {% if instance %}Edit{% else %}Tambah{% endif %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-user-clock me-2 text-success"></i>
+        {% if instance %}Edit Assignment{% else %}Tambah Assignment Shift{% endif %}
+    </h4>
+    <a href="{% url 'assignment_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<form method="post">
+{% csrf_token %}
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header fw-semibold bg-light">Target Assignment</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Tipe Target <span class="text-danger">*</span></label>
+                    <div class="d-flex gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="target_type" value="employee"
+                                   id="targetEmp" {% if not instance or instance.employee %}checked{% endif %}
+                                   onchange="toggleTarget()">
+                            <label class="form-check-label" for="targetEmp">Per Karyawan</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="target_type" value="department"
+                                   id="targetDept" {% if instance and instance.department %}checked{% endif %}
+                                   onchange="toggleTarget()">
+                            <label class="form-check-label" for="targetDept">Per Departemen</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sectionEmployee" class="mb-3">
+                    <label class="form-label fw-semibold">Karyawan</label>
+                    <select name="employee_id" class="form-select">
+                        <option value="">-- Pilih Karyawan --</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.id }}" {% if instance and instance.employee_id == emp.id %}selected{% endif %}>
+                            {{ emp.nama }} — {{ emp.department|default:"No Dept" }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="sectionDept" class="mb-3" style="display:none">
+                    <label class="form-label fw-semibold">Departemen</label>
+                    <select name="department_id" class="form-select">
+                        <option value="">-- Pilih Departemen --</option>
+                        {% for d in departments %}
+                        <option value="{{ d.id }}" {% if instance and instance.department_id == d.id %}selected{% endif %}>
+                            {{ d.nama }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Semua karyawan aktif di departemen ini akan mendapat shift ini</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Hari Spesifik</label>
+                    <select name="hari_spesifik" class="form-select">
+                        <option value="">Semua hari kerja shift</option>
+                        {% for idx, nama in HARI_CHOICES %}
+                        <option value="{{ idx }}" {% if instance and instance.hari_spesifik == idx %}selected{% endif %}>
+                            {{ nama }} saja
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Untuk jadwal mingguan (misal Senin pakai shift ini, Selasa shift lain)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header fw-semibold bg-light">Detail Shift & Periode</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Shift <span class="text-danger">*</span></label>
+                    <select name="shift_id" class="form-select">
+                        <option value="">-- Pilih Shift --</option>
+                        {% for s in shifts %}
+                        <option value="{{ s.id }}" {% if instance and instance.shift_id == s.id %}selected{% endif %}>
+                            [{{ s.kode }}] {{ s.nama }} — {{ s.get_tipe_display }}
+                            {% if s.jam_masuk %} ({{ s.jam_masuk|time:"H:i" }}–{{ s.jam_keluar|time:"H:i" }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Berlaku Mulai <span class="text-danger">*</span></label>
+                    <input type="date" name="berlaku_mulai" class="form-control"
+                           value="{{ instance.berlaku_mulai|date:'Y-m-d'|default:'' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Berlaku Sampai</label>
+                    <input type="date" name="berlaku_sampai" class="form-control"
+                           value="{{ instance.berlaku_sampai|date:'Y-m-d'|default:'' }}">
+                    <small class="text-muted">Kosongkan = berlaku permanen (tidak ada batas akhir)</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Keterangan</label>
+                    <input type="text" name="keterangan" class="form-control"
+                           placeholder="Opsional..." value="{{ instance.keterangan|default:'' }}">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4 d-flex gap-2">
+    <button type="submit" class="btn btn-success px-4">
+        <i class="fas fa-save me-1"></i>Simpan Assignment
+    </button>
+    <a href="{% url 'assignment_list' %}" class="btn btn-outline-secondary px-4">Batal</a>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleTarget() {
+    var isDept = document.getElementById('targetDept').checked;
+    document.getElementById('sectionEmployee').style.display = isDept ? 'none' : '';
+    document.getElementById('sectionDept').style.display     = isDept ? '' : 'none';
+}
+{% if instance and instance.department %}
+toggleTarget();
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Import Absensi{% endblock %}
+{% block breadcrumb %}Absensi / Import Excel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-file-import me-2 text-success"></i>Import Data Absensi
+    </h4>
+    <a href="{% url 'attendance_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show">
+        <i class="fas fa-{% if msg.tags == 'success' %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
+        {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Langkah 1: Download Template -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <span class="badge bg-primary rounded-circle p-3 fs-5">1</span>
+                </div>
+                <h5 class="fw-bold">Download Template</h5>
+                <p class="text-muted small">Download template Excel, isi data absensi sesuai format yang disediakan.</p>
+                <a href="{% url 'attendance_import_template' %}" class="btn btn-outline-success w-100">
+                    <i class="fas fa-download me-2"></i>Download Template Excel
+                </a>
+                <div class="mt-3 text-start">
+                    <small class="text-muted">
+                        <strong>Kolom wajib (merah):</strong><br>
+                        NIK, Tanggal
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Langkah 2: Isi Data -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="text-center mb-3">
+                    <span class="badge bg-warning text-dark rounded-circle p-3 fs-5">2</span>
+                </div>
+                <h5 class="fw-bold text-center">Isi Data</h5>
+                <ul class="list-unstyled small text-muted mt-3">
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Format tanggal: <code>YYYY-MM-DD</code> atau <code>DD/MM/YYYY</code></li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Format jam: <code>HH:MM</code> atau <code>HH:MM:SS</code></li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Status: <code>Hadir</code> / <code>Tidak Hadir</code> / <code>Izin</code> / <code>Sakit</code> / <code>Cuti</code> / <code>WFH</code></li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>NIK harus sesuai data karyawan aktif</li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Data existing akan diupdate</li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Nama kolom tidak harus sama — bisa di-mapping</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Langkah 3: Upload -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="text-center mb-3">
+                    <span class="badge bg-success rounded-circle p-3 fs-5">3</span>
+                </div>
+                <h5 class="fw-bold text-center">Upload File</h5>
+                <form method="post" enctype="multipart/form-data" class="mt-3">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Pilih File Excel</label>
+                        <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+                        <div class="form-text">Format: .xlsx atau .xls · Maks 10MB</div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Lanjut ke Mapping Kolom
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info mesin fingerprint -->
+<div class="card mt-4 border-info">
+    <div class="card-header bg-info bg-opacity-10">
+        <i class="fas fa-fingerprint me-2 text-info"></i>
+        <strong>Info: Import dari Mesin Fingerprint</strong>
+    </div>
+    <div class="card-body small text-muted">
+        <p>Jika export dari mesin fingerprint memiliki nama kolom berbeda (misal <em>ID Karyawan</em>, <em>Check In Time</em>, dll),
+        tidak perlu mengubah file — cukup lakukan <strong>mapping kolom</strong> di langkah berikutnya setelah upload.</p>
+        <p class="mb-0">Sistem mendukung berbagai format tanggal dan jam secara otomatis.</p>
+    </div>
+</div>
+{% endblock %}

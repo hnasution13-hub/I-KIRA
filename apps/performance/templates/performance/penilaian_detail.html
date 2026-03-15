@@ -1,0 +1,179 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Detail Penilaian — {{ penilaian.employee.nama }}{% endblock %}
+{% block breadcrumb %}Performance / Detail Penilaian{% endblock %}
+
+{% block extra_css %}
+<style>
+.kpi-row { background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:8px; }
+.skor-bar { height:8px;border-radius:4px;background:var(--surface2);overflow:hidden; }
+.skor-fill { height:100%;border-radius:4px;transition:width .5s; }
+.status-badge { padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700; }
+.info-row { display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.85rem; }
+.info-row:last-child { border-bottom:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="fw-bold mb-0">Detail Penilaian</h5>
+    <small class="text-muted">{{ penilaian.employee.nama }} — {{ penilaian.periode.nama }}</small>
+  </div>
+  <div class="d-flex gap-2">
+    {% if penilaian.status == 'draft' or penilaian.status == 'rejected' %}
+    <a href="{% url 'penilaian_input_kpi' penilaian.pk %}" class="btn btn-sm btn-danger">
+      <i class="fas fa-edit me-1"></i>Input KPI
+    </a>
+    {% endif %}
+    {% if penilaian.status == 'submit' or penilaian.status == 'review' %}
+    <a href="{% url 'penilaian_review_atasan' penilaian.pk %}" class="btn btn-sm btn-warning">
+      <i class="fas fa-star me-1"></i>Review Atasan
+    </a>
+    {% endif %}
+    <a href="{% url 'penilaian_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Kiri: Info + Skor -->
+  <div class="col-12 col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0"><i class="fas fa-user me-2"></i>Informasi Karyawan</h6></div>
+      <div class="card-body">
+        <div class="info-row"><span class="text-muted">Nama</span><span class="fw-semibold">{{ penilaian.employee.nama }}</span></div>
+        <div class="info-row"><span class="text-muted">NIK</span><span>{{ penilaian.employee.nik }}</span></div>
+        <div class="info-row"><span class="text-muted">Jabatan</span><span>{{ penilaian.employee.jabatan }}</span></div>
+        <div class="info-row"><span class="text-muted">Departemen</span><span>{{ penilaian.employee.department }}</span></div>
+        <div class="info-row"><span class="text-muted">Penilai</span><span>{{ penilaian.atasan.nama|default:"—" }}</span></div>
+        <div class="info-row"><span class="text-muted">Periode</span><span>{{ penilaian.periode.nama }}</span></div>
+        <div class="info-row"><span class="text-muted">Status</span>
+          <span class="status-badge
+            {% if penilaian.status == 'approved' %}bg-success text-white
+            {% elif penilaian.status == 'rejected' %}bg-danger text-white
+            {% elif penilaian.status == 'submit' %}bg-warning text-dark
+            {% else %}bg-secondary text-white{% endif %}">
+            {{ penilaian.get_status_display }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {% if penilaian.status == 'approved' %}
+    <div class="card">
+      <div class="card-header"><h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Hasil Penilaian</h6></div>
+      <div class="card-body text-center">
+        <div style="font-size:3rem;font-weight:800;color:{{ penilaian.predikat_color }};">
+          {{ penilaian.skor_akhir }}%
+        </div>
+        <div class="badge-predikat mb-3" style="display:inline-block;padding:5px 16px;border-radius:20px;
+          background:{{ penilaian.predikat_color }}22;color:{{ penilaian.predikat_color }};font-weight:700;">
+          {{ penilaian.predikat }}
+        </div>
+        <div class="skor-bar mb-3">
+          <div class="skor-fill" style="width:{{ penilaian.skor_akhir }}%;background:{{ penilaian.predikat_color }};"></div>
+        </div>
+        <div class="d-flex justify-content-between" style="font-size:.8rem;">
+          <span class="text-muted">Skor KPI<br><strong class="text-primary">{{ penilaian.skor_kpi }}%</strong></span>
+          <span class="text-muted">Skor Review<br><strong class="text-success">{{ penilaian.skor_review }}%</strong></span>
+          <span class="text-muted">Skor Akhir<br><strong style="color:{{ penilaian.predikat_color }};">{{ penilaian.skor_akhir }}%</strong></span>
+        </div>
+        <div class="mt-2 text-muted" style="font-size:.72rem;">
+          Formula: KPI × 70% + Review × 30%
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Kanan: KPI + Review -->
+  <div class="col-12 col-lg-8">
+    <!-- KPI Items -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-bullseye me-2 text-danger"></i>KPI Items
+          <small class="text-muted ms-1">(Total bobot: {{ total_bobot_kpi|floatformat:0 }}%)</small>
+        </h6>
+      </div>
+      <div class="card-body">
+        {% if kpi_items %}
+        {% for item in kpi_items %}
+        <div class="kpi-row">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <div class="fw-semibold" style="font-size:.88rem;">{{ item.nama_kpi }}</div>
+              <small class="text-muted">Bobot: {{ item.bobot }}% | Satuan: {{ item.satuan }} | Arah: {{ item.arah }}</small>
+            </div>
+            {% if item.pencapaian_persen is not None %}
+            <div class="text-end">
+              <div class="fw-bold" style="font-size:1.1rem;color:{% if item.pencapaian_persen >= 80 %}#22c55e{% elif item.pencapaian_persen >= 60 %}#f59e0b{% else %}#ef4444{% endif %};">
+                {{ item.pencapaian_persen|floatformat:1 }}%
+              </div>
+              <small class="text-muted">pencapaian</small>
+            </div>
+            {% endif %}
+          </div>
+          <div class="d-flex gap-4" style="font-size:.82rem;">
+            <span>Target: <strong>{{ item.target|floatformat:2 }} {{ item.satuan }}</strong></span>
+            <span>Realisasi: <strong>{{ item.realisasi|default:"—"|floatformat:2 }} {% if item.realisasi %}{{ item.satuan }}{% endif %}</strong></span>
+          </div>
+          {% if item.pencapaian_persen is not None %}
+          <div class="skor-bar mt-2">
+            <div class="skor-fill" style="width:{{ item.pencapaian_persen|floatformat:0 }}%;
+              background:{% if item.pencapaian_persen >= 80 %}#22c55e{% elif item.pencapaian_persen >= 60 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+          </div>
+          {% endif %}
+          {% if item.catatan %}<small class="text-muted d-block mt-1">📝 {{ item.catatan }}</small>{% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-muted text-center py-3">Belum ada KPI ditambahkan</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Review Atasan -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="fas fa-star me-2 text-warning"></i>Review Atasan
+          <small class="text-muted ms-1">(Total bobot: {{ total_bobot_review|floatformat:0 }}%)</small>
+        </h6>
+      </div>
+      <div class="card-body">
+        {% if review_items %}
+        {% for item in review_items %}
+        <div class="d-flex align-items-center gap-3 mb-2 py-2" style="border-bottom:1px solid var(--border);">
+          <div class="flex-grow-1">
+            <div class="fw-semibold" style="font-size:.86rem;">{{ item.aspek }}</div>
+            <small class="text-muted">Bobot: {{ item.bobot }}%</small>
+          </div>
+          <div class="d-flex gap-1">
+            {% for i in "12345" %}
+            <span style="font-size:1rem;color:{% if item.skor and forloop.counter <= item.skor %}#f59e0b{% else %}#444{% endif %};">★</span>
+            {% endfor %}
+          </div>
+          <div style="width:45px;text-align:right;font-size:.85rem;">
+            {% if item.skor %}<strong>{{ item.skor }}/5</strong>{% else %}<span class="text-muted">—</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-muted text-center py-3">Belum ada aspek review</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Catatan -->
+    {% if penilaian.catatan_karyawan or penilaian.catatan_atasan %}
+    <div class="card">
+      <div class="card-header"><h6 class="mb-0"><i class="fas fa-comment me-2"></i>Catatan</h6></div>
+      <div class="card-body">
+        {% if penilaian.catatan_karyawan %}
+        <p style="font-size:.85rem;"><strong>Karyawan:</strong> {{ penilaian.catatan_karyawan }}</p>{% endif %}
+        {% if penilaian.catatan_atasan %}
+        <p style="font-size:.85rem;" class="mb-0"><strong>Atasan:</strong> {{ penilaian.catatan_atasan }}</p>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

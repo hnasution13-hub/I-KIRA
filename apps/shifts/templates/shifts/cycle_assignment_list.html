@@ -1,0 +1,99 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Assignment Pola Cyclic{% endblock %}
+{% block breadcrumb %}Shift / Pola Cyclic / Assignment{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-users me-2 text-success"></i>Assignment Pola Cyclic</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'cycle_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-sync-alt me-1"></i>Master Pola
+        </a>
+        <a href="{% url 'cycle_assignment_add' %}" class="btn btn-success btn-sm">
+            <i class="fas fa-user-plus me-1"></i>Assign Pola
+        </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-3"><div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Departemen</label>
+            <select name="dept" class="form-select form-select-sm">
+                <option value="">Semua</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}" {% if dept_filter == d.id|stringformat:"s" %}selected{% endif %}>{{ d.nama }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Pola</label>
+            <select name="cycle" class="form-select form-select-sm">
+                <option value="">Semua</option>
+                {% for c in cycles %}
+                <option value="{{ c.id }}" {% if cycle_filter == c.id|stringformat:"s" %}selected{% endif %}>{{ c.nama }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+            <a href="{% url 'cycle_assignment_list' %}" class="btn btn-outline-secondary btn-sm ms-1">Reset</a>
+        </div>
+    </form>
+</div></div>
+
+<div class="card"><div class="card-body p-0">
+<table class="table table-hover mb-0">
+    <thead class="table-light">
+        <tr>
+            <th>Karyawan</th>
+            <th>Pola</th>
+            <th>Mulai Dari</th>
+            <th>Berlaku Sampai</th>
+            <th>Status</th>
+            <th class="text-center">Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in assignments %}
+        <tr>
+            <td>
+                <div class="fw-semibold">{{ a.employee.nama }}</div>
+                <small class="text-muted">{{ a.employee.nik }} &bull; {{ a.employee.department|default:"-" }}</small>
+            </td>
+            <td>
+                <div class="fw-semibold">{{ a.cycle.nama }}</div>
+                <small class="text-muted">{{ a.cycle.panjang_siklus }} hari/siklus</small>
+            </td>
+            <td>{{ a.mulai_dari|date:"d/m/Y" }}</td>
+            <td>{{ a.berlaku_sampai|date:"d/m/Y"|default:"<span class='text-success small'>Permanen</span>" }}</td>
+            <td>
+                {% if a.aktif %}
+                    <span class="badge bg-success">Aktif</span>
+                {% else %}
+                    <span class="badge bg-secondary">Nonaktif</span>
+                {% endif %}
+            </td>
+            <td class="text-center">
+                <a href="{% url 'cycle_preview' a.employee.id %}" class="btn btn-outline-info btn-sm" title="Lihat Jadwal">
+                    <i class="fas fa-calendar"></i>
+                </a>
+                <a href="{% url 'cycle_assignment_edit' a.pk %}" class="btn btn-outline-primary btn-sm ms-1">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'cycle_assignment_delete' a.pk %}" class="btn btn-outline-danger btn-sm ms-1">
+                    <i class="fas fa-trash"></i>
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Belum ada assignment pola cyclic</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div></div>
+{% endblock %}
+
+
+{# ─── CYCLE ASSIGNMENT FORM ─────────────────────────────────────────────── #}
+{# Simpan file terpisah: cycle_assignment_form.html #}

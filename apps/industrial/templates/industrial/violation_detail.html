@@ -1,0 +1,119 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Detail Pelanggaran - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Industrial Relation / Pelanggaran / Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-gavel me-2 text-danger"></i>Detail Pelanggaran</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'violation_edit' violation.pk %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-edit me-1"></i>Edit
+        </a>
+        <a href="{% url 'violation_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Kembali
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Info Pelanggaran -->
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header fw-semibold bg-danger text-white">
+                <i class="fas fa-exclamation-triangle me-2"></i>Informasi Pelanggaran
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Tipe SP</small>
+                        <span class="badge bg-danger">{{ violation.tipe_pelanggaran }}</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Tanggal Kejadian</small>
+                        <strong>{{ violation.tanggal_kejadian|date:"d F Y" }}</strong>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Tingkat</small>
+                        <span class="badge {% if violation.tingkat == 'Berat' %}bg-danger{% elif violation.tingkat == 'Sedang' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                            {{ violation.tingkat }}
+                        </span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Poin</small>
+                        <strong>{{ violation.poin }}</strong>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Status</small>
+                        <span class="badge {% if violation.status == 'Selesai' %}bg-success{% elif violation.status == 'Proses' %}bg-warning text-dark{% elif violation.status == 'Dibatalkan' %}bg-secondary{% else %}bg-primary{% endif %}">
+                            {{ violation.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted d-block">Deskripsi Pelanggaran</small>
+                        <div class="mt-1 p-3 bg-light rounded">{{ violation.deskripsi }}</div>
+                    </div>
+                    {% if violation.sanksi %}
+                    <div class="col-12">
+                        <small class="text-muted d-block">Sanksi yang Diberikan</small>
+                        <div class="mt-1 p-3 bg-light rounded">{{ violation.sanksi }}</div>
+                    </div>
+                    {% endif %}
+                    {% if violation.dokumen %}
+                    <div class="col-12">
+                        <small class="text-muted d-block">Dokumen Pendukung</small>
+                        <a href="{{ violation.dokumen.url }}" target="_blank" class="btn btn-outline-primary btn-sm mt-1">
+                            <i class="fas fa-file me-1"></i>Lihat Dokumen
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Karyawan -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header fw-semibold">
+                <i class="fas fa-user me-2"></i>Karyawan
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted d-block">Nama</small>
+                    <a href="{% url 'employee_detail' violation.employee.pk %}" class="fw-semibold text-decoration-none">
+                        {{ violation.employee.nama }}
+                    </a>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">NIK</small>
+                    <strong>{{ violation.employee.nik }}</strong>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Departemen</small>
+                    {{ violation.employee.department|default:"-" }}
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Jabatan</small>
+                    {{ violation.employee.jabatan|default:"-" }}
+                </div>
+                <hr>
+                <small class="text-muted d-block mb-1">Riwayat SP Karyawan</small>
+                {% with sp_list=violation.employee.violations.all %}
+                {% if sp_list %}
+                    {% for sp in sp_list %}
+                    <div class="d-flex justify-content-between align-items-center mb-1 small">
+                        <span>{{ sp.tanggal_kejadian|date:"d/m/Y" }}</span>
+                        <span class="badge {% if sp.pk == violation.pk %}bg-danger{% else %}bg-secondary{% endif %} bg-opacity-75">
+                            {{ sp.tipe_pelanggaran|truncatechars:18 }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <span class="text-muted small">Tidak ada riwayat lain</span>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

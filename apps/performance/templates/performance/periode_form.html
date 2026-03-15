@@ -1,0 +1,68 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{{ action }} Periode{% endblock %}
+{% block breadcrumb %}Performance / Periode / {{ action }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h5 class="fw-bold mb-0">{{ action }} Periode Penilaian</h5>
+  <a href="{% url 'periode_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+</div>
+<div class="card" style="max-width:600px;">
+  <div class="card-body">
+    <form method="post">{% csrf_token %}
+      {% if companies %}
+      <div class="mb-3">
+        <label class="form-label" style="font-size:.82rem;">Perusahaan *</label>
+        <select name="company_id" class="form-select" required style="background:var(--surface);border-color:var(--border);color:var(--text);">
+          {% for c in companies %}<option value="{{ c.pk }}">{{ c.nama }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="mb-3">
+        <label class="form-label" style="font-size:.82rem;">Nama Periode *</label>
+        <input type="text" name="nama" value="{{ obj.nama|default:'' }}" class="form-control" required placeholder="Misal: Semester 1 2026"
+          style="background:var(--surface);border-color:var(--border);color:var(--text);">
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label" style="font-size:.82rem;">Tipe *</label>
+          <select name="tipe" class="form-select" style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            {% for val, lbl in obj.TIPE_CHOICES|default:"" %}
+            <option value="{{ val }}" {% if obj.tipe == val %}selected{% endif %}>{{ lbl }}</option>
+            {% empty %}
+            <option value="Bulanan">Bulanan</option>
+            <option value="Triwulan">Triwulan (Q)</option>
+            <option value="Semesteran">Semesteran</option>
+            <option value="Tahunan" selected>Tahunan</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" style="font-size:.82rem;">Status</label>
+          <select name="status" class="form-select" style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            <option value="draft" {% if obj.status == 'draft' or not obj %}selected{% endif %}>Draft</option>
+            <option value="aktif" {% if obj.status == 'aktif' %}selected{% endif %}>Aktif</option>
+            <option value="tutup" {% if obj.status == 'tutup' %}selected{% endif %}>Ditutup</option>
+          </select>
+        </div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label" style="font-size:.82rem;">Tanggal Mulai *</label>
+          <input type="date" name="tanggal_mulai" value="{{ obj.tanggal_mulai|date:'Y-m-d'|default:'' }}" class="form-control" required
+            style="background:var(--surface);border-color:var(--border);color:var(--text);">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" style="font-size:.82rem;">Tanggal Selesai *</label>
+          <input type="date" name="tanggal_selesai" value="{{ obj.tanggal_selesai|date:'Y-m-d'|default:'' }}" class="form-control" required
+            style="background:var(--surface);border-color:var(--border);color:var(--text);">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" style="font-size:.82rem;">Deskripsi</label>
+        <textarea name="deskripsi" class="form-control" rows="2" style="background:var(--surface);border-color:var(--border);color:var(--text);">{{ obj.deskripsi|default:'' }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-danger">{{ action }} Periode</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

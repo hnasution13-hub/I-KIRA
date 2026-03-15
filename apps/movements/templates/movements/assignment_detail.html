@@ -1,0 +1,49 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Detail Penugasan{% endblock %}
+{% block breadcrumb %}Asset Management / Detail Penugasan{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'movements:assignment_list' %}" class="text-secondary text-decoration-none small"><i class="fas fa-arrow-left me-1"></i>Penugasan</a>
+    <h4 class="text-white mb-0 mt-1">Detail Penugasan: {{ object.asset_code }}</h4>
+</div>
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header border-secondary"><h6 class="text-white mb-0">Status Penugasan Saat Ini</h6></div>
+            <div class="card-body">
+                <table class="table table-dark table-borderless mb-0">
+                    <tr><td class="text-secondary">Aset</td><td><a href="{% url 'assets:asset_detail' object.asset.pk %}" class="text-info text-decoration-none font-monospace">{{ object.asset_code }}</a></td></tr>
+                    <tr><td class="text-secondary">PIC</td><td class="text-white">{{ object.current_pic_name|default:"-" }}</td></tr>
+                    <tr><td class="text-secondary">Lokasi</td><td class="text-white">{{ object.current_location_name|default:"-" }}</td></tr>
+                    <tr><td class="text-secondary">Kondisi</td><td class="text-white">{{ object.current_condition|default:"-" }}</td></tr>
+                    <tr><td class="text-secondary">Tgl. Penugasan</td><td class="text-white">{{ object.assignment_date|date:"d M Y"|default:"-" }}</td></tr>
+                    <tr><td class="text-secondary">Batas Kembali</td><td class="text-white">{{ object.expected_return_date|date:"d M Y"|default:"-" }}</td></tr>
+                    <tr><td class="text-secondary">Mutasi Terakhir</td><td class="text-white">{{ object.last_movement_date|date:"d M Y"|default:"-" }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header border-secondary"><h6 class="text-white mb-0">Riwayat Mutasi Aset</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-dark table-hover mb-0">
+                    <thead><tr><th class="text-secondary fw-normal small ps-3">Tipe</th><th class="text-secondary fw-normal small">Ke</th><th class="text-secondary fw-normal small">Tanggal</th></tr></thead>
+                    <tbody>
+                    {% for mov in object.asset.movements.all|slice:":10" %}
+                    <tr class="border-secondary">
+                        <td class="ps-3"><span class="badge bg-secondary small">{{ mov.movement_type }}</span></td>
+                        <td class="text-white small">{{ mov.to_pic_name|default:"-" }}</td>
+                        <td class="text-secondary small">{{ mov.movement_date|date:"d M Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-center text-secondary py-3">Tidak ada riwayat</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{
+  "name": "HRIS SmartDesk Portal",
+  "short_name": "Portal",
+  "description": "Portal self-service karyawan HRIS SmartDesk",
+  "start_url": "/karyawan/",
+  "display": "standalone",
+  "background_color": "#c0392b",
+  "theme_color": "#c0392b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/images/Logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/images/Logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

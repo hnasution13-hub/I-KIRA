@@ -1,0 +1,677 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Pengaturan Shift{% endblock %}
+
+{% block breadcrumb_extra %}
+/ Absensi / <span>Pengaturan Shift</span>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Form sections ── */
+.form-section {
+  margin-bottom: 28px;
+}
+.form-section-title {
+  font-size: .72rem; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--muted);
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+}
+.form-section-title i { color: var(--red); font-size: .8rem; }
+
+/* Form grid */
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.form-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 18px; }
+
+.fgroup { display: flex; flex-direction: column; gap: 6px; }
+.flabel {
+  font-size: .74rem; font-weight: 600; letter-spacing: .3px;
+  color: var(--muted); text-transform: uppercase;
+}
+.flabel .req { color: var(--red); }
+
+.finput, .fselect, .ftextarea {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text);
+  font-family: 'DM Sans'; font-size: .88rem;
+  padding: 10px 14px; outline: none; width: 100%;
+  transition: border-color .2s, box-shadow .2s;
+}
+.finput:focus, .fselect:focus, .ftextarea:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(230,51,41,.1);
+}
+.finput::placeholder { color: var(--muted2); }
+.fselect option { background: var(--surface); }
+
+/* Time input with icon */
+.time-wrap { position: relative; }
+.time-wrap .finput { padding-left: 36px; }
+.time-wrap::before {
+  content: '🕐'; position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%); font-size: .85rem; pointer-events: none;
+}
+
+/* Number with unit suffix */
+.input-suffix-wrap { position: relative; }
+.input-suffix-wrap .finput { padding-right: 44px; }
+.input-suffix {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  font-size: .74rem; color: var(--muted);
+  font-family: 'DM Mono'; pointer-events: none;
+}
+
+/* Tolerance special card */
+.tolerance-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px;
+}
+.tolerance-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+}
+.tolerance-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; flex-shrink: 0;
+}
+.tolerance-title { font-size: .88rem; font-weight: 600; }
+.tolerance-desc { font-size: .76rem; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+
+/* Slider */
+.slider-wrap { display: flex; align-items: center; gap: 12px; }
+.range-slider {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 4px; border-radius: 2px; outline: none;
+  background: var(--border2); cursor: pointer;
+}
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--red);
+  cursor: pointer; border: 2px solid var(--bg2);
+  box-shadow: 0 0 0 1px var(--red);
+}
+.range-val {
+  font-family: 'DM Mono'; font-size: .9rem; font-weight: 600;
+  color: var(--text); min-width: 52px; text-align: right;
+}
+
+/* Toggle switch */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border: none; padding-bottom: 0; }
+.toggle-info .toggle-label { font-size: .85rem; font-weight: 500; }
+.toggle-info .toggle-sub { font-size: .76rem; color: var(--muted); margin-top: 2px; }
+
+.toggle {
+  position: relative; width: 40px; height: 22px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0; cursor: pointer;
+  background: var(--border2); border-radius: 22px;
+  transition: background .2s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; left: 3px; bottom: 3px;
+  transition: transform .2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--red); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* Shift list card */
+.shift-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 16px; background: var(--bg3);
+  border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 10px; transition: border-color .15s;
+  cursor: pointer;
+}
+.shift-item:hover { border-color: var(--border2); }
+.shift-item.selected { border-color: var(--red); background: rgba(230,51,41,.04); }
+
+.shift-color { width: 4px; border-radius: 2px; align-self: stretch; flex-shrink: 0; }
+.shift-info { flex: 1; }
+.shift-name { font-size: .88rem; font-weight: 600; margin-bottom: 3px; }
+.shift-time { font-size: .76rem; color: var(--muted); font-family: 'DM Mono'; }
+.shift-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.shift-badge {
+  font-size: .65rem; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; letter-spacing: .3px;
+}
+.shift-actions { display: flex; gap: 6px; }
+.icon-btn {
+  width: 30px; height: 30px; border-radius: 7px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--muted); cursor: pointer; font-size: .8rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.icon-btn:hover { background: var(--surface); color: var(--text); }
+.icon-btn.danger:hover { background: rgba(230,51,41,.1); color: var(--red); border-color: rgba(230,51,41,.3); }
+
+/* Hari kerja checkboxes */
+.day-checks { display: flex; gap: 6px; flex-wrap: wrap; }
+.day-check { cursor: pointer; }
+.day-check input { display: none; }
+.day-label {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 8px;
+  border: 1px solid var(--border2); background: var(--surface);
+  font-size: .78rem; font-weight: 600; color: var(--muted);
+  transition: all .15s; user-select: none;
+}
+.day-check input:checked + .day-label {
+  background: var(--red); color: #fff; border-color: var(--red);
+}
+.day-label:hover { border-color: var(--border2); color: var(--text); }
+
+/* form error */
+.field-error { font-size: .74rem; color: #f87171; margin-top: 4px; }
+
+/* helper text */
+.field-help { font-size: .73rem; color: var(--muted2); margin-top: 4px; line-height: 1.5; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Pengaturan Shift</div>
+    <div class="page-sub">Kelola shift kerja, jam istirahat, dan aturan toleransi kehadiran</div>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'attendance_list' %}" class="btn btn-outline btn-sm">
+      <i class="fas fa-arrow-left"></i> Kembali
+    </a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;">
+
+  <!-- ═══ LEFT: FORM ═══ -->
+  <div>
+    <div class="card">
+      <form method="POST" action="" id="shiftForm">
+        {% csrf_token %}
+        {% if form.instance.pk %}
+        <input type="hidden" name="shift_id" value="{{ form.instance.pk }}">
+        {% endif %}
+
+        <!-- ─── Identitas Shift ─── -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-tag"></i> Identitas Shift
+          </div>
+          <div class="form-grid-2">
+            <div class="fgroup">
+              <label class="flabel" for="id_nama">Nama Shift <span class="req">*</span></label>
+              <input type="text" class="finput" id="id_nama" name="nama"
+                placeholder="cth: Shift Pagi, Morning Shift"
+                value="{{ form.nama.value|default:'' }}" required>
+              {% if form.nama.errors %}<div class="field-error">{{ form.nama.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="fgroup">
+              <label class="flabel" for="id_kode">Kode Shift</label>
+              <input type="text" class="finput" id="id_kode" name="kode"
+                placeholder="cth: SP, SM, SS"
+                value="{{ form.kode.value|default:'' }}" maxlength="10">
+              <div class="field-help">Singkatan untuk tampilan di rekap absensi</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── Jam Kerja ─── -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-clock"></i> Jam Kerja
+          </div>
+          <div class="form-grid-2">
+            <div class="fgroup">
+              <label class="flabel" for="id_jam_masuk">Jam Masuk <span class="req">*</span></label>
+              <div class="time-wrap">
+                <input type="time" class="finput" id="id_jam_masuk" name="jam_masuk"
+                  value="{{ form.jam_masuk.value|default:'08:00' }}" required>
+              </div>
+            </div>
+            <div class="fgroup">
+              <label class="flabel" for="id_jam_keluar">Jam Keluar <span class="req">*</span></label>
+              <div class="time-wrap">
+                <input type="time" class="finput" id="id_jam_keluar" name="jam_keluar"
+                  value="{{ form.jam_keluar.value|default:'17:00' }}" required>
+              </div>
+            </div>
+          </div>
+          <div class="form-grid-2" style="margin-top:14px;">
+            <div class="fgroup">
+              <label class="flabel" for="id_jam_istirahat_mulai">
+                Jam Istirahat Mulai
+              </label>
+              <div class="time-wrap">
+                <input type="time" class="finput" id="id_jam_istirahat_mulai" name="jam_istirahat_mulai"
+                  value="{{ form.jam_istirahat_mulai.value|default:'12:00' }}">
+              </div>
+            </div>
+            <div class="fgroup">
+              <label class="flabel" for="id_jam_istirahat_selesai">
+                Jam Istirahat Selesai
+              </label>
+              <div class="time-wrap">
+                <input type="time" class="finput" id="id_jam_istirahat_selesai" name="jam_istirahat_selesai"
+                  value="{{ form.jam_istirahat_selesai.value|default:'13:00' }}">
+              </div>
+              <div class="field-help">Durasi istirahat: <strong id="durasiIstirahat">60 menit</strong></div>
+            </div>
+          </div>
+
+          <!-- Ringkasan jam kerja efektif -->
+          <div style="margin-top:14px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;display:flex;gap:24px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:.7rem;color:var(--muted);margin-bottom:2px;">Total Jam Kerja</div>
+              <div style="font-family:'DM Mono';font-weight:700;font-size:.95rem;" id="totalJamKerja">9 jam</div>
+            </div>
+            <div>
+              <div style="font-size:.7rem;color:var(--muted);margin-bottom:2px;">Jam Efektif (- istirahat)</div>
+              <div style="font-family:'DM Mono';font-weight:700;font-size:.95rem;color:var(--red);" id="jamEfektif">8 jam</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── Toleransi ─── -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-sliders"></i> Toleransi Kehadiran
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+            <!-- Toleransi Telat -->
+            <div class="tolerance-card">
+              <div class="tolerance-header">
+                <div class="tolerance-icon" style="background:rgba(251,191,36,.1);">⏰</div>
+                <div>
+                  <div class="tolerance-title">Toleransi Keterlambatan</div>
+                  <div class="tolerance-desc">Menit setelah jam masuk yang masih dianggap tepat waktu</div>
+                </div>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" class="range-slider" id="toleransiTelatSlider"
+                  min="0" max="60" step="5"
+                  value="{{ form.toleransi_telat.value|default:'15' }}"
+                  oninput="updateSlider('toleransiTelat', this.value)">
+                <div class="range-val"><span id="toleransiTelatVal">{{ form.toleransi_telat.value|default:'15' }}</span> mnt</div>
+              </div>
+              <input type="hidden" name="toleransi_telat" id="toleransiTelat" value="{{ form.toleransi_telat.value|default:'15' }}">
+              <div class="field-help" style="margin-top:10px;">
+                Masuk sebelum pukul
+                <strong id="batasTelat" style="color:var(--text);">08:15</strong>
+                masih dihitung tepat waktu
+              </div>
+            </div>
+
+            <!-- Toleransi Pulang Cepat -->
+            <div class="tolerance-card">
+              <div class="tolerance-header">
+                <div class="tolerance-icon" style="background:rgba(230,51,41,.1);">🚪</div>
+                <div>
+                  <div class="tolerance-title">Toleransi Pulang Cepat</div>
+                  <div class="tolerance-desc">Menit sebelum jam keluar yang masih diperbolehkan pulang</div>
+                </div>
+              </div>
+              <div class="slider-wrap">
+                <input type="range" class="range-slider" id="toleransiPulangSlider"
+                  min="0" max="60" step="5"
+                  value="{{ form.toleransi_pulang_cepat.value|default:'0' }}"
+                  oninput="updateSlider('toleransiPulang', this.value)">
+                <div class="range-val"><span id="toleransiPulangVal">{{ form.toleransi_pulang_cepat.value|default:'0' }}</span> mnt</div>
+              </div>
+              <input type="hidden" name="toleransi_pulang_cepat" id="toleransiPulang" value="{{ form.toleransi_pulang_cepat.value|default:'0' }}">
+              <div class="field-help" style="margin-top:10px;">
+                Boleh pulang mulai pukul
+                <strong id="batasPulang" style="color:var(--text);">17:00</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── Hari Kerja ─── -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-calendar-week"></i> Hari Kerja
+          </div>
+          <div class="day-checks">
+            {% for day_val, day_label in hari_choices %}
+            <label class="day-check">
+              <input type="checkbox" name="hari_kerja" value="{{ day_val }}"
+                {% if day_val in selected_hari %}checked{% endif %}>
+              <span class="day-label">{{ day_label }}</span>
+            </label>
+            {% empty %}
+            {% for d in "Sen,Sel,Rab,Kam,Jum,Sab,Min"|split:"," %}
+            <label class="day-check">
+              <input type="checkbox" name="hari_kerja" value="{{ forloop.counter }}"
+                {% if forloop.counter <= 5 %}checked{% endif %}>
+              <span class="day-label">{{ d }}</span>
+            </label>
+            {% endfor %}
+            {% endfor %}
+          </div>
+          <div class="field-help" style="margin-top:8px;">Centang hari yang termasuk hari kerja shift ini</div>
+        </div>
+
+        <!-- ─── Opsi Lanjutan ─── -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-toggle-on"></i> Opsi Lanjutan
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Izinkan Lembur Otomatis</div>
+              <div class="toggle-sub">Absensi di luar jam kerja dihitung lembur secara otomatis</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" name="allow_overtime"
+                {% if form.allow_overtime.value %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Absensi Wajib Selfie</div>
+              <div class="toggle-sub">Karyawan wajib upload selfie saat check-in shift ini</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" name="wajib_selfie"
+                {% if form.wajib_selfie.value %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Wajib Dalam Radius Lokasi</div>
+              <div class="toggle-sub">Check-in hanya diizinkan dalam radius geofencing kantor</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" name="wajib_geofence"
+                {% if form.wajib_geofence.value %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Shift Aktif</div>
+              <div class="toggle-sub">Nonaktifkan untuk menyembunyikan shift dari pilihan absensi</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" name="aktif"
+                {% if form.aktif.value != False %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- ─── Catatan ─── -->
+        <div class="form-section" style="margin-bottom:0;">
+          <div class="form-section-title">
+            <i class="fas fa-note-sticky"></i> Catatan
+          </div>
+          <textarea class="ftextarea" name="catatan" rows="3"
+            placeholder="Keterangan tambahan tentang shift ini...">{{ form.catatan.value|default:'' }}</textarea>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:24px;border-top:1px solid var(--border);margin-top:24px;">
+          <a href="{% url 'shift_list' %}" class="btn btn-outline">Batal</a>
+          <button type="submit" class="btn btn-red">
+            <i class="fas fa-save"></i>
+            {% if form.instance.pk %}Simpan Perubahan{% else %}Buat Shift{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT: SHIFT LIST ═══ -->
+  <div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin:0;">Daftar Shift</div>
+        <span style="font-size:.72rem;color:var(--muted);">{{ shifts|length|default:"3" }} shift</span>
+      </div>
+
+      {% for shift in shifts %}
+      <div class="shift-item {% if shift.pk == form.instance.pk %}selected{% endif %}"
+           onclick="loadShift('{{ shift.pk }}')">
+        <div class="shift-color" style="background:{% cycle '#e63329' '#3b82f6' '#22c55e' '#f59e0b' '#a855f7' %};"></div>
+        <div class="shift-info">
+          <div class="shift-name">{{ shift.nama }}</div>
+          <div class="shift-time">{{ shift.jam_masuk }} – {{ shift.jam_keluar }}</div>
+          <div class="shift-badges">
+            {% if shift.jam_istirahat_mulai %}
+            <span class="shift-badge" style="background:rgba(255,255,255,.06);color:var(--muted);">
+              ☕ {{ shift.jam_istirahat_mulai }}–{{ shift.jam_istirahat_selesai }}
+            </span>
+            {% endif %}
+            {% if shift.toleransi_telat %}
+            <span class="shift-badge" style="background:rgba(251,191,36,.08);color:#fbbf24;">
+              ⏰ ±{{ shift.toleransi_telat }}m
+            </span>
+            {% endif %}
+            {% if shift.toleransi_pulang_cepat %}
+            <span class="shift-badge" style="background:rgba(230,51,41,.08);color:var(--red);">
+              🚪 -{{ shift.toleransi_pulang_cepat }}m
+            </span>
+            {% endif %}
+            {% if not shift.aktif %}
+            <span class="shift-badge badge-gray">Nonaktif</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="shift-actions">
+          <a href="{% url 'shift_edit' shift.pk %}" class="icon-btn" onclick="event.stopPropagation()">
+            <i class="fas fa-pencil"></i>
+          </a>
+          <button class="icon-btn danger" onclick="event.stopPropagation();confirmDelete('{{ shift.pk }}','{{ shift.nama }}')">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      {% empty %}
+      <!-- Demo shifts -->
+      <div class="shift-item">
+        <div class="shift-color" style="background:#e63329;"></div>
+        <div class="shift-info">
+          <div class="shift-name">Shift Pagi</div>
+          <div class="shift-time">07:00 – 15:00</div>
+          <div class="shift-badges">
+            <span class="shift-badge" style="background:rgba(255,255,255,.06);color:var(--muted);">☕ 12:00–13:00</span>
+            <span class="shift-badge" style="background:rgba(251,191,36,.08);color:#fbbf24;">⏰ ±15m</span>
+            <span class="shift-badge" style="background:rgba(230,51,41,.08);color:var(--red);">🚪 -10m</span>
+          </div>
+        </div>
+        <div class="shift-actions">
+          <button class="icon-btn"><i class="fas fa-pencil"></i></button>
+          <button class="icon-btn danger"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      <div class="shift-item">
+        <div class="shift-color" style="background:#3b82f6;"></div>
+        <div class="shift-info">
+          <div class="shift-name">Shift Normal</div>
+          <div class="shift-time">08:00 – 17:00</div>
+          <div class="shift-badges">
+            <span class="shift-badge" style="background:rgba(255,255,255,.06);color:var(--muted);">☕ 12:00–13:00</span>
+            <span class="shift-badge" style="background:rgba(251,191,36,.08);color:#fbbf24;">⏰ ±15m</span>
+          </div>
+        </div>
+        <div class="shift-actions">
+          <button class="icon-btn"><i class="fas fa-pencil"></i></button>
+          <button class="icon-btn danger"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      <div class="shift-item">
+        <div class="shift-color" style="background:#22c55e;"></div>
+        <div class="shift-info">
+          <div class="shift-name">Shift Malam</div>
+          <div class="shift-time">22:00 – 06:00</div>
+          <div class="shift-badges">
+            <span class="shift-badge" style="background:rgba(255,255,255,.06);color:var(--muted);">☕ 02:00–03:00</span>
+            <span class="shift-badge" style="background:rgba(251,191,36,.08);color:#fbbf24;">⏰ ±15m</span>
+            <span class="shift-badge" style="background:rgba(230,51,41,.08);color:var(--red);">🚪 -5m</span>
+          </div>
+        </div>
+        <div class="shift-actions">
+          <button class="icon-btn"><i class="fas fa-pencil"></i></button>
+          <button class="icon-btn danger"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      {% endfor %}
+
+      <a href="{% url 'shift_add' %}" class="btn btn-outline"
+         style="width:100%;justify-content:center;margin-top:12px;">
+        <i class="fas fa-plus"></i> Tambah Shift Baru
+      </a>
+    </div>
+
+    <!-- Legend card -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">Keterangan Badge</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:.78rem;">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--muted);">
+          <span style="font-size:.75rem;">☕</span>
+          <span>Jam istirahat (mulai–selesai)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;color:#fbbf24;">
+          <span style="font-size:.75rem;">⏰</span>
+          <span>Toleransi keterlambatan (±menit)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;color:var(--red);">
+          <span style="font-size:.75rem;">🚪</span>
+          <span>Toleransi pulang cepat (-menit)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="deleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+     z-index:300;display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;
+              padding:28px;width:360px;">
+    <div style="font-size:1rem;font-weight:700;margin-bottom:8px;">Hapus Shift?</div>
+    <div style="font-size:.84rem;color:var(--muted);margin-bottom:20px;">
+      Shift "<strong id="deleteShiftName" style="color:var(--text);"></strong>" akan dihapus.
+      Tindakan ini tidak dapat dibatalkan.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Batal</button>
+      <form method="POST" action="" id="deleteForm" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="shift_id" id="deleteShiftId">
+        <button type="submit" class="btn btn-sm" style="background:var(--red);color:#fff;">
+          <i class="fas fa-trash"></i> Hapus
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Slider ──
+function updateSlider(id, val) {
+  document.getElementById(id).value = val;
+  document.getElementById(id + 'Val').textContent = val;
+  updateBatas();
+}
+
+// ── Hitung batas toleransi ──
+function updateBatas() {
+  const masuk  = document.getElementById('id_jam_masuk').value  || '08:00';
+  const keluar = document.getElementById('id_jam_keluar').value || '17:00';
+  const telat  = parseInt(document.getElementById('toleransiTelat').value) || 0;
+  const pulang = parseInt(document.getElementById('toleransiPulang').value) || 0;
+
+  document.getElementById('batasTelat').textContent  = addMinutes(masuk, telat);
+  document.getElementById('batasPulang').textContent = addMinutes(keluar, -pulang);
+
+  // Hitung jam kerja
+  updateJamKerja();
+}
+
+function addMinutes(time, minutes) {
+  const [h, m] = time.split(':').map(Number);
+  const total = h * 60 + m + minutes;
+  const nh = Math.floor(((total % 1440) + 1440) % 1440 / 60);
+  const nm = ((total % 1440) + 1440) % 1440 % 60;
+  return `${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;
+}
+
+function diffMinutes(t1, t2) {
+  const [h1, m1] = t1.split(':').map(Number);
+  const [h2, m2] = t2.split(':').map(Number);
+  let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+  if (diff < 0) diff += 1440; // overnight
+  return diff;
+}
+
+function minutesToHM(m) {
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return min ? `${h} jam ${min} mnt` : `${h} jam`;
+}
+
+function updateJamKerja() {
+  const masuk    = document.getElementById('id_jam_masuk').value  || '08:00';
+  const keluar   = document.getElementById('id_jam_keluar').value || '17:00';
+  const istMulai = document.getElementById('id_jam_istirahat_mulai').value;
+  const istAkhir = document.getElementById('id_jam_istirahat_selesai').value;
+
+  const totalMenit = diffMinutes(masuk, keluar);
+  let istirahatMenit = 0;
+  if (istMulai && istAkhir) {
+    istirahatMenit = diffMinutes(istMulai, istAkhir);
+  }
+
+  document.getElementById('totalJamKerja').textContent   = minutesToHM(totalMenit);
+  document.getElementById('jamEfektif').textContent      = minutesToHM(totalMenit - istirahatMenit);
+  document.getElementById('durasiIstirahat').textContent = istirahatMenit ? `${istirahatMenit} menit` : '—';
+}
+
+// Bind events
+['id_jam_masuk','id_jam_keluar','id_jam_istirahat_mulai','id_jam_istirahat_selesai'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    updateBatas();
+  });
+});
+
+// Init
+updateBatas();
+
+// ── Delete modal ──
+function confirmDelete(id, name) {
+  document.getElementById('deleteShiftId').value = id;
+  document.getElementById('deleteShiftName').textContent = name;
+  document.getElementById('deleteModal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('deleteModal').style.display = 'none';
+}
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+{% endblock %}

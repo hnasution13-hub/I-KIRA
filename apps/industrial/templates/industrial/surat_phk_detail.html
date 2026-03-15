@@ -1,0 +1,72 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Detail Surat PHK{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'surat_phk_list' %}">Surat PHK</a></li>
+      <li class="breadcrumb-item active">Detail</li>
+    </ol>
+  </nav>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0">📋 Surat PHK — {{ surat.snap_nama }}</h4>
+    <div class="d-flex gap-2">
+      <a href="{% url 'surat_phk_print' surat.pk %}" target="_blank" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-printer me-1"></i>Cetak
+      </a>
+      <a href="{% url 'skk_create' %}?employee={{ surat.employee.pk }}" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-file-text me-1"></i>Buat SKK
+      </a>
+      <a href="{% url 'surat_phk_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+    </div>
+  </div>
+  <div class="row g-3">
+    <div class="col-md-5">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light fw-semibold small">Data PHK</div>
+        <div class="card-body small">
+          <table class="table table-sm table-borderless mb-0">
+            <tr><td class="text-muted">Nomor</td><td>{{ surat.nomor_surat|default:"-" }}</td></tr>
+            <tr><td class="text-muted">Tanggal</td><td>{{ surat.tanggal_surat|date:"d F Y" }}</td></tr>
+            <tr><td class="text-muted">Karyawan</td><td><strong>{{ surat.snap_nama }}</strong></td></tr>
+            <tr><td class="text-muted">NIK</td><td>{{ surat.snap_nik }}</td></tr>
+            <tr><td class="text-muted">Jabatan</td><td>{{ surat.snap_jabatan }}</td></tr>
+            <tr><td class="text-muted">Tgl Masuk</td><td>{{ surat.snap_tanggal_masuk|date:"d/m/Y" }}</td></tr>
+            <tr><td class="text-muted">Tgl PHK</td><td class="text-danger fw-bold">{{ surat.snap_tanggal_phk|date:"d/m/Y" }}</td></tr>
+            <tr><td class="text-muted">Alasan</td><td>{{ surat.snap_alasan_phk }}</td></tr>
+            <tr><td class="text-muted">Dasar Pasal</td><td><code>{{ surat.snap_dasar_pasal }}</code></td></tr>
+            <tr><td class="text-muted">Grand Total</td><td class="fw-bold text-primary">Rp {{ surat.snap_grand_total|floatformat:"0g" }}</td></tr>
+            <tr><td class="text-muted">Status</td><td>
+              <span class="badge {% if surat.status == 'final' %}bg-success{% else %}bg-secondary{% endif %}">
+                {{ surat.get_status_display }}</span></td></tr>
+          </table>
+        </div>
+      </div>
+      {# Pipeline next step #}
+      <div class="card shadow-sm border-success">
+        <div class="card-header bg-success text-white fw-semibold small">Pipeline Selanjutnya</div>
+        <div class="card-body p-3 small">
+          <p class="text-muted mb-2">Surat PHK sudah selesai. Langkah berikutnya:</p>
+          <a href="{% url 'skk_create' %}?employee={{ surat.employee.pk }}" class="btn btn-sm btn-outline-success w-100">
+            <i class="bi bi-file-text me-1"></i>Buat Surat Keterangan Kerja (SKK)
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-7">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light fw-semibold small">Dasar Hukum</div>
+        <div class="card-body small">{{ surat.dasar_hukum|linebreaksbr|default:"-" }}</div>
+      </div>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light fw-semibold small">Alasan PHK</div>
+        <div class="card-body small">{{ surat.alasan_phk|linebreaksbr }}</div>
+      </div>
+      <div class="card shadow-sm">
+        <div class="card-header bg-light fw-semibold small">Kompensasi</div>
+        <div class="card-body small">{{ surat.keterangan_kompensasi|linebreaksbr|default:"-" }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

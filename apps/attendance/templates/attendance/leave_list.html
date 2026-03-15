@@ -1,0 +1,144 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Cuti & Ijin{% endblock %}
+{% block breadcrumb %}Administrasi / Cuti & Ijin{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Cuti & Ijin</h4>
+    <a href="{% url 'leave_add' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Ajukan Cuti</a>
+</div>
+
+<div class="card"><div class="card-body p-0">
+    <div class="table-responsive-wrap">
+<table class="table table-hover datatable mb-0" id="tbl-cuti">
+        <thead class="table-light">
+            <tr>
+                <th>Karyawan</th><th>Tipe</th><th>Mulai</th><th>Selesai</th>
+                <th class="text-center">Hari</th><th>Alasan</th>
+                <th>Approver</th><th>Status</th><th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in leaves %}
+            <tr>
+                <td class="fw-semibold">
+                    <a href="{% url 'leave_detail' l.pk %}" class="text-decoration-none">{{ l.employee.nama }}</a>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ l.tipe_cuti }}</span></td>
+                <td>{{ l.tanggal_mulai|date:"d/m/Y" }}</td>
+                <td>{{ l.tanggal_selesai|date:"d/m/Y" }}</td>
+                <td class="text-center">{{ l.jumlah_hari }}</td>
+                <td><small class="text-muted">{{ l.alasan|truncatechars:40 }}</small></td>
+                <td>
+                    <small class="text-muted">
+                        {% if l.approved_by %}{{ l.approved_by.nama }}{% else %}—{% endif %}
+                    </small>
+                </td>
+                <td>
+                    <span class="badge {% if l.status == 'Approved' %}bg-success{% elif l.status == 'Pending' %}bg-warning text-dark{% elif l.status == 'Rejected' %}bg-danger{% else %}bg-secondary{% endif %}">
+                        {{ l.status }}
+                    </span>
+                </td>
+                <td>
+                    {% if l.status == 'Pending' %}
+                    <div class="btn-group btn-group-sm">
+                        {# Approve — modal konfirmasi #}
+                        <button type="button" class="btn btn-outline-success"
+                                data-bs-toggle="modal" data-bs-target="#modalApprove"
+                                data-pk="{{ l.pk }}" data-nama="{{ l.employee.nama }}"
+                                title="Setujui">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        {# Reject — modal konfirmasi #}
+                        <button type="button" class="btn btn-outline-danger"
+                                data-bs-toggle="modal" data-bs-target="#modalReject"
+                                data-pk="{{ l.pk }}" data-nama="{{ l.employee.nama }}"
+                                title="Tolak">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'leave_detail' l.pk %}" class="btn btn-sm btn-outline-secondary ms-1" title="Detail">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr class="dt-empty">
+                    <td colspan="9" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-plane-departure"></i></div>
+                            <div class="empty-state-title">Belum ada pengajuan cuti / izin</div>
+                            <div class="empty-state-desc">Karyawan belum mengajukan cuti atau izin. Pengajuan baru akan muncul di sini.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'leave_add' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Pengajuan</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div></div>
+
+{# ── Modal Approve ─────────────────────────────────────────────────────────── #}
+<div class="modal fade" id="modalApprove" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title">Setujui Cuti</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="formApprove" action="">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p class="small mb-2">Setujui cuti <strong id="approveNama"></strong>?</p>
+          <label class="form-label small">Catatan (opsional)</label>
+          <input type="text" name="catatan_approval" class="form-control form-control-sm" placeholder="Catatan...">
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-success btn-sm">Ya, Setujui</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ── Modal Reject ──────────────────────────────────────────────────────────── #}
+<div class="modal fade" id="modalReject" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title">Tolak Cuti</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="formReject" action="">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p class="small mb-2">Tolak cuti <strong id="rejectNama"></strong>?</p>
+          <label class="form-label small">Alasan penolakan</label>
+          <input type="text" name="catatan_approval" class="form-control form-control-sm" placeholder="Alasan..." required>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-danger btn-sm">Ya, Tolak</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('modalApprove').addEventListener('show.bs.modal', e => {
+    const btn = e.relatedTarget;
+    document.getElementById('approveNama').textContent = btn.dataset.nama;
+    document.getElementById('formApprove').action = `/attendance/leave/${btn.dataset.pk}/approve/`;
+});
+document.getElementById('modalReject').addEventListener('show.bs.modal', e => {
+    const btn = e.relatedTarget;
+    document.getElementById('rejectNama').textContent = btn.dataset.nama;
+    document.getElementById('formReject').action = `/attendance/leave/${btn.dataset.pk}/reject/`;
+});
+</script>
+{% endblock %}

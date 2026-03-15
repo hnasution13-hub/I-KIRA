@@ -1,0 +1,60 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ action }} Kategori Kompetensi{% endblock %}
+{% block breadcrumb %}OD — {{ action }} Kategori Kompetensi{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0">
+    <i class="fas fa-tags me-2" style="color:#818cf8;"></i>{{ action }} Kategori Kompetensi
+  </h4>
+  <a href="{% url 'od:competency_category_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:540px;">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label fw-medium">Nama Kategori <span class="text-danger">*</span></label>
+        <input type="text" name="nama" class="form-control" required
+               value="{{ obj.nama|default:'' }}" placeholder="Misal: Technical Skill">
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-medium">Deskripsi</label>
+        <textarea name="deskripsi" class="form-control" rows="2"
+                  placeholder="Penjelasan singkat kategori ini...">{{ obj.deskripsi|default:'' }}</textarea>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-medium">Warna Label</label>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="color" name="warna" class="form-control form-control-color"
+                   value="{{ obj.warna|default:'#818cf8' }}" style="width:50px;height:38px;">
+            <small class="text-muted">Tampil sebagai badge warna di daftar kompetensi</small>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-medium">Urutan Tampil</label>
+          <input type="number" name="urutan" class="form-control"
+                 value="{{ obj.urutan|default:'0' }}" min="0"
+                 placeholder="0 = pertama">
+        </div>
+      </div>
+      {% if obj %}
+      <div class="mb-3">
+        <div class="form-check">
+          <input type="checkbox" name="aktif" class="form-check-input" id="aktifCheck"
+                 {% if obj.aktif %}checked{% endif %}>
+          <label class="form-check-label" for="aktifCheck">Aktif</label>
+        </div>
+      </div>
+      {% endif %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i> Simpan
+        </button>
+        <a href="{% url 'od:competency_category_list' %}" class="btn btn-outline-secondary">Batal</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

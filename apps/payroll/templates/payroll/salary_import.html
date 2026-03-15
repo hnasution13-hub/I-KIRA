@@ -1,0 +1,122 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Import Data Upah & Benefit{% endblock %}
+{% block breadcrumb %}Payroll / Upah & Benefit / Import{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-file-import me-2 text-primary"></i>Import Data Upah & Benefit
+    </h4>
+    <a href="{% url 'salary_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Langkah 1: Download Template -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <span class="badge bg-primary rounded-circle p-3 fs-5">1</span>
+                </div>
+                <h5 class="fw-bold">Download Template</h5>
+                <p class="text-muted small">Download template Excel, isi data gaji sesuai format yang disediakan.</p>
+                <a href="{% url 'template_salary' %}" class="btn btn-outline-success w-100">
+                    <i class="fas fa-download me-2"></i>Download Template Excel
+                </a>
+                <div class="mt-3 text-start">
+                    <small class="text-muted">
+                        <strong>Kolom wajib (merah):</strong><br>
+                        NIK (harus sudah terdaftar sebagai karyawan aktif)
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Langkah 2: Isi Data -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="text-center mb-3">
+                    <span class="badge bg-warning text-dark rounded-circle p-3 fs-5">2</span>
+                </div>
+                <h5 class="fw-bold text-center">Isi Data</h5>
+                <ul class="list-unstyled small text-muted mt-3">
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Angka <strong>tanpa</strong> titik/koma pemisah ribuan</li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>Isi <code>0</code> pada kolom override = hitung otomatis</li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>PPh21 Ditanggung: isi <code>Ya</code> atau <code>Tidak</code></li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>NIK sudah ada → data upah akan <strong>diupdate</strong></li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>NIK belum ada upah → akan <strong>ditambahkan</strong></li>
+                    <li class="mb-1"><i class="fas fa-exclamation-circle text-warning me-2"></i>NIK tidak dikenal → baris dilewati + notifikasi error</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Langkah 3: Upload -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="text-center mb-3">
+                    <span class="badge bg-success rounded-circle p-3 fs-5">3</span>
+                </div>
+                <h5 class="fw-bold text-center">Upload File</h5>
+                <form method="post" enctype="multipart/form-data" class="mt-3">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Pilih File Excel</label>
+                        <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+                        <div class="form-text">Format: .xlsx atau .xls</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-upload me-2"></i>Upload & Import
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+<div class="mt-4">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Info kolom override -->
+<div class="card mt-4 border-info">
+    <div class="card-header bg-info bg-opacity-10">
+        <i class="fas fa-info-circle me-2 text-info"></i>
+        <strong>Info: Kolom Override (isi 0 = otomatis)</strong>
+    </div>
+    <div class="card-body small">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless mb-0">
+                    <tbody>
+                        <tr><td class="fw-semibold">BPJS TK Override</td><td class="text-muted">0 = otomatis 3% dari gaji pokok</td></tr>
+                        <tr><td class="fw-semibold">BPJS Kes Override</td><td class="text-muted">0 = otomatis 1% (maks Rp 12 jt)</td></tr>
+                        <tr><td class="fw-semibold">THR Override</td><td class="text-muted">0 = otomatis berdasarkan masa kerja (PP 36/2021)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless mb-0">
+                    <tbody>
+                        <tr><td class="fw-semibold">Tarif Lembur Override</td><td class="text-muted">0 = otomatis gaji pokok / 173</td></tr>
+                        <tr><td class="fw-semibold">Potongan Absensi</td><td class="text-muted">0 = otomatis upah harian</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+<title>{{ sp.level_label }} — {{ sp.employee.nama }}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #000; background:#fff; }
+  .page { width:210mm; min-height:297mm; margin:0 auto; padding:25mm 25mm 20mm 30mm; }
+  .header { text-align:center; border-bottom:3px double #000; padding-bottom:8px; margin-bottom:18px; }
+  .header .company-name { font-size:16pt; font-weight:bold; text-transform:uppercase; letter-spacing:1px; }
+  .header .company-sub  { font-size:10pt; margin-top:3px; }
+  .title-box { text-align:center; margin:20px 0 18px; }
+  .title-box .sp-title { font-size:14pt; font-weight:bold; text-decoration:underline; text-transform:uppercase; }
+  .title-box .nomor    { font-size:11pt; margin-top:4px; }
+  .identity-table { width:100%; margin-bottom:16px; border-collapse:collapse; font-size:11pt; }
+  .identity-table td { padding:3px 6px; vertical-align:top; }
+  .identity-table td:first-child { width:130px; }
+  .identity-table td:nth-child(2){ width:12px; text-align:center; }
+  .body-text { font-size:11pt; line-height:1.8; text-align:justify; margin-bottom:10px; }
+  .body-text p { margin-bottom:8px; }
+  .uraian-box { border:1px solid #000; padding:10px 14px; margin:12px 0; font-size:11pt; line-height:1.7; background:#f9f9f9; }
+  .sanksi-box { border-left:4px solid #c00; padding:8px 12px; margin:10px 0; font-size:11pt; }
+  .pernyataan { margin-top:14px; font-size:11pt; line-height:1.7; }
+  .ttd-table { width:100%; margin-top:40px; border-collapse:collapse; }
+  .ttd-table td { width:50%; text-align:center; vertical-align:top; padding:0 20px; }
+  .ttd-title   { font-size:11pt; }
+  .ttd-space   { height:75px; display:block; }
+  .ttd-line    { border-top:1px solid #000; display:block; }
+  .ttd-name    { font-weight:bold; font-size:11pt; display:block; padding-top:4px; }
+  .ttd-jabatan { font-size:10pt; display:block; margin-top:2px; }
+  .berlaku-note { margin-top:16px; font-size:10pt; font-style:italic; color:#333; border-top:1px dashed #999; padding-top:8px; }
+  @media print { .no-print { display:none!important; } .page { padding:20mm 20mm 15mm 25mm; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  {# Header perusahaan #}
+  <div class="header">
+    <div class="company-name">{{ sp.company.nama }}</div>
+    <div class="company-sub">{{ sp.company.alamat }}</div>
+  </div>
+
+  {# Judul Surat #}
+  <div class="title-box">
+    <div class="sp-title">{{ sp.level_label }}</div>
+    <div class="nomor">Nomor: {{ sp.nomor_sp|default:"___/SP/HRD/___/____" }}</div>
+  </div>
+
+  {# Identitas karyawan #}
+  <p style="font-size:11pt;margin-bottom:8px;">Yang bertanda tangan di bawah ini:</p>
+  <table class="identity-table" style="margin-bottom:14px;">
+    <tr><td>Nama</td><td>:</td><td><strong>{{ sp.nama_penandatangan }}</strong></td></tr>
+    <tr><td>Jabatan</td><td>:</td><td>{{ sp.jabatan_penandatangan }}</td></tr>
+    <tr><td>Perusahaan</td><td>:</td><td>{{ sp.company.nama }}</td></tr>
+  </table>
+
+  <p style="font-size:11pt;margin-bottom:8px;">Dengan ini memberikan <strong>{{ sp.level_label }}</strong> kepada:</p>
+  <table class="identity-table" style="margin-bottom:14px;">
+    <tr><td>Nama</td><td>:</td><td><strong>{{ sp.employee.nama }}</strong></td></tr>
+    <tr><td>NIK</td><td>:</td><td>{{ sp.employee.nik }}</td></tr>
+    <tr><td>Jabatan</td><td>:</td><td>{{ sp.snap_jabatan|default:sp.employee.jabatan }}</td></tr>
+    <tr><td>Departemen</td><td>:</td><td>{{ sp.kategori_pelanggaran|default:sp.employee.department }}</td></tr>
+  </table>
+
+  {# Isi surat #}
+  <div class="body-text">
+    <p>Dikarenakan yang bersangkutan telah melakukan pelanggaran sebagai berikut:</p>
+  </div>
+
+  <div class="uraian-box">
+    <strong>Jenis Pelanggaran:</strong> {{ sp.label_pelanggaran }}<br>
+    {% if sp.dasar_pasal %}<strong>Dasar Pasal:</strong> {{ sp.dasar_pasal }}<br>{% endif %}
+    {% if sp.tingkat_pelanggaran %}<strong>Tingkat Kesalahan:</strong> {{ sp.tingkat_pelanggaran }}<br>{% endif %}
+    <br>
+    <strong>Uraian:</strong><br>
+    {{ sp.uraian_pelanggaran|linebreaksbr }}
+  </div>
+
+  {% if sp.sanksi %}
+  <div class="sanksi-box">
+    <strong>Sanksi:</strong><br>
+    {{ sp.sanksi|linebreaksbr }}
+  </div>
+  {% endif %}
+
+  <div class="body-text">
+    <p>
+      Dengan diterbitkannya {{ sp.level_label }} ini, yang bersangkutan diharapkan dapat memperbaiki
+      perilaku dan kinerjanya. Apabila di kemudian hari yang bersangkutan kembali melakukan pelanggaran,
+      maka perusahaan berhak memberikan sanksi yang lebih berat sesuai dengan peraturan yang berlaku.
+    </p>
+  </div>
+
+  {% if sp.pernyataan_karyawan %}
+  <div class="pernyataan">
+    <p><strong>Pernyataan Karyawan:</strong></p>
+    <p>{{ sp.pernyataan_karyawan|linebreaksbr }}</p>
+  </div>
+  {% endif %}
+
+  {# Tanggal & TTD #}
+  <table class="ttd-table">
+    <tr>
+      <td>
+        <span class="ttd-title">Karyawan yang Bersangkutan,</span>
+        <span class="ttd-space"></span>
+        <span class="ttd-line"></span>
+        <span class="ttd-name">{{ sp.employee.nama }}</span>
+        <span class="ttd-jabatan">{{ sp.employee.jabatan }}</span>
+      </td>
+      <td>
+        <span class="ttd-title">{{ sp.company.nama }},</span><br>
+        <span class="ttd-title">{{ sp.tanggal_sp|date:"d F Y" }}</span>
+        <span class="ttd-space"></span>
+        <span class="ttd-line"></span>
+        <span class="ttd-name">{{ sp.nama_penandatangan }}</span>
+        <span class="ttd-jabatan">{{ sp.jabatan_penandatangan }}</span>
+      </td>
+    </tr>
+  </table>
+
+  <div class="berlaku-note">
+    Surat Peringatan ini berlaku selama <strong>6 (enam) bulan</strong>
+    terhitung sejak tanggal {{ sp.tanggal_sp|date:"d F Y" }}
+    sampai dengan {{ sp.tanggal_berlaku_sampai|date:"d F Y" }}.
+    {% if sp.is_eskalasi %} — Merupakan eskalasi dari SP sebelumnya.{% endif %}
+  </div>
+
+</div>
+
+<div class="no-print" style="text-align:center;padding:16px;">
+  <button onclick="window.print()" style="padding:8px 24px;background:#dc3545;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px;">
+    🖨️ Cetak Surat
+  </button>
+  <a href="{% url 'sp_detail' sp.pk %}" style="margin-left:12px;color:#666;text-decoration:none;">← Kembali</a>
+</div>
+</body>
+</html>

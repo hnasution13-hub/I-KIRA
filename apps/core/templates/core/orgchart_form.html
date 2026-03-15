@@ -1,0 +1,53 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Buat Org Chart{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">Buat Org Chart Baru</h4>
+  <a href="{% url 'orgchart_list' %}" class="btn btn-outline-secondary btn-sm">← Kembali</a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:560px">
+  <div class="card-body">
+    <p class="text-muted small mb-4">
+      Org chart dibuat otomatis dari data jabatan yang sudah diatur hierarkinya.
+      Pastikan field <strong>Atasan Jabatan</strong> di setiap Jabatan sudah diisi.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Nama Org Chart</label>
+        <input type="text" name="nama" class="form-control" required placeholder="Cth: Struktur Organisasi 2026">
+      </div>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">Periode (tahun)</label>
+          <input type="text" name="periode" class="form-control" placeholder="2026" maxlength="7">
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="draft">Draft</option>
+            <option value="aktif">Langsung Aktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">Berlaku Mulai</label>
+          <input type="date" name="berlaku_mulai" class="form-control" required>
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Berlaku Sampai <small class="text-muted">(opsional)</small></label>
+          <input type="date" name="berlaku_sampai" class="form-control">
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Deskripsi <small class="text-muted">(opsional)</small></label>
+        <textarea name="deskripsi" class="form-control" rows="2"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Buat Org Chart</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

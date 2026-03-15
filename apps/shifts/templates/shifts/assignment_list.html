@@ -1,0 +1,111 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Assignment Shift{% endblock %}
+{% block breadcrumb %}Shift / Assignment{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-user-clock me-2 text-success"></i>Assignment Shift</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'shift_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-layer-group me-1"></i>Master Shift
+        </a>
+        <a href="{% url 'assignment_add' %}" class="btn btn-success btn-sm">
+            <i class="fas fa-plus me-1"></i>Tambah Assignment
+        </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-3"><div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Departemen</label>
+            <select name="dept" class="form-select form-select-sm">
+                <option value="">Semua Departemen</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}" {% if dept_filter == d.id|stringformat:"s" %}selected{% endif %}>{{ d.nama }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Shift</label>
+            <select name="shift" class="form-select form-select-sm">
+                <option value="">Semua Shift</option>
+                {% for s in shifts %}
+                <option value="{{ s.id }}" {% if shift_filter == s.id|stringformat:"s" %}selected{% endif %}>{{ s.kode }} — {{ s.nama }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search me-1"></i>Filter</button>
+            <a href="{% url 'assignment_list' %}" class="btn btn-outline-secondary btn-sm ms-1">Reset</a>
+        </div>
+    </form>
+</div></div>
+
+<div class="card"><div class="card-body p-0">
+    <div class="table-responsive-wrap">
+<table class="table table-hover mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>Target</th>
+                <th>Shift</th>
+                <th>Berlaku Mulai</th>
+                <th>Berlaku Sampai</th>
+                <th>Hari Spesifik</th>
+                <th>Keterangan</th>
+                <th class="text-center">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in assignments %}
+            <tr>
+                <td>
+                    {% if a.employee %}
+                        <i class="fas fa-user text-primary me-1"></i>{{ a.employee.nama }}
+                        <br><small class="text-muted">{{ a.employee.department|default:"-" }}</small>
+                    {% else %}
+                        <i class="fas fa-sitemap text-success me-1"></i>Dept: {{ a.department.nama }}
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge" style="background:{{ a.shift.warna }}">{{ a.shift.kode }}</span>
+                    {{ a.shift.nama }}
+                </td>
+                <td>{{ a.berlaku_mulai|date:"d/m/Y" }}</td>
+                <td>{{ a.berlaku_sampai|date:"d/m/Y"|default:"<span class='text-success'>Permanen</span>" }}</td>
+                <td>
+                    {% if a.hari_spesifik is not None %}
+                        {{ a.get_hari_spesifik_display }}
+                    {% else %}
+                        <small class="text-muted">Semua hari</small>
+                    {% endif %}
+                </td>
+                <td><small>{{ a.keterangan|default:"-" }}</small></td>
+                <td class="text-center">
+                    <a href="{% url 'assignment_edit' a.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{% url 'assignment_delete' a.pk %}" class="btn btn-outline-danger btn-sm ms-1">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr class="dt-empty">
+                    <td colspan="7" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-user-clock"></i></div>
+                            <div class="empty-state-title">Belum ada penugasan shift</div>
+                            <div class="empty-state-desc">Assign shift ke karyawan untuk mengatur jadwal kerja.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'assignment_add' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Penugasan</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div></div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{% if instance %}Edit{% else %}Tambah{% endif %} Jabatan{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">{% if instance %}Edit Jabatan: {{ instance.nama }}{% else %}Tambah Jabatan{% endif %}</h4>
+  <a href="{% url 'job_library_list' %}" class="btn btn-outline-secondary btn-sm">← Kembali</a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:680px">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+
+      {# ── Identitas ──────────────────────────────────────────────────── #}
+      <h6 class="text-muted mb-3 border-bottom pb-2">Identitas Jabatan</h6>
+      <div class="row">
+        <div class="col-8 mb-3">
+          <label class="form-label">Nama Jabatan <span class="text-danger">*</span></label>
+          <input type="text" name="nama" class="form-control" required value="{{ instance.nama|default:'' }}">
+        </div>
+        <div class="col-4 mb-3">
+          <label class="form-label">Level <span class="text-danger">*</span></label>
+          <select name="level" class="form-select" required>
+            {% for val, label in level_choices %}
+            <option value="{{ val }}" {% if instance.level == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">Departemen</label>
+          <select name="department" class="form-select">
+            <option value="">— Pilih departemen —</option>
+            {% for d in departments %}
+            <option value="{{ d.pk }}" {% if instance.department_id == d.pk %}selected{% endif %}>{{ d.nama }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Pilih departemen untuk filter daftar atasan jabatan.</div>
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Atasan Jabatan
+            <span class="text-muted small" data-bs-toggle="tooltip" title="Jabatan atasan langsung dalam hierarki org chart">(?)</span>
+          </label>
+          <select name="parent" class="form-select">
+            <option value="">— Puncak hierarki —</option>
+          </select>
+          <div class="form-text">Otomatis terfilter sesuai departemen yang dipilih.</div>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Deskripsi Singkat</label>
+        <textarea name="deskripsi" class="form-control" rows="2">{{ instance.deskripsi|default:'' }}</textarea>
+      </div>
+
+      {# ── Job Desc & Kualifikasi ──────────────────────────────────────── #}
+      <h6 class="text-muted mb-3 border-bottom pb-2">Job Description & Kualifikasi</h6>
+      <div class="mb-3">
+        <label class="form-label">Job Description</label>
+        <textarea name="job_desc" class="form-control" rows="4">{{ instance.job_desc|default:'' }}</textarea>
+      </div>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">Skill Wajib <small class="text-muted">(pisah koma)</small></label>
+          <input type="text" name="skill_wajib" class="form-control" value="{{ instance.skill_wajib|default:'' }}"
+                 placeholder="Python, SQL, MS Excel">
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Skill Diinginkan <small class="text-muted">(pisah koma)</small></label>
+          <input type="text" name="skill_diinginkan" class="form-control" value="{{ instance.skill_diinginkan|default:'' }}">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">Pendidikan Minimum</label>
+          <select name="pendidikan_min" class="form-select">
+            <option value="">Tidak Ditentukan</option>
+            {% for val, label in instance.PENDIDIKAN_CHOICES|default:'' %}
+            <option value="{{ val }}" {% if instance.pendidikan_min == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Pengalaman Min (tahun)</label>
+          <input type="number" name="pengalaman_min" class="form-control" min="0"
+                 value="{{ instance.pengalaman_min|default:0 }}">
+        </div>
+      </div>
+
+      {# ── Bobot ATS ───────────────────────────────────────────────────── #}
+      <h6 class="text-muted mb-3 border-bottom pb-2">Bobot ATS <small class="fw-normal">(total harus 100%)</small></h6>
+      <div class="row">
+        {% with fields="bobot_skill_wajib:Skill Wajib:40,bobot_pengalaman:Pengalaman:25,bobot_pendidikan:Pendidikan:20,bobot_skill_tambahan:Skill Diinginkan:15" %}
+        <div class="col-6 mb-3">
+          <label class="form-label">Skill Wajib (%)</label>
+          <input type="number" name="bobot_skill_wajib" class="form-control bobot-input"
+                 value="{{ instance.bobot_skill_wajib|default:40 }}" min="0" max="100">
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Pengalaman (%)</label>
+          <input type="number" name="bobot_pengalaman" class="form-control bobot-input"
+                 value="{{ instance.bobot_pengalaman|default:25 }}" min="0" max="100">
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Pendidikan (%)</label>
+          <input type="number" name="bobot_pendidikan" class="form-control bobot-input"
+                 value="{{ instance.bobot_pendidikan|default:20 }}" min="0" max="100">
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Skill Diinginkan (%)</label>
+          <input type="number" name="bobot_skill_tambahan" class="form-control bobot-input"
+                 value="{{ instance.bobot_skill_tambahan|default:15 }}" min="0" max="100">
+        </div>
+        {% endwith %}
+      </div>
+      <div id="bobot-total-warn" class="alert alert-warning py-2 small d-none mb-3">
+        Total bobot: <strong id="bobot-total">100</strong>% — harus tepat 100%.
+      </div>
+
+      <button type="submit" class="btn btn-primary">Simpan Jabatan</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// ── Bobot ATS validation ─────────────────────────────────────────────────────
+const inputs = document.querySelectorAll('.bobot-input');
+const warn   = document.getElementById('bobot-total-warn');
+const total  = document.getElementById('bobot-total');
+function checkBobot() {
+  const sum = [...inputs].reduce((a, i) => a + (parseInt(i.value) || 0), 0);
+  total.textContent = sum;
+  warn.classList.toggle('d-none', sum === 100);
+}
+inputs.forEach(i => i.addEventListener('input', checkBobot));
+checkBobot();
+
+// ── Cascade: Departemen → Atasan Jabatan ─────────────────────────────────────
+const deptSelect   = document.querySelector('select[name="department"]');
+const parentSelect = document.querySelector('select[name="parent"]');
+const currentParentId = {{ instance.parent_id|default:'null' }};
+
+function loadPositionsByDept(deptId, preselectId) {
+  // Reset dropdown
+  parentSelect.innerHTML = '<option value="">— Puncak hierarki —</option>';
+
+  if (!deptId) {
+    // Kalau tidak ada dept dipilih, muat semua jabatan
+    fetch('/api/positions/')
+      .then(r => r.json())
+      .then(data => fillParentOptions(data.positions, preselectId));
+    return;
+  }
+
+  parentSelect.innerHTML = '<option value="" disabled>Memuat...</option>';
+  fetch(`/api/positions/?department=${deptId}`)
+    .then(r => r.json())
+    .then(data => {
+      fillParentOptions(data.positions, preselectId);
+    })
+    .catch(() => {
+      parentSelect.innerHTML = '<option value="">— Puncak hierarki —</option>';
+    });
+}
+
+function fillParentOptions(positions, preselectId) {
+  parentSelect.innerHTML = '<option value="">— Puncak hierarki —</option>';
+  // Exclude jabatan yang sedang diedit (hindari self-parent)
+  const currentId = {{ instance.pk|default:'null' }};
+  positions
+    .filter(p => p.id !== currentId)
+    .forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.nama} (${p.level})`;
+      if (preselectId && p.id === preselectId) opt.selected = true;
+      parentSelect.appendChild(opt);
+    });
+}
+
+// Saat departemen berubah → reload parent options, reset preselect
+deptSelect.addEventListener('change', function() {
+  loadPositionsByDept(this.value, null);
+});
+
+// Inisialisasi: load berdasarkan dept yang sudah terpilih (mode edit)
+const initialDeptId = deptSelect.value;
+loadPositionsByDept(initialDeptId, currentParentId);
+</script>
+{% endblock %}

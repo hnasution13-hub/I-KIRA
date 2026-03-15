@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HRIS QA Simulator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--bg2:#141414;--bg3:#1a1a1a;--surface:#202020;
+  --border:#2a2a2a;--border2:#333;--text:#f0f0f0;--muted:#777;
+  --red:#e63329;--green:#22c55e;--yellow:#f59e0b;--blue:#3b82f6;
+  --font:'Segoe UI',system-ui,sans-serif;--mono:'Consolas','Courier New',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px}
+
+/* ── Layout ── */
+.app{display:grid;grid-template-columns:230px 1fr;height:100vh;overflow:hidden}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.logo{padding:16px;border-bottom:1px solid var(--border)}
+.logo-title{font-size:14px;font-weight:700;color:#fff}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.nav-group{padding:12px 8px 4px}
+.nav-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:0 8px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;border-radius:6px;color:var(--muted);transition:all .12s;user-select:none}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:var(--surface);color:#fff;font-weight:500}
+.nav-item svg{flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;padding:1px 5px;border-radius:8px;font-weight:700}
+.nav-badge.green{background:var(--green)}
+.nav-badge.yellow{background:var(--yellow);color:#000}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border)}
+
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.topbar-title{font-size:14px;font-weight:600;flex:1}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.status-dot.green{background:var(--green);box-shadow:0 0 6px var(--green)}
+.status-dot.red{background:var(--red);box-shadow:0 0 6px var(--red)}
+.status-dot.yellow{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+.btn{border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:var(--font);font-weight:500;transition:all .12s}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:#c0211a}
+.btn-red:disabled{opacity:.4;cursor:default}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2)}.btn-ghost:hover{background:var(--surface);color:var(--text)}
+.btn-green{background:var(--green);color:#000}.btn-green:hover{filter:brightness(1.1)}
+.content{flex:1;overflow-y:auto;padding:20px}
+.page{display:none}.page.active{display:block}
+
+/* ── Config Panel ── */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:700px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+input,select,textarea{background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;color:var(--text);font-size:13px;font-family:var(--font);width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
+textarea{resize:vertical;min-height:60px}
+.config-section{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px}
+.config-section-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.check-row{display:flex;align-items:center;gap:8px;padding:5px 0}
+.check-row input[type=checkbox]{width:auto;accent-color:var(--red)}
+.check-row label{font-size:12px;color:var(--text);cursor:pointer}
+
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.stat-label{font-size:11px;color:var(--muted);margin-bottom:4px}
+.stat-val{font-size:24px;font-weight:700}
+.progress-wrap{margin-bottom:20px}
+.progress-bar{height:5px;background:var(--surface);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:var(--red);transition:width .4s}
+.progress-fill.green{background:var(--green)}
+.progress-label{font-size:11px;color:var(--muted);margin-top:5px}
+
+/* ── Scenario List ── */
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.filter-chip{border:1px solid var(--border2);background:transparent;color:var(--muted);border-radius:20px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:var(--font);transition:all .12s}
+.filter-chip:hover{border-color:var(--border);color:var(--text)}
+.filter-chip.active{border-color:var(--red);color:var(--red)}
+.scenario-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;margin-bottom:6px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.scenario-item.pass{border-color:#166534;background:rgba(34,197,94,.05)}
+.scenario-item.fail{border-color:#7f1d1d;background:rgba(230,51,41,.07)}
+.scenario-item.running{border-color:var(--yellow);background:rgba(245,158,11,.05)}
+.scenario-item.skip{opacity:.4}
+.scenario-name{font-size:12px;font-weight:500;margin-bottom:2px}
+.scenario-meta{font-size:11px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.scenario-right{display:flex;align-items:center;gap:6px}
+.badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;white-space:nowrap}
+.badge-red{background:rgba(230,51,41,.2);color:#f87171}
+.badge-green{background:rgba(34,197,94,.15);color:#4ade80}
+.badge-yellow{background:rgba(245,158,11,.15);color:#fbbf24}
+.badge-blue{background:rgba(59,130,246,.15);color:#60a5fa}
+.badge-muted{background:var(--surface);color:var(--muted)}
+.run-one-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--font)}
+.run-one-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ── Log ── */
+.log-container{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.7;max-height:320px;overflow-y:auto}
+.log-line{padding:1px 0}
+.log-line.ok{color:#4ade80}
+.log-line.err{color:#f87171}
+.log-line.warn{color:#fbbf24}
+.log-line.info{color:#60a5fa}
+.log-line.muted{color:var(--muted)}
+.log-line.head{color:var(--text);font-weight:600}
+
+/* ── Issue Tracker ── */
+.issue-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.issue-header{display:flex;align-items:flex-start;gap:10px}
+.issue-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px}
+.issue-icon.bug{background:rgba(230,51,41,.15)}
+.issue-icon.warning{background:rgba(245,158,11,.15)}
+.issue-icon.pass{background:rgba(34,197,94,.12)}
+.issue-body{flex:1}
+.issue-title{font-size:13px;font-weight:500;margin-bottom:3px}
+.issue-meta{font-size:11px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.issue-detail{margin-top:8px;padding:8px 10px;background:var(--bg2);border-radius:5px;font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.6;white-space:pre-wrap}
+.issue-response{margin-top:6px;padding:6px 10px;background:var(--surface);border-radius:5px;font-size:11px;color:var(--text);line-height:1.5}
+.collapsible{cursor:pointer;user-select:none}
+.collapsible::after{content:' ▸';color:var(--muted);font-size:10px}
+.collapsible.open::after{content:' ▾'}
+
+/* ── Report ── */
+.report-table{width:100%;border-collapse:collapse}
+.report-table th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.report-table td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px}
+.report-table tr:last-child td{border-bottom:none}
+.report-table tr:hover td{background:var(--surface)}
+.health-score{font-size:48px;font-weight:800;text-align:center;padding:20px 0}
+.module-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.module-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px}
+.module-name{font-size:12px;font-weight:600;margin-bottom:6px}
+.module-bar{height:4px;background:var(--surface);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.module-bar-fill{height:100%;border-radius:2px;transition:width .5s}
+.module-stats{font-size:11px;color:var(--muted)}
+
+/* ── Manual Form ── */
+.manual-form{max-width:640px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row.full{grid-template-columns:1fr}
+.success-flash{padding:10px 14px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#4ade80;font-size:12px;margin-top:8px}
+
+/* ── Tabs ── */
+.tab-row{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab-btn{padding:8px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;margin-bottom:-1px;transition:all .12s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--red);font-weight:500}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── Spinner ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:10px;height:10px;border:2px solid var(--border2);border-top-color:var(--yellow);border-radius:50%;animation:spin .7s linear infinite}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-title">⬡ HRIS QA Simulator</div>
+      <div class="logo-sub">User simulation &amp; bug reporter</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Utama</div>
+      <div class="nav-item active" onclick="nav('config',this)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        Konfigurasi
+      </div>
+      <div class="nav-item" onclick="nav('run',this)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+        Jalankan Test
+        <span class="nav-badge yellow" id="badge-run">0</span>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Hasil</div>
+      <div class="nav-item" onclick="nav('issues',this)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        Issue Tracker
+        <span class="nav-badge" id="badge-issues">0</span>
+      </div>
+      <div class="nav-item" onclick="nav('report',this)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Laporan
+      </div>
+      <div class="nav-item" onclick="nav('manual',this)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Input Manual
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div style="font-size:11px;color:var(--muted)" id="server-status-text">Server: belum ditest</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px" id="last-run-text">—</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="status-dot" id="topbar-dot"></div>
+      <div class="topbar-title" id="topbar-title">Konfigurasi</div>
+      <button class="btn btn-ghost" onclick="exportReport()">⬇ Export JSON</button>
+      <button class="btn btn-red" id="run-all-btn" onclick="runAll()" disabled>▶ Jalankan Semua</button>
+    </div>
+
+    <div class="content">
+
+      <!-- ═══════════════ CONFIG PAGE ═══════════════ -->
+      <div class="page active" id="page-config">
+        <div class="config-section">
+          <div class="config-section-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Target Server
+          </div>
+          <div class="config-grid">
+            <div class="field">
+              <div class="field-label">Base URL</div>
+              <input type="text" id="cfg-url" value="http://127.0.0.1:8000" placeholder="http://127.0.0.1:8000">
+            </div>
+            <div class="field">
+              <div class="field-label">Timeout (detik)</div>
+              <input type="number" id="cfg-timeout" value="10" min="3" max="60">
+            </div>
+          </div>
+          <button class="btn btn-ghost" style="margin-top:10px" onclick="pingServer()">⚡ Test Koneksi</button>
+          <span id="ping-result" style="font-size:12px;margin-left:10px;color:var(--muted)"></span>
+        </div>
+
+        <div class="config-section">
+          <div class="config-section-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Akun Login (Admin/HR)
+          </div>
+          <div class="config-grid">
+            <div class="field">
+              <div class="field-label">Username</div>
+              <input type="text" id="cfg-user" value="admin" placeholder="admin">
+            </div>
+            <div class="field">
+              <div class="field-label">Password</div>
+              <input type="password" id="cfg-pass" value="" placeholder="password admin">
+            </div>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="config-section-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Akun Portal Karyawan
+          </div>
+          <div class="config-grid">
+            <div class="field">
+              <div class="field-label">Username Karyawan</div>
+              <input type="text" id="cfg-portal-user" value="" placeholder="username karyawan">
+            </div>
+            <div class="field">
+              <div class="field-label">Password</div>
+              <input type="password" id="cfg-portal-pass" value="" placeholder="password karyawan">
+            </div>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="config-section-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Pilih Skenario yang Dijalankan
+          </div>
+          <div id="scenario-checklist" style="display:grid;grid-template-columns:1fr 1fr;gap:4px"></div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-ghost" style="font-size:11px" onclick="checkAll(true)">Pilih Semua</button>
+            <button class="btn btn-ghost" style="font-size:11px" onclick="checkAll(false)">Batal Semua</button>
+          </div>
+        </div>
+
+        <button class="btn btn-red" style="padding:9px 22px;font-size:13px" onclick="saveConfigAndGo()">Simpan &amp; Mulai Test →</button>
+      </div>
+
+      <!-- ═══════════════ RUN PAGE ═══════════════ -->
+      <div class="page" id="page-run">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val" id="s-total">0</div></div>
+          <div class="stat-card"><div class="stat-label">Berjalan</div><div class="stat-val" style="color:var(--yellow)" id="s-run">0</div></div>
+          <div class="stat-card"><div class="stat-label">Lulus</div><div class="stat-val" style="color:var(--green)" id="s-pass">0</div></div>
+          <div class="stat-card"><div class="stat-label">Gagal</div><div class="stat-val" style="color:var(--red)" id="s-fail">0</div></div>
+          <div class="stat-card"><div class="stat-label">Dilewati</div><div class="stat-val" style="color:var(--muted)" id="s-skip">0</div></div>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill" id="main-progress" style="width:0%"></div></div>
+          <div class="progress-label" id="progress-label">Belum dimulai</div>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+          <div class="filter-row" style="margin:0;flex:1">
+            <button class="filter-chip active" onclick="filterScen('all',this)">Semua</button>
+            <button class="filter-chip" onclick="filterScen('employees',this)">Karyawan</button>
+            <button class="filter-chip" onclick="filterScen('portal',this)">Portal</button>
+            <button class="filter-chip" onclick="filterScen('attendance',this)">Absensi</button>
+            <button class="filter-chip" onclick="filterScen('payroll',this)">Payroll</button>
+            <button class="filter-chip" onclick="filterScen('contracts',this)">Kontrak</button>
+            <button class="filter-chip" onclick="filterScen('other',this)">Lainnya</button>
+          </div>
+        </div>
+
+        <div id="scenario-list"></div>
+
+        <div style="margin-top:14px">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Log Realtime</div>
+          <div class="log-container" id="main-log">
+            <div class="log-line muted">// Klik "Jalankan Semua" untuk mulai simulasi...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ ISSUES PAGE ═══════════════ -->
+      <div class="page" id="page-issues">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="filter-row" style="margin:0">
+            <button class="filter-chip active" onclick="filterIssue('all',this)">Semua</button>
+            <button class="filter-chip" onclick="filterIssue('bug',this)">Bug</button>
+            <button class="filter-chip" onclick="filterIssue('warning',this)">Warning</button>
+            <button class="filter-chip" onclick="filterIssue('pass',this)">Passed</button>
+          </div>
+          <button class="btn btn-ghost" style="font-size:11px" onclick="nav('manual',document.querySelectorAll('.nav-item')[4])">+ Tambah Manual</button>
+        </div>
+        <div id="issue-list"></div>
+      </div>
+
+      <!-- ═══════════════ REPORT PAGE ═══════════════ -->
+      <div class="page" id="page-report">
+        <div class="tab-row">
+          <button class="tab-btn active" onclick="switchTab('rpt-overview',this)">Overview</button>
+          <button class="tab-btn" onclick="switchTab('rpt-modules',this)">Per Modul</button>
+          <button class="tab-btn" onclick="switchTab('rpt-detail',this)">Tabel Detail</button>
+          <button class="tab-btn" onclick="switchTab('rpt-log',this)">Full Log</button>
+        </div>
+        <div class="tab-panel active" id="rpt-overview"></div>
+        <div class="tab-panel" id="rpt-modules"></div>
+        <div class="tab-panel" id="rpt-detail"></div>
+        <div class="tab-panel" id="rpt-log"></div>
+      </div>
+
+      <!-- ═══════════════ MANUAL PAGE ═══════════════ -->
+      <div class="page" id="page-manual">
+        <div class="manual-form">
+          <div class="config-section">
+            <div class="config-section-title">Tambah Issue / Keluhan Manual</div>
+            <div class="form-row">
+              <div class="field"><div class="field-label">Modul</div>
+                <select id="m-module">
+                  <option>employees</option><option>portal</option><option>attendance</option>
+                  <option>payroll</option><option>contracts</option><option>recruitment</option>
+                  <option>reports</option><option>assets</option><option>performance</option>
+                  <option>industrial</option><option>shifts</option><option>other</option>
+                </select>
+              </div>
+              <div class="field"><div class="field-label">Tipe</div>
+                <select id="m-type">
+                  <option value="bug">🔴 Bug / Error</option>
+                  <option value="warning">🟡 Warning / UX Issue</option>
+                  <option value="pass">🟢 Passed / OK</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field"><div class="field-label">Prioritas</div>
+                <select id="m-prio">
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div class="field"><div class="field-label">URL / Endpoint</div>
+                <input type="text" id="m-url" placeholder="/employees/edit/1/">
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="field"><div class="field-label">Judul Issue</div>
+                <input type="text" id="m-title" placeholder="Contoh: Tab Data Pribadi tidak bisa diklik">
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="field"><div class="field-label">Steps to Reproduce</div>
+                <textarea id="m-steps" rows="3" placeholder="1. Buka halaman edit karyawan&#10;2. Klik tab 'Data Pribadi'&#10;3. Halaman tidak berubah"></textarea>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="field"><div class="field-label">Expected vs Actual</div>
+                <textarea id="m-expected" rows="2" placeholder="Expected: Tab berpindah dan form Data Pribadi muncul&#10;Actual: Tidak ada respons saat tab diklik"></textarea>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="field"><div class="field-label">HTTP Response (jika ada)</div>
+                <textarea id="m-response" rows="2" placeholder="HTTP 500 / TypeError: Cannot read property 'active' of null"></textarea>
+              </div>
+            </div>
+            <button class="btn btn-red" style="padding:8px 20px" onclick="submitManual()">Simpan Issue</button>
+            <div id="manual-ok" style="display:none" class="success-flash">✓ Issue berhasil disimpan — cek di Issue Tracker</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .content -->
+  </div><!-- .main -->
+</div><!-- .app -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const S = {
+  baseUrl: 'http://127.0.0.1:8000',
+  timeout: 10000,
+  adminUser: 'admin',
+  adminPass: '',
+  portalUser: '',
+  portalPass: '',
+  csrfToken: '',
+  portalCsrf: '',
+  sessionCookies: '',
+  portalCookies: '',
+  running: false,
+  results: {},
+  issues: [],
+  logs: [],
+  scFilter: 'all',
+  issFilter: 'all',
+  enabled: {},
+  startTime: null,
+};
+
+// ═══════════════════════════════════════════════════════════
+//  SKENARIO DEFINISI
+// ═══════════════════════════════════════════════════════════
+const SCENARIOS = [
+  // ── Auth ──────────────────────────────────────────────
+  { id:'auth-1', module:'auth', name:'Login admin berhasil',
+    desc:'POST /login/ dengan kredensial valid → session terbentuk',
+    url:'/login/', method:'POST', auth:'admin',
+    test: async ()=>{ return await testAdminLogin(); } },
+
+  { id:'auth-2', module:'auth', name:'Login dengan password salah',
+    desc:'POST /login/ dengan password salah → error message',
+    url:'/login/', method:'POST',
+    test: async ()=>{ return await testBadLogin(); } },
+
+  // ── Employees ─────────────────────────────────────────
+  { id:'emp-1', module:'employees', name:'Daftar karyawan tampil (200)',
+    desc:'GET /employees/ → HTTP 200, konten tabel',
+    url:'/employees/', method:'GET',
+    test: async ()=>{ return await testGet('/employees/','Karyawan',200); } },
+
+  { id:'emp-2', module:'employees', name:'Form tambah karyawan tampil',
+    desc:'GET /employees/add/ → form dengan semua tab',
+    url:'/employees/add/', method:'GET',
+    test: async ()=>{ return await testGet('/employees/add/','emp-form-progress',200); } },
+
+  { id:'emp-3', module:'employees', name:'Tab form karyawan (CSS terdefinisi)',
+    desc:'GET /employees/add/ → .emp-step, role=tablist ada di HTML',
+    url:'/employees/add/', method:'GET',
+    test: async ()=>{
+      const r = await httpGet('/employees/');
+      if(!r.ok) return fail('Tidak bisa akses /employees/');
+      const body = await httpGet('/employees/add/');
+      if(!body.ok) return fail('Tidak bisa akses form tambah karyawan');
+      const html = body.text;
+      const checks = [
+        ['role="tablist"', html.includes('role="tablist"')],
+        ['data-empstep', html.includes('data-empstep')],
+        ['.emp-step CSS', html.includes('.emp-step')],
+        ['tab-pane#tab-pribadi', html.includes('id="tab-pribadi"')],
+      ];
+      const failed = checks.filter(c=>!c[1]);
+      if(failed.length) return fail('Missing: '+failed.map(c=>c[0]).join(', '));
+      return pass('Tab navigator OK — '+checks.map(c=>c[0]).join(', ')+' semua ditemukan');
+    }},
+
+  { id:'emp-4', module:'employees', name:'Redirect ke login jika belum auth',
+    desc:'GET /employees/ tanpa session → redirect 302 ke /login/',
+    url:'/employees/', method:'GET',
+    test: async ()=>{
+      const r = await fetch(S.baseUrl+'/employees/',{redirect:'manual',signal:AbortSignal.timeout(S.timeout),credentials:'omit'}).catch(e=>null);
+      if(!r) return fail('Server tidak bisa dihubungi');
+      if(r.status===302||r.status===301) return pass('Redirect '+r.status+' → '+r.headers.get('location'));
+      if(r.status===200){
+        const t=await r.text();
+        if(t.includes('login')||t.includes('Login')) return pass('Redirect ke login (via response body)');
+        return fail('HTTP 200 tanpa redirect — halaman terekspos tanpa login');
+      }
+      return pass('HTTP '+r.status+' — akses dikontrol');
+    }},
+
+  // ── Portal ────────────────────────────────────────────
+  { id:'portal-1', module:'portal', name:'Halaman login portal tampil',
+    desc:'GET /karyawan/login/ → form login',
+    url:'/karyawan/login/', method:'GET',
+    test: async ()=>{ return await testGet('/karyawan/login/','Portal Karyawan',200); } },
+
+  { id:'portal-2', module:'portal', name:'Login portal karyawan',
+    desc:'POST /karyawan/login/ → redirect ke dashboard portal',
+    url:'/karyawan/login/', method:'POST',
+    test: async ()=>{ return await testPortalLogin(); } },
+
+  { id:'portal-3', module:'portal', name:'Dashboard portal tampil',
+    desc:'GET /karyawan/ → clock-card, stat-card, data absensi',
+    url:'/karyawan/', method:'GET',
+    test: async ()=>{ return await testPortalGet('/karyawan/','portal_dashboard',200); } },
+
+  { id:'portal-4', module:'portal', name:'Halaman profil karyawan',
+    desc:'GET /karyawan/profile/ → form biodata dengan dark theme',
+    url:'/karyawan/profile/', method:'GET',
+    test: async ()=>{
+      const r = await httpPortalGet('/karyawan/profile/');
+      if(!r.ok) return fail('HTTP '+r.status);
+      const html = r.text;
+      const checks = [
+        ['.profile-header CSS', html.includes('.profile-header')],
+        ['.card-wrap CSS', html.includes('.card-wrap')],
+        ['.form-control CSS', html.includes('.form-control')],
+        ['--bg dark theme', html.includes('--bg:')],
+      ];
+      const failed = checks.filter(c=>!c[1]);
+      if(failed.length) return warn('CSS kurang: '+failed.map(c=>c[0]).join(', '));
+      return pass('Profil OK — semua CSS class ditemukan');
+    }},
+
+  { id:'portal-5', module:'portal', name:'Halaman offline (PWA)',
+    desc:'GET /karyawan/offline/ → dark theme, CSS vars',
+    url:'/karyawan/offline/', method:'GET',
+    test: async ()=>{
+      const r = await httpGetNoAuth('/karyawan/offline/');
+      if(!r.ok) return fail('HTTP '+r.status);
+      const html = r.text;
+      if(!html.includes('--bg')) return warn('CSS variable --bg tidak ditemukan');
+      if(!html.includes('favicon')) return warn('Favicon tidak ditemukan');
+      return pass('Offline page OK');
+    }},
+
+  // ── Attendance ────────────────────────────────────────
+  { id:'att-1', module:'attendance', name:'Daftar absensi tampil',
+    desc:'GET /attendance/ → tabel absensi',
+    url:'/attendance/', method:'GET',
+    test: async ()=>{ return await testGet('/attendance/','attendance',200); } },
+
+  { id:'att-2', module:'attendance', name:'Halaman leave/cuti tampil',
+    desc:'GET /attendance/leave/ → list cuti',
+    url:'/attendance/leave/', method:'GET',
+    test: async ()=>{ return await testGet('/attendance/leave/','leave',200); } },
+
+  // ── Payroll ───────────────────────────────────────────
+  { id:'pay-1', module:'payroll', name:'Daftar payroll tampil',
+    desc:'GET /payroll/ → halaman payroll',
+    url:'/payroll/', method:'GET',
+    test: async ()=>{ return await testGet('/payroll/','payroll',200); } },
+
+  { id:'pay-2', module:'payroll', name:'Halaman salary list tampil',
+    desc:'GET /payroll/salary/ → daftar gaji karyawan',
+    url:'/payroll/salary/', method:'GET',
+    test: async ()=>{ return await testGet('/payroll/salary/','salary',200); } },
+
+  // ── Contracts ─────────────────────────────────────────
+  { id:'con-1', module:'contracts', name:'Daftar kontrak tampil',
+    desc:'GET /contracts/ → list kontrak',
+    url:'/contracts/', method:'GET',
+    test: async ()=>{ return await testGet('/contracts/','contract',200); } },
+
+  { id:'con-2', module:'contracts', name:'pkwt_print WAJIB login',
+    desc:'GET /contracts/1/pkwt-print/ tanpa session → harus redirect ke login',
+    url:'/contracts/1/pkwt-print/', method:'GET',
+    test: async ()=>{
+      const r = await fetch(S.baseUrl+'/contracts/1/pkwt-print/',{redirect:'manual',signal:AbortSignal.timeout(S.timeout)}).catch(e=>null);
+      if(!r) return fail('Server tidak bisa dihubungi');
+      if(r.status===302||r.status===301) return pass('Terproteksi — redirect '+r.status+' ke '+r.headers.get('location'));
+      if(r.status===404) return pass('HTTP 404 (tidak ada data) — endpoint ada tapi butuh login');
+      if(r.status===200){
+        const t=await r.text();
+        if(t.includes('login')||t.includes('Login')||t.toLowerCase().includes('masuk')) return pass('Redirect ke login via body');
+        return fail('HTTP 200 tanpa auth — PKWT dokumen TEREKSPOS tanpa login! (Security issue)');
+      }
+      return pass('HTTP '+r.status+' — endpoint terkontrol');
+    }},
+
+  // ── Reports ───────────────────────────────────────────
+  { id:'rpt-1', module:'reports', name:'Halaman laporan tampil',
+    desc:'GET /reports/ → halaman laporan',
+    url:'/reports/', method:'GET',
+    test: async ()=>{ return await testGet('/reports/','report',200); } },
+
+  // ── Assets ────────────────────────────────────────────
+  { id:'ast-1', module:'assets', name:'Daftar aset tampil',
+    desc:'GET /asset/ → list aset',
+    url:'/asset/', method:'GET',
+    test: async ()=>{ return await testGet('/asset/','asset',200); } },
+
+  { id:'ast-2', module:'assets', name:'asset_card partial load static',
+    desc:'GET /asset/ → {% load static %} ada di response',
+    url:'/asset/', method:'GET',
+    test: async ()=>{
+      const r = await httpGet('/asset/');
+      if(!r.ok) return fail('HTTP '+r.status);
+      // Cek tidak ada error "Invalid block tag: static"
+      if(r.text.includes('Invalid block tag') && r.text.includes('static'))
+        return fail('Template error: {% static %} tanpa {% load static %}');
+      if(r.text.includes('TemplateSyntaxError'))
+        return fail('TemplateSyntaxError ditemukan di response');
+      return pass('Tidak ada template error');
+    }},
+
+  // ── Performance ───────────────────────────────────────
+  { id:'perf-1', module:'other', name:'Dashboard performa tampil',
+    desc:'GET /performance/ → halaman KPI',
+    url:'/performance/', method:'GET',
+    test: async ()=>{ return await testGet('/performance/','performance',200); } },
+
+  // ── Industrial ────────────────────────────────────────
+  { id:'ind-1', module:'other', name:'Halaman SP/Pelanggaran tampil',
+    desc:'GET /industrial/violations/ → list pelanggaran',
+    url:'/industrial/violations/', method:'GET',
+    test: async ()=>{ return await testGet('/industrial/violations/','violation',200); } },
+
+  // ── Recruitment ───────────────────────────────────────
+  { id:'rec-1', module:'other', name:'Daftar kandidat tampil',
+    desc:'GET /recruitment/candidate/ → list kandidat',
+    url:'/recruitment/candidates/', method:'GET',
+    test: async ()=>{ return await testGet('/recruitment/candidates/','candidate',200); } },
+
+  // ── Security checks ───────────────────────────────────
+  { id:'sec-1', module:'security', name:'Custom categories AJAX butuh login',
+    desc:'GET /custom-categories/load-subcategories/ tanpa auth → bukan 200',
+    url:'/custom-categories/load-subcategories/', method:'GET',
+    test: async ()=>{
+      const r = await fetch(S.baseUrl+'/custom-categories/load-subcategories/',{redirect:'manual',signal:AbortSignal.timeout(S.timeout)}).catch(e=>null);
+      if(!r) return fail('Server tidak bisa dihubungi');
+      if(r.status===302||r.status===301) return pass('Terproteksi — redirect ke login');
+      if(r.status===200){
+        const t=await r.text();
+        if(t.includes('login')||t.includes('Login')) return pass('Redirect via body');
+        if(t.includes('[]')||t.includes('{}')) return fail('HTTP 200 tanpa auth — AJAX endpoint terekspos! Kembalikan data kosong tanpa login');
+        return pass('HTTP 200 tapi bukan data subcategory — OK');
+      }
+      if(r.status===403||r.status===401) return pass('HTTP '+r.status+' — Terproteksi');
+      return pass('HTTP '+r.status+' — Terkontrol');
+    }},
+
+  { id:'sec-2', module:'security', name:'Error page 404 tampil',
+    desc:'GET /halaman-tidak-ada-sama-sekali-xyz/ → 404 page',
+    url:'/halaman-tidak-ada-xyz/', method:'GET',
+    test: async ()=>{
+      const r = await fetch(S.baseUrl+'/halaman-tidak-ada-xyz/',{redirect:'follow',signal:AbortSignal.timeout(S.timeout)}).catch(e=>null);
+      if(!r) return fail('Server tidak bisa dihubungi');
+      if(r.status===404){
+        const t = await r.text();
+        if(t.includes('Traceback')||t.includes('Django')) return warn('404 page mengekspos Django debug info!');
+        return pass('404 page custom tampil dengan benar');
+      }
+      return warn('HTTP '+r.status+' (bukan 404)');
+    }},
+
+  { id:'sec-3', module:'security', name:'CSRF protection aktif',
+    desc:'POST /login/ tanpa CSRF token → HTTP 403',
+    url:'/login/', method:'POST',
+    test: async ()=>{
+      const r = await fetch(S.baseUrl+'/login/',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'username=test&password=test',
+        redirect:'manual',
+        signal:AbortSignal.timeout(S.timeout)
+      }).catch(e=>null);
+      if(!r) return fail('Server tidak bisa dihubungi');
+      if(r.status===403) return pass('CSRF protection aktif — HTTP 403 Forbidden');
+      if(r.status===302||r.status===301) return warn('Redirect '+r.status+' — CSRF mungkin tidak diaktifkan');
+      if(r.status===200){
+        const t=await r.text();
+        if(t.includes('CSRF')||t.includes('csrf')) return pass('CSRF validation aktif (via response)');
+        return warn('HTTP 200 tanpa CSRF check — pastikan CsrfViewMiddleware aktif');
+      }
+      return pass('HTTP '+r.status);
+    }},
+];
+
+// ═══════════════════════════════════════════════════════════
+//  HTTP HELPERS
+// ═══════════════════════════════════════════════════════════
+async function httpGetNoAuth(path) {
+  try {
+    const r = await fetch(S.baseUrl+path, {
+      redirect:'follow',
+      signal:AbortSignal.timeout(S.timeout),
+      credentials:'omit'
+    });
+    const text = await r.text();
+    return { ok: r.status < 400 || r.status === 404, status: r.status, text };
+  } catch(e) {
+    return { ok:false, status:0, text:'', error: e.message };
+  }
+}
+
+async function httpGet(path) {
+  try {
+    const r = await fetch(S.baseUrl+path, {
+      redirect:'follow',
+      signal:AbortSignal.timeout(S.timeout),
+      credentials:'include',
+      headers: S.sessionCookies ? { 'Cookie': S.sessionCookies } : {}
+    });
+    const text = await r.text();
+    return { ok: r.status < 400, status: r.status, text };
+  } catch(e) {
+    return { ok:false, status:0, text:'', error: e.message };
+  }
+}
+
+async function httpPortalGet(path) {
+  try {
+    const r = await fetch(S.baseUrl+path, {
+      redirect:'follow',
+      signal:AbortSignal.timeout(S.timeout),
+      credentials:'include',
+      headers: S.portalCookies ? { 'Cookie': S.portalCookies } : {}
+    });
+    const text = await r.text();
+    return { ok: r.status < 400, status: r.status, text };
+  } catch(e) {
+    return { ok:false, status:0, text:'', error: e.message };
+  }
+}
+
+async function getCsrf(path, usePortal=false) {
+  try {
+    const r = await fetch(S.baseUrl+path,{
+      redirect:'follow',
+      signal:AbortSignal.timeout(S.timeout),
+      credentials:'include'
+    });
+    const text = await r.text();
+    const m = text.match(/csrfmiddlewaretoken['"]\s+value=['"]([^'"]+)['"]/);
+    const token = m ? m[1] : '';
+    return { token, cookies: r.headers.get('set-cookie')||'' };
+  } catch(e) { return { token:'', cookies:'' }; }
+}
+
+async function testAdminLogin() {
+  const {token} = await getCsrf('/login/');
+  if(!token) return warn('Tidak bisa ambil CSRF token dari /login/');
+  try {
+    const body = `username=${encodeURIComponent(S.adminUser)}&password=${encodeURIComponent(S.adminPass)}&csrfmiddlewaretoken=${encodeURIComponent(token)}`;
+    const r = await fetch(S.baseUrl+'/login/',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':token},
+      body, redirect:'follow', credentials:'include',
+      signal:AbortSignal.timeout(S.timeout)
+    });
+    const text = await r.text();
+    if(r.status===200 && (text.includes('dashboard')||text.includes('Dashboard')||text.includes('HRIS')||!text.includes('login-form')))
+      return pass('Login berhasil — session terbentuk');
+    if(text.includes('salah')||text.includes('invalid')||text.includes('incorrect'))
+      return fail('Login gagal — username/password salah. Cek konfigurasi di halaman Config');
+    return warn('HTTP '+r.status+' — Login status tidak pasti, cek manual');
+  } catch(e) { return fail('Error: '+e.message); }
+}
+
+async function testBadLogin() {
+  const {token} = await getCsrf('/login/');
+  if(!token) return warn('Tidak bisa ambil CSRF token');
+  try {
+    const body = `username=wronguser999&password=wrongpass999&csrfmiddlewaretoken=${encodeURIComponent(token)}`;
+    const r = await fetch(S.baseUrl+'/login/',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body, redirect:'follow', credentials:'include',
+      signal:AbortSignal.timeout(S.timeout)
+    });
+    const text = await r.text();
+    if(text.includes('salah')||text.includes('invalid')||text.includes('incorrect')||text.includes('gagal'))
+      return pass('Error message ditampilkan dengan benar');
+    if(r.status===200 && text.includes('login'))
+      return pass('Kembali ke halaman login — validasi OK');
+    return warn('HTTP '+r.status+' — respons tidak jelas');
+  } catch(e) { return fail('Error: '+e.message); }
+}
+
+async function testPortalLogin() {
+  if(!S.portalUser) return warn('Username portal tidak dikonfigurasi — skip');
+  const {token} = await getCsrf('/karyawan/login/');
+  if(!token) return warn('Tidak bisa ambil CSRF token dari portal login');
+  try {
+    const body = `username=${encodeURIComponent(S.portalUser)}&password=${encodeURIComponent(S.portalPass)}&csrfmiddlewaretoken=${encodeURIComponent(token)}`;
+    const r = await fetch(S.baseUrl+'/karyawan/login/',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':token},
+      body, redirect:'follow', credentials:'include',
+      signal:AbortSignal.timeout(S.timeout)
+    });
+    const text = await r.text();
+    if(text.includes('portal_dashboard')||text.includes('clock-card')||text.includes('Check-in'))
+      return pass('Login portal berhasil');
+    if(text.includes('salah')||text.includes('gagal'))
+      return fail('Login portal gagal — cek username/password di Config');
+    return warn('HTTP '+r.status+' — status login tidak pasti');
+  } catch(e) { return fail('Error: '+e.message); }
+}
+
+async function testPortalGet(path, keyword, expectedStatus) {
+  if(!S.portalUser) return warn('Username portal tidak dikonfigurasi — skip');
+  const r = await httpPortalGet(path);
+  if(!r.ok) return fail('HTTP '+r.status+' (expected '+expectedStatus+')');
+  if(keyword && !r.text.toLowerCase().includes(keyword.toLowerCase()))
+    return warn('HTTP '+r.status+' OK tapi keyword "'+keyword+'" tidak ditemukan di halaman');
+  return pass('HTTP '+r.status+' OK — "'+keyword+'" ditemukan');
+}
+
+async function testGet(path, keyword, expectedStatus) {
+  const r = await httpGet(path);
+  if(r.status===302||r.status===301){
+    const loc=r.headers ? r.headers.get('location')||'' : '';
+    if(loc.includes('login')||path==='/') return pass('Redirect ke login — akses terkontrol');
+    return pass('Redirect '+r.status);
+  }
+  if(!r.ok){
+    if(r.status===0) return fail('Tidak bisa konek ke server');
+    return fail('HTTP '+r.status);
+  }
+  if(keyword && r.text && !r.text.toLowerCase().includes(keyword.toLowerCase()))
+    return warn('HTTP '+r.status+' OK tapi keyword "'+keyword+'" tidak ditemukan — halaman mungkin kosong/error diam-diam');
+  return pass('HTTP '+r.status+' OK'+(keyword?' — "'+keyword+'" ditemukan':''));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RESULT HELPERS
+// ═══════════════════════════════════════════════════════════
+function pass(msg){ return {status:'pass', message:msg}; }
+function fail(msg){ return {status:'fail', message:msg}; }
+function warn(msg){ return {status:'warn', message:msg}; }
+
+// ═══════════════════════════════════════════════════════════
+//  RUNNER
+// ═══════════════════════════════════════════════════════════
+async function runAll() {
+  if(S.running) return;
+  S.running = true;
+  S.issues = S.issues.filter(i=>i.source==='manual');
+  S.results = {};
+  S.logs = [];
+  S.startTime = new Date();
+
+  document.getElementById('run-all-btn').disabled = true;
+  document.getElementById('main-log').innerHTML = '';
+  setTopDot('yellow');
+  addLog('═══ Simulasi dimulai ═══', 'head');
+  addLog('Target: '+S.baseUrl, 'info');
+  addLog('Total skenario: '+SCENARIOS.filter(s=>S.enabled[s.id]!==false).length, 'info');
+
+  const toRun = SCENARIOS.filter(s => S.enabled[s.id] !== false);
+  let done=0;
+
+  for(const sc of toRun){
+    S.results[sc.id] = 'running';
+    renderScenarios();
+    addLog('▶ ['+sc.module+'] '+sc.name, 'muted');
+    let result;
+    try {
+      result = await sc.test();
+    } catch(e) {
+      result = fail('Exception: '+e.message);
+    }
+    S.results[sc.id] = result.status==='pass'?'pass':result.status==='warn'?'warn':'fail';
+    done++;
+
+    const pct = Math.round(done/toRun.length*100);
+    document.getElementById('main-progress').style.width = pct+'%';
+    document.getElementById('main-progress').className = 'progress-fill'+(pct===100?' green':'');
+    document.getElementById('progress-label').textContent = done+'/'+toRun.length+' selesai ('+pct+'%)';
+
+    const logClass = result.status==='pass'?'ok':result.status==='warn'?'warn':'err';
+    const icon = result.status==='pass'?'✓':result.status==='warn'?'⚠':'✗';
+    addLog('  '+icon+' '+result.message, logClass);
+
+    // Auto-create issue untuk fail dan warn
+    if(result.status==='fail'||result.status==='warn') {
+      const prio = result.status==='fail'?
+        (sc.module==='security'?'critical':'high') : 'medium';
+      S.issues.push({
+        id:'auto-'+sc.id, source:'auto',
+        type: result.status==='fail'?'bug':'warning',
+        module: sc.module, title: sc.name,
+        detail: 'Test: '+sc.desc+'\nResult: '+result.message,
+        url: sc.url, priority: prio,
+        time: new Date().toLocaleTimeString('id-ID')
+      });
+    }
+    updateStats();
+  }
+
+  // Skipped
+  SCENARIOS.filter(s=>S.enabled[s.id]===false).forEach(s=>{
+    S.results[s.id]='skip';
+  });
+
+  S.running = false;
+  document.getElementById('run-all-btn').disabled = false;
+
+  const pass_c = Object.values(S.results).filter(v=>v==='pass').length;
+  const fail_c = Object.values(S.results).filter(v=>v==='fail').length;
+  const warn_c = Object.values(S.results).filter(v=>v==='warn').length;
+  const total_run = pass_c+fail_c+warn_c;
+  const score = total_run>0 ? Math.round(pass_c/total_run*100) : 0;
+  const dur = Math.round((new Date()-S.startTime)/1000);
+
+  addLog('', 'muted');
+  addLog('═══ Selesai dalam '+dur+'s ═══', 'head');
+  addLog('Pass: '+pass_c+' | Warn: '+warn_c+' | Fail: '+fail_c+' | Score: '+score+'%',
+    score>=90?'ok':score>=70?'warn':'err');
+
+  setTopDot(fail_c>0?'red':warn_c>0?'yellow':'green');
+  document.getElementById('server-status-text').textContent = 'Score: '+score+'%';
+  document.getElementById('last-run-text').textContent = 'Terakhir: '+new Date().toLocaleTimeString('id-ID');
+  document.getElementById('badge-run').textContent = fail_c+warn_c;
+  document.getElementById('badge-run').className = 'nav-badge '+(fail_c>0?'':'yellow');
+
+  updateBadges();
+  renderScenarios();
+  renderIssues();
+  buildReport();
+}
+
+async function runOne(id) {
+  const sc = SCENARIOS.find(s=>s.id===id);
+  if(!sc||S.running) return;
+  S.results[id]='running';
+  renderScenarios();
+  let result;
+  try { result = await sc.test(); }
+  catch(e) { result = fail('Exception: '+e.message); }
+  S.results[id] = result.status;
+  if(result.status==='fail'||result.status==='warn') {
+    S.issues = S.issues.filter(i=>i.id!=='auto-'+id);
+    S.issues.push({
+      id:'auto-'+id, source:'auto', type:result.status==='fail'?'bug':'warning',
+      module:sc.module, title:sc.name,
+      detail:'Test: '+sc.desc+'\nResult: '+result.message,
+      url:sc.url, priority:result.status==='fail'?'high':'medium',
+      time:new Date().toLocaleTimeString('id-ID')
+    });
+  }
+  renderScenarios();
+  updateStats();
+  updateBadges();
+  renderIssues();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PING
+// ═══════════════════════════════════════════════════════════
+async function pingServer() {
+  const el = document.getElementById('ping-result');
+  el.textContent = '⏳ Testing...';
+  el.style.color = 'var(--yellow)';
+  S.baseUrl = document.getElementById('cfg-url').value.replace(/\/$/,'');
+  S.timeout = parseInt(document.getElementById('cfg-timeout').value)*1000;
+  try {
+    const t0 = Date.now();
+    const r = await fetch(S.baseUrl+'/', {redirect:'follow', signal:AbortSignal.timeout(S.timeout)});
+    const ms = Date.now()-t0;
+    el.textContent = '✓ Terhubung — HTTP '+r.status+' ('+ms+'ms)';
+    el.style.color = 'var(--green)';
+    setTopDot('green');
+    document.getElementById('run-all-btn').disabled = false;
+    document.getElementById('server-status-text').textContent = 'Server: online ('+ms+'ms)';
+  } catch(e) {
+    el.textContent = '✗ Gagal — '+e.message;
+    el.style.color = 'var(--red)';
+    setTopDot('red');
+    document.getElementById('server-status-text').textContent = 'Server: offline';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function setTopDot(color) {
+  const d = document.getElementById('topbar-dot');
+  d.className = 'status-dot '+(color||'');
+}
+
+function addLog(msg, cls='muted') {
+  const box = document.getElementById('main-log');
+  const d = document.createElement('div');
+  d.className = 'log-line '+cls;
+  const t = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  d.textContent = (cls==='head'?'':t+' ')+msg;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  S.logs.push({time:t, msg, type:cls});
+}
+
+function updateStats() {
+  const r = S.results;
+  const pass_c = Object.values(r).filter(v=>v==='pass').length;
+  const fail_c = Object.values(r).filter(v=>v==='fail').length;
+  const warn_c = Object.values(r).filter(v=>v==='warn').length;
+  const run_c  = Object.values(r).filter(v=>v==='running').length;
+  const skip_c = Object.values(r).filter(v=>v==='skip').length;
+  document.getElementById('s-total').textContent = SCENARIOS.length;
+  document.getElementById('s-run').textContent   = run_c;
+  document.getElementById('s-pass').textContent  = pass_c;
+  document.getElementById('s-fail').textContent  = fail_c+warn_c;
+  document.getElementById('s-skip').textContent  = skip_c;
+}
+
+function updateBadges() {
+  const bugs = S.issues.filter(i=>i.type==='bug').length;
+  const warns = S.issues.filter(i=>i.type==='warning').length;
+  document.getElementById('badge-issues').textContent = bugs+warns;
+  document.getElementById('badge-issues').className = 'nav-badge '+(bugs>0?'':'yellow');
+}
+
+function nav(page, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+  const titles = {config:'Konfigurasi',run:'Jalankan Test',issues:'Issue Tracker',report:'Laporan',manual:'Input Manual'};
+  document.getElementById('topbar-title').textContent = titles[page]||page;
+  if(page==='issues') renderIssues();
+  if(page==='report') buildReport();
+  if(page==='run') renderScenarios();
+}
+
+function filterScen(f, btn) {
+  S.scFilter = f;
+  document.querySelectorAll('#page-run .filter-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderScenarios();
+}
+
+function filterIssue(f, btn) {
+  S.issFilter = f;
+  document.querySelectorAll('#page-issues .filter-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderIssues();
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function renderScenarios() {
+  const list = document.getElementById('scenario-list');
+  const mods = {other:['other','reports','assets','security','auth','recruitment','industrial']};
+  const filtered = SCENARIOS.filter(s => {
+    const f = S.scFilter;
+    if(f==='all') return true;
+    if(f==='other') return !['employees','portal','attendance','payroll','contracts'].includes(s.module);
+    return s.module===f;
+  });
+
+  list.innerHTML = filtered.map(s => {
+    const r = S.results[s.id];
+    let cls='scenario-item', badge='';
+    if(r==='pass') { cls+=' pass'; badge='<span class="badge badge-green">✓ Pass</span>'; }
+    else if(r==='fail') { cls+=' fail'; badge='<span class="badge badge-red">✗ Fail</span>'; }
+    else if(r==='warn') { cls+=' fail'; badge='<span class="badge badge-yellow">⚠ Warn</span>'; }
+    else if(r==='running') { cls+=' running'; badge='<span class="spinner"></span>'; }
+    else if(r==='skip') { cls+=' skip'; badge='<span class="badge badge-muted">Skip</span>'; }
+    else badge = `<button class="run-one-btn" onclick="runOne('${s.id}')">▶ Test</button>`;
+
+    const msg = S.issues.find(i=>i.id==='auto-'+s.id)?.detail?.split('\n')[1]?.replace('Result: ','')||'';
+    return `<div class="${cls}">
+      <div>
+        <div class="scenario-name">${s.name}</div>
+        <div class="scenario-meta">
+          <span class="badge badge-blue">${s.module}</span>
+          <span class="badge badge-muted">${s.method}</span>
+          <span style="font-family:var(--mono)">${s.url}</span>
+          ${msg?'<span style="color:var(--muted)">— '+msg+'</span>':''}
+        </div>
+      </div>
+      <div class="scenario-right">${badge}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderIssues() {
+  const list = document.getElementById('issue-list');
+  const filtered = S.issues.filter(i => {
+    const f = S.issFilter;
+    if(f==='all') return true;
+    if(f==='pass') return i.type==='pass';
+    return i.type===f;
+  });
+
+  if(!filtered.length) {
+    list.innerHTML = '<div class="empty">Tidak ada issue'+
+      (S.issFilter!=='all'?' dengan filter "'+S.issFilter+'"':'')+
+      '. Jalankan simulasi dulu.</div>';
+    return;
+  }
+
+  const prioColor = {critical:'#f87171',high:'#f87171',medium:'#fbbf24',low:'var(--muted)'};
+  list.innerHTML = filtered.map(i => {
+    const icon = i.type==='bug'?'✕':i.type==='warning'?'!':'✓';
+    const detail = i.detail||'';
+    const detailId = 'detail-'+Math.random().toString(36).slice(2);
+    return `<div class="issue-card">
+      <div class="issue-header">
+        <div class="issue-icon ${i.type==='bug'?'bug':i.type==='warning'?'warning':'pass'}">${icon}</div>
+        <div class="issue-body">
+          <div class="issue-title collapsible" onclick="toggleDetail('${detailId}',this)">${i.title}</div>
+          <div class="issue-meta">
+            <span class="badge ${i.type==='bug'?'badge-red':i.type==='warning'?'badge-yellow':'badge-green'}">${i.type}</span>
+            <span>${i.module||'—'}</span>
+            <span style="color:${prioColor[i.priority]||'var(--muted)'}">${i.priority||'medium'}</span>
+            <span style="font-family:var(--mono);font-size:10px">${i.url||''}</span>
+            <span>${i.time||''}</span>
+            <span style="color:var(--muted);font-size:10px">${i.source==='manual'?'[manual]':'[auto]'}</span>
+          </div>
+          ${detail?`<div class="issue-detail" id="${detailId}" style="display:none">${detail}</div>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDetail(id, el) {
+  const d = document.getElementById(id);
+  if(!d) return;
+  const open = d.style.display==='block';
+  d.style.display = open?'none':'block';
+  el.classList.toggle('open', !open);
+}
+
+function buildReport() {
+  const r = S.results;
+  const pass_c = Object.values(r).filter(v=>v==='pass').length;
+  const fail_c = Object.values(r).filter(v=>v==='fail').length;
+  const warn_c = Object.values(r).filter(v=>v==='warn').length;
+  const done = pass_c+fail_c+warn_c;
+  const score = done>0?Math.round(pass_c/done*100):0;
+  const scoreColor = score>=90?'var(--green)':score>=70?'var(--yellow)':'var(--red)';
+  const dur = S.startTime?Math.round((new Date()-S.startTime)/1000):0;
+
+  // Overview
+  document.getElementById('rpt-overview').innerHTML = `
+    <div class="health-score" style="color:${scoreColor}">${done>0?score+'%':'—'}</div>
+    <div style="text-align:center;color:var(--muted);font-size:12px;margin-bottom:24px">Health Score${dur?' · selesai dalam '+dur+'s':''}</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Dijalankan</div><div class="stat-val">${done}</div></div>
+      <div class="stat-card"><div class="stat-label">Pass</div><div class="stat-val" style="color:var(--green)">${pass_c}</div></div>
+      <div class="stat-card"><div class="stat-label">Warn</div><div class="stat-val" style="color:var(--yellow)">${warn_c}</div></div>
+      <div class="stat-card"><div class="stat-label">Fail</div><div class="stat-val" style="color:var(--red)">${fail_c}</div></div>
+      <div class="stat-card"><div class="stat-label">Bugs Critical</div><div class="stat-val" style="color:var(--red)">${S.issues.filter(i=>i.priority==='critical').length}</div></div>
+    </div>`;
+
+  // Module breakdown
+  const modMap = {};
+  SCENARIOS.forEach(s=>{
+    if(!modMap[s.module]) modMap[s.module]={total:0,pass:0,fail:0,warn:0};
+    modMap[s.module].total++;
+    const rs = r[s.id];
+    if(rs==='pass') modMap[s.module].pass++;
+    else if(rs==='fail') modMap[s.module].fail++;
+    else if(rs==='warn') modMap[s.module].warn++;
+  });
+  document.getElementById('rpt-modules').innerHTML = '<div class="module-grid">'+
+    Object.entries(modMap).map(([mod,d])=>{
+      const pct = d.total>0?Math.round(d.pass/d.total*100):0;
+      const color = d.fail>0?'var(--red)':d.warn>0?'var(--yellow)':'var(--green)';
+      return `<div class="module-card">
+        <div class="module-name">${mod}</div>
+        <div class="module-bar"><div class="module-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="module-stats">${d.pass}/${d.total} pass${d.fail?' · '+d.fail+' fail':''}${d.warn?' · '+d.warn+' warn':''}</div>
+      </div>`;
+    }).join('')+'</div>';
+
+  // Detail table
+  document.getElementById('rpt-detail').innerHTML = done>0?`
+    <table class="report-table">
+      <thead><tr><th>Skenario</th><th>Modul</th><th>URL</th><th>Status</th><th>Detail</th></tr></thead>
+      <tbody>${SCENARIOS.map(s=>{
+        const rs=r[s.id]||'pending';
+        const issue=S.issues.find(i=>i.id==='auto-'+s.id);
+        const color=rs==='pass'?'var(--green)':rs==='warn'?'var(--yellow)':rs==='fail'?'var(--red)':'var(--muted)';
+        const icon=rs==='pass'?'✓':rs==='warn'?'⚠':rs==='fail'?'✗':'—';
+        return `<tr>
+          <td style="font-weight:500">${s.name}</td>
+          <td><span class="badge badge-blue">${s.module}</span></td>
+          <td style="font-family:var(--mono);font-size:11px">${s.url}</td>
+          <td style="color:${color};font-weight:600">${icon} ${rs}</td>
+          <td style="font-size:11px;color:var(--muted)">${issue?issue.detail.split('\n')[1]?.replace('Result: ','')||'':''}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`:'<div class="empty">Belum ada data — jalankan simulasi dulu</div>';
+
+  // Full log
+  document.getElementById('rpt-log').innerHTML = S.logs.length>0?
+    '<div class="log-container" style="max-height:500px">'+
+    S.logs.map(l=>`<div class="log-line ${l.type}">[${l.time}] ${l.msg}</div>`).join('')+
+    '</div>':'<div class="empty">Belum ada log</div>';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MANUAL ISSUE
+// ═══════════════════════════════════════════════════════════
+function submitManual() {
+  const title = document.getElementById('m-title').value.trim();
+  if(!title){ alert('Judul wajib diisi'); return; }
+  S.issues.push({
+    id:'manual-'+Date.now(), source:'manual',
+    type: document.getElementById('m-type').value,
+    module: document.getElementById('m-module').value,
+    priority: document.getElementById('m-prio').value,
+    title,
+    detail: [
+      document.getElementById('m-steps').value,
+      document.getElementById('m-expected').value,
+      document.getElementById('m-response').value
+    ].filter(Boolean).join('\n\n'),
+    url: document.getElementById('m-url').value,
+    time: new Date().toLocaleTimeString('id-ID')
+  });
+  updateBadges();
+  ['m-title','m-steps','m-expected','m-response','m-url'].forEach(id=>document.getElementById(id).value='');
+  const ok = document.getElementById('manual-ok');
+  ok.style.display='block';
+  setTimeout(()=>ok.style.display='none', 3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════════════════
+function exportReport() {
+  const r = S.results;
+  const pass_c = Object.values(r).filter(v=>v==='pass').length;
+  const done = Object.values(r).filter(v=>!['running','skip'].includes(v)).length;
+  const report = {
+    generated: new Date().toISOString(),
+    target: S.baseUrl,
+    summary: {
+      total: SCENARIOS.length, done,
+      pass: pass_c,
+      fail: Object.values(r).filter(v=>v==='fail').length,
+      warn: Object.values(r).filter(v=>v==='warn').length,
+      health_score: done>0?Math.round(pass_c/done*100)+'%':'N/A',
+      duration_s: S.startTime?Math.round((new Date()-S.startTime)/1000):0
+    },
+    issues: S.issues,
+    scenarios: SCENARIOS.map(s=>({...s, result: r[s.id]||'pending', test:undefined})),
+    logs: S.logs
+  };
+  const blob = new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hris_qa_'+new Date().toISOString().slice(0,10)+'_'+
+    (S.startTime?Math.round((new Date()-S.startTime)/1000)+'s':'')+'.json';
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════
+function saveConfigAndGo() {
+  S.baseUrl   = document.getElementById('cfg-url').value.replace(/\/$/,'');
+  S.timeout   = parseInt(document.getElementById('cfg-timeout').value)*1000||10000;
+  S.adminUser = document.getElementById('cfg-user').value;
+  S.adminPass = document.getElementById('cfg-pass').value;
+  S.portalUser= document.getElementById('cfg-portal-user').value;
+  S.portalPass= document.getElementById('cfg-portal-pass').value;
+  nav('run', document.querySelectorAll('.nav-item')[1]);
+}
+
+function checkAll(val) {
+  document.querySelectorAll('#scenario-checklist input[type=checkbox]').forEach(cb=>{
+    cb.checked = val;
+    S.enabled[cb.dataset.id] = val||undefined;
+    if(!val) S.enabled[cb.dataset.id] = false;
+    else delete S.enabled[cb.dataset.id];
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+(function init() {
+  // Build scenario checklist
+  const cl = document.getElementById('scenario-checklist');
+  cl.innerHTML = SCENARIOS.map(s=>`
+    <div class="check-row">
+      <input type="checkbox" id="chk-${s.id}" data-id="${s.id}" checked
+        onchange="S.enabled[this.dataset.id]=this.checked||undefined; if(!this.checked) S.enabled[this.dataset.id]=false; else delete S.enabled[this.dataset.id]">
+      <label for="chk-${s.id}" style="font-size:12px">${s.name} <span style="color:var(--muted)">[${s.module}]</span></label>
+    </div>`).join('');
+
+  document.getElementById('badge-run').textContent = SCENARIOS.length;
+  renderScenarios();
+})();
+</script>
+</body>
+</html>
+HTMLEOF
+echo "File size: $(wc -c < /mnt/user-data/outputs/hris_qa_simulator.html) bytes"

@@ -1,0 +1,72 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit{% else %}Buat{% endif %} MPRF{% endblock %}
+{% block breadcrumb %}Rekrutmen / MPRF{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>{% if instance %}Edit{% else %}Buat{% endif %} Manpower Request</h4>
+    <a href="{% url 'mprf_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
+</div>
+<div class="card" style="max-width:700px;"><div class="card-body">
+    <form method="post">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label fw-semibold">Departemen *</label>
+                <select name="department" class="form-select" required>
+                    <option value="">-- Pilih --</option>
+                    {% for d in departments %}<option value="{{ d.id }}" {% if instance.department_id == d.id %}selected{% endif %}>{{ d.nama }}</option>{% endfor %}
+                </select></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Jabatan (Job Library)</label>
+                <select name="jabatan" class="form-select" id="selectJabatan">
+                    <option value="">-- Pilih dari Job Library (opsional) --</option>
+                    {% for pos in positions %}<option value="{{ pos.id }}"
+                        data-nama="{{ pos.nama }}"
+                        data-kualifikasi="Pendidikan: {{ pos.pendidikan_min }}&#10;Pengalaman min: {{ pos.pengalaman_min }} tahun&#10;Skill wajib: {{ pos.skill_wajib }}&#10;Skill tambahan: {{ pos.skill_diinginkan }}"
+                        {% if instance.jabatan_id == pos.id %}selected{% endif %}>
+                        {{ pos.nama }} — {{ pos.level }}
+                    </option>{% endfor %}
+                </select>
+                <small class="text-muted">Pilih untuk auto-isi nama jabatan & kualifikasi dari Job Library</small>
+            </div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Nama Jabatan *</label>
+                <input type="text" name="nama_jabatan" id="inputNamaJabatan" class="form-control" value="{{ instance.nama_jabatan|default:'' }}" required></div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Tipe *</label>
+                <select name="tipe" class="form-select" required>
+                    <option value="New Hire" {% if instance.tipe == 'New Hire' or not instance %}selected{% endif %}>New Hire</option>
+                    <option value="Replacement" {% if instance.tipe == 'Replacement' %}selected{% endif %}>Replacement</option>
+                    <option value="Additional" {% if instance.tipe == 'Additional' %}selected{% endif %}>Additional</option>
+                </select></div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Jumlah Kebutuhan *</label>
+                <input type="number" name="jumlah_kebutuhan" class="form-control" min="1" value="{{ instance.jumlah_kebutuhan|default:1 }}" required></div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Target Date *</label>
+                <input type="date" name="target_date" class="form-control" value="{{ instance.target_date|date:'Y-m-d'|default:'' }}" required></div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Status</label>
+                <select name="status" class="form-select">
+                    <option value="Draft" {% if instance.status == 'Draft' or not instance %}selected{% endif %}>Draft</option>
+                    <option value="Approved" {% if instance.status == 'Approved' %}selected{% endif %}>Approved</option>
+                    <option value="Open" {% if instance.status == 'Open' %}selected{% endif %}>Open</option>
+                    <option value="In Process" {% if instance.status == 'In Process' %}selected{% endif %}>In Process</option>
+                    <option value="Filled" {% if instance.status == 'Filled' %}selected{% endif %}>Filled</option>
+                    <option value="Cancelled" {% if instance.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                </select></div>
+            <div class="col-12"><label class="form-label fw-semibold">Alasan Kebutuhan</label>
+                <textarea name="alasan" class="form-control" rows="3">{{ instance.alasan|default:'' }}</textarea></div>
+            <div class="col-12"><label class="form-label fw-semibold">Kualifikasi</label>
+                <textarea name="kualifikasi" class="form-control" rows="4" placeholder="Pendidikan minimal, pengalaman, skills...">{{ instance.kualifikasi|default:'' }}</textarea></div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>Simpan</button>
+                <a href="{% url 'mprf_list' %}" class="btn btn-outline-secondary ms-2">Batal</a>
+            </div>
+        </div>
+    </form>
+</div></div>
+<script>
+document.getElementById('selectJabatan').addEventListener('change', function() {
+    const opt = this.options[this.selectedIndex];
+    if (opt.value) {
+        document.getElementById('inputNamaJabatan').value = opt.dataset.nama || '';
+        const ta = document.querySelector('textarea[name="kualifikasi"]');
+        if (ta && !ta.value.trim()) ta.value = opt.dataset.kualifikasi || '';
+    }
+});
+</script>
+{% endblock %}

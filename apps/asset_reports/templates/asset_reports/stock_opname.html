@@ -1,0 +1,52 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Stock Opname{% endblock %}
+{% block breadcrumb %}Asset Management / Stock Opname{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="text-white mb-1"><i class="fas fa-clipboard-list me-2 text-primary"></i>Stock Opname</h4>
+        <p class="text-secondary mb-0">Daftar lengkap semua aset untuk keperluan stock opname</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="?export=excel" class="btn btn-success btn-sm"><i class="fas fa-file-excel me-1"></i>Export Excel</a>
+        <a href="?export=pdf" class="btn btn-danger btn-sm"><i class="fas fa-file-pdf me-1"></i>Export PDF</a>
+    </div>
+</div>
+<div class="card bg-dark border-secondary"><div class="card-body p-0">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+            <thead><tr class="border-secondary">
+                <th class="text-secondary fw-normal ps-3 small">No</th>
+                <th class="text-secondary fw-normal small">Kode</th>
+                <th class="text-secondary fw-normal small">Nama Aset</th>
+                <th class="text-secondary fw-normal small">Kategori</th>
+                <th class="text-secondary fw-normal small">Lokasi</th>
+                <th class="text-secondary fw-normal small">PIC</th>
+                <th class="text-secondary fw-normal small">Kondisi</th>
+                <th class="text-secondary fw-normal small">Status</th>
+                <th class="text-secondary fw-normal small">Harga Perolehan</th>
+                <th class="text-secondary fw-normal small">✓</th>
+            </tr></thead>
+            <tbody>
+            {% for asset in assets %}
+            <tr class="border-secondary">
+                <td class="ps-3 text-secondary small">{{ forloop.counter }}</td>
+                <td class="font-monospace text-info small">{{ asset.asset_code }}</td>
+                <td><a href="{% url 'assets:asset_detail' asset.pk %}" class="text-white text-decoration-none small">{{ asset.asset_name }}</a></td>
+                <td class="text-secondary small">{{ asset.category.name|default:"-" }}</td>
+                <td class="text-secondary small">{{ asset.location.name|default:"-" }}</td>
+                <td class="text-secondary small">{{ asset.responsible.name|default:"-" }}</td>
+                <td><span class="badge {% if asset.condition == 'Baik' %}bg-success{% elif 'Rusak' in asset.condition %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ asset.condition }}</span></td>
+                <td><span class="badge bg-secondary">{{ asset.status }}</span></td>
+                <td class="text-white small">Rp {{ asset.purchase_price|floatformat:0 }}</td>
+                <td><input type="checkbox" class="form-check-input"></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="10" class="text-center text-secondary py-5">Tidak ada aset</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div></div>
+{% endblock %}

@@ -1,0 +1,409 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Buat Surat Peringatan{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'sp_list' %}">Surat Peringatan</a></li>
+      <li class="breadcrumb-item active">Buat SP</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <span class="fs-4">⚠️</span>
+    <h4 class="mb-0 fw-bold">Buat Surat Peringatan</h4>
+  </div>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+        {{ msg|safe }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {# Warning SP3 → PHK #}
+  {% if can_phk %}
+  <div class="alert alert-danger d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div>
+      Karyawan ini masih memiliki <strong>SP III aktif</strong>.
+      Pertimbangkan untuk melanjutkan ke proses
+      <a href="{% url 'severance_calculator' %}" class="alert-link">Perhitungan Pesangon → PHK</a>.
+    </div>
+  </div>
+  {% endif %}
+
+  <form method="post" id="sp-form">
+    {% csrf_token %}
+    {% if violation %}<input type="hidden" name="violation_id" value="{{ violation.pk }}">{% endif %}
+
+    <div class="row g-3">
+
+      {# ── KOLOM KIRI ──────────────────────────────────────────────────────── #}
+      <div class="col-lg-5">
+
+        {# Pilih Karyawan #}
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-light fw-semibold small">
+            <i class="bi bi-person-badge me-1"></i>Karyawan
+          </div>
+          <div class="card-body p-3">
+            {% if employee %}
+              <input type="hidden" name="employee_id" value="{{ employee.pk }}">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center"
+                     style="width:44px;height:44px;font-size:18px;flex-shrink:0;">
+                  {{ employee.nama|first }}
+                </div>
+                <div>
+                  <div class="fw-bold">{{ employee.nama }}</div>
+                  <div class="text-muted small">{{ employee.nik }} · {{ employee.jabatan }}</div>
+                  <div class="text-muted small">{{ employee.department }}</div>
+                </div>
+              </div>
+            {% else %}
+              <label class="form-label small fw-semibold">Pilih Karyawan <span class="text-danger">*</span></label>
+              <select name="employee_id" id="id_employee" class="form-select form-select-sm" required>
+                <option value="">-- Pilih Karyawan --</option>
+                {% for emp in employees %}
+                  <option value="{{ emp.pk }}">{{ emp.nama }} ({{ emp.nik }})</option>
+                {% endfor %}
+              </select>
+            {% endif %}
+          </div>
+        </div>
+
+        {# History SP karyawan #}
+        <div class="card shadow-sm mb-3" id="card-sp-history" {% if not employee %}style="display:none"{% endif %}>
+          <div class="card-header bg-light fw-semibold small">
+            <i class="bi bi-clock-history me-1"></i>Riwayat SP Karyawan
+          </div>
+          <div class="card-body p-2" id="sp-history-body">
+            {% if employee %}
+              {% with history=employee.surat_peringatan.all %}
+              {% if history %}
+                {% for h in history %}
+                <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded
+                     {% if h.status == 'aktif' %}bg-warning bg-opacity-10 border border-warning{% else %}bg-light{% endif %} mb-1 small">
+                  <div>
+                    <span class="badge {% if h.level == 1 %}bg-warning text-dark{% elif h.level == 2 %}bg-danger{% else %}bg-danger{% endif %} me-1">SP {{ h.level }}</span>
+                    {{ h.label_pelanggaran|truncatechars:40 }}
+                  </div>
+                  <div class="text-muted text-nowrap ms-2">
+                    {{ h.tanggal_sp|date:"d/m/Y" }}
+                    <span class="badge {% if h.status == 'aktif' %}bg-success{% else %}bg-secondary{% endif %} ms-1">{{ h.status }}</span>
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div class="text-muted small text-center py-2">Belum ada riwayat SP</div>
+              {% endif %}
+              {% endwith %}
+            {% else %}
+              <div class="text-muted small text-center py-2" id="sp-history-placeholder">
+                Pilih karyawan untuk melihat riwayat SP
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        {# Metadata SP #}
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-light fw-semibold small">
+            <i class="bi bi-file-text me-1"></i>Metadata Surat
+          </div>
+          <div class="card-body p-3">
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Nomor SP</label>
+                <input type="text" name="nomor_sp" id="id_nomor_sp"
+                       class="form-control form-control-sm"
+                       placeholder="Kosongkan untuk auto-generate">
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Tanggal SP <span class="text-danger">*</span></label>
+                <input type="date" name="tanggal_sp" value="{{ today }}"
+                       class="form-control form-control-sm" required>
+              </div>
+              <div class="col-6">
+                <div class="label-with-help"><label class="form-label small fw-semibold" for="id_level">Level SP <span class="text-danger">*</span><div class="hris-tooltip-wrap"><span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span><div class="hris-tooltip-box" role="tooltip"><strong>SP 1</strong>: peringatan pertama, pelanggaran ringan. <strong>SP 2</strong>: pengulangan atau pelanggaran sedang. <strong>SP 3</strong>: pelanggaran berat, dapat menjadi dasar PHK.</div></div></div>
+                <select name="level" id="id_level" class="form-select form-select-sm" required>
+                  <option value="1" {% if suggestion.suggested_level == 1 %}selected{% endif %}>SP I</option>
+                  <option value="2" {% if suggestion.suggested_level == 2 %}selected{% endif %}>SP II</option>
+                  <option value="3" {% if suggestion.suggested_level == 3 %}selected{% endif %}>SP III</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# Penandatangan #}
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-light fw-semibold small">
+            <i class="bi bi-pen me-1"></i>Penandatangan
+          </div>
+          <div class="card-body p-3">
+            <div class="row g-2">
+              <div class="col-12">
+                <div class="label-with-help"><label class="form-label small fw-semibold" for="id_penandatangan">Nama Penandatangan <span class="text-danger">*</span><div class="hris-tooltip-wrap"><span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span><div class="hris-tooltip-box" role="tooltip">Nama lengkap pejabat yang menandatangani SP (biasanya HRD Manager atau Direktur). Akan dicetak di dokumen SP.</div></div></div>
+                <input type="text" name="nama_penandatangan"
+                       value="{{ company.nama_penandatangan_default }}"
+                       class="form-control form-control-sm" required
+                       placeholder="Nama pejabat penandatangan">
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Jabatan <span class="text-danger">*</span></label>
+                <input type="text" name="jabatan_penandatangan"
+                       value="{{ company.jabatan_penandatangan_default }}"
+                       class="form-control form-control-sm" required
+                       placeholder="Jabatan pejabat penandatangan">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>{# /kolom kiri #}
+
+      {# ── KOLOM KANAN ─────────────────────────────────────────────────────── #}
+      <div class="col-lg-7">
+
+        {# Pilih Pelanggaran #}
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-danger text-white fw-semibold small">
+            <i class="bi bi-exclamation-triangle me-1"></i>Jenis Pelanggaran
+          </div>
+          <div class="card-body p-3">
+
+            {# Warning suggestion #}
+            <div id="suggestion-warning" class="alert alert-warning small py-2 mb-3 {% if not suggestion %}d-none{% endif %}">
+              <i class="bi bi-info-circle me-1"></i>
+              <span id="suggestion-text">{{ suggestion.warning }}</span>
+            </div>
+
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Kategori</label>
+                <select id="id_kategori" class="form-select form-select-sm">
+                  <option value="">-- Pilih Kategori --</option>
+                  {% for kat in pelanggaran_by_kat.keys %}
+                    <option value="{{ kat }}">{{ kat }}</option>
+                  {% endfor %}
+                  <option value="__custom__">+ Lainnya (isi manual)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Jenis Pelanggaran</label>
+                <select id="id_kode_select" class="form-select form-select-sm">
+                  <option value="">-- Pilih dulu kategori --</option>
+                </select>
+              </div>
+              <input type="hidden" name="kode_pelanggaran" id="id_kode_pelanggaran">
+              <div class="col-12" id="row-label-manual" style="display:none">
+                <label class="form-label small fw-semibold">Uraian Jenis Pelanggaran</label>
+                <input type="text" name="label_pelanggaran" id="id_label_manual"
+                       class="form-control form-control-sm"
+                       placeholder="Tulis jenis pelanggaran...">
+              </div>
+              <div class="col-md-6" id="row-dasar-manual" style="display:none">
+                <label class="form-label small fw-semibold">Dasar Pasal</label>
+                <input type="text" name="dasar_pasal" id="id_dasar_manual"
+                       class="form-control form-control-sm"
+                       placeholder="Misal: Pasal 12 Ayat 1">
+              </div>
+            </div>
+
+            {# Info pelanggaran terpilih #}
+            <div id="pelanggaran-info" class="mt-3 p-3 bg-light rounded small d-none">
+              <div class="row g-1">
+                <div class="col-4 text-muted">Kategori</div>
+                <div class="col-8 fw-semibold" id="info-kategori">-</div>
+                <div class="col-4 text-muted">Tingkat</div>
+                <div class="col-8" id="info-tingkat">-</div>
+                <div class="col-4 text-muted">Dasar Pasal</div>
+                <div class="col-8" id="info-pasal">-</div>
+                <div class="col-4 text-muted">Default SP</div>
+                <div class="col-8 fw-bold text-danger" id="info-default-sp">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# Uraian detail #}
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-light fw-semibold small">
+            <i class="bi bi-pencil-square me-1"></i>Isi Surat
+          </div>
+          <div class="card-body p-3">
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label small fw-semibold">
+                  Uraian Detail Pelanggaran <span class="text-danger">*</span>
+                </label>
+                <textarea name="uraian_pelanggaran" rows="4" required
+                          class="form-control form-control-sm"
+                          placeholder="Jelaskan kronologi dan detail pelanggaran yang dilakukan...">{% if violation %}{{ violation.deskripsi }}{% endif %}</textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Sanksi yang Diberikan</label>
+                <textarea name="sanksi" rows="2"
+                          class="form-control form-control-sm"
+                          placeholder="Misal: Diberikan Surat Peringatan I dan diwajibkan memperbaiki kedisiplinan...">{% if violation %}{{ violation.sanksi }}{% endif %}</textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Pernyataan Kesanggupan Karyawan</label>
+                <textarea name="pernyataan_karyawan" rows="2"
+                          class="form-control form-control-sm"
+                          placeholder="Pernyataan yang harus disetujui karyawan (opsional)..."></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Catatan Internal</label>
+                <textarea name="catatan" rows="2"
+                          class="form-control form-control-sm"
+                          placeholder="Catatan internal HR (tidak tampil di surat cetak)..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# Tombol #}
+        <div class="d-flex gap-2 justify-content-end">
+          <a href="{% url 'sp_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle me-1"></i>Batal
+          </a>
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-check-circle me-1"></i>Terbitkan Surat Peringatan
+          </button>
+        </div>
+
+      </div>{# /kolom kanan #}
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Data pelanggaran dari Python
+const PELANGGARAN_MAP = {{ pelanggaran_map|default:"{}" }};
+const PELANGGARAN_BY_KAT = {
+  {% for kat, items in pelanggaran_by_kat.items %}
+  "{{ kat }}": [
+    {% for item in items %}
+    {"kode": "{{ item.kode }}", "label": "{{ item.label|escapejs }}", "tingkat": "{{ item.tingkat }}", "dasar_pasal": "{{ item.dasar_pasal|escapejs }}"},
+    {% endfor %}
+  ],
+  {% endfor %}
+};
+const SP_LABEL = {"1":"SP I","2":"SP II","3":"SP III"};
+
+// ── Kategori → populate kode ─────────────────────────────────────────────────
+document.getElementById('id_kategori').addEventListener('change', function() {
+  const kat    = this.value;
+  const select = document.getElementById('id_kode_select');
+  const isCustom = (kat === '__custom__');
+
+  document.getElementById('row-label-manual').style.display = isCustom ? 'block' : 'none';
+  document.getElementById('row-dasar-manual').style.display = isCustom ? 'block' : 'none';
+  document.getElementById('pelanggaran-info').classList.add('d-none');
+  document.getElementById('id_kode_pelanggaran').value = '';
+
+  select.innerHTML = '<option value="">-- Pilih pelanggaran --</option>';
+  if (!isCustom && PELANGGARAN_BY_KAT[kat]) {
+    PELANGGARAN_BY_KAT[kat].forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.kode;
+      opt.textContent = item.label;
+      select.appendChild(opt);
+    });
+  }
+});
+
+// ── Kode → info + saran level ────────────────────────────────────────────────
+document.getElementById('id_kode_select').addEventListener('change', function() {
+  const kode = this.value;
+  document.getElementById('id_kode_pelanggaran').value = kode;
+  if (!kode) return;
+
+  // Tampilkan info
+  const rule = PELANGGARAN_MAP[kode] || {};
+  document.getElementById('info-kategori').textContent = rule.kategori  || '-';
+  document.getElementById('info-pasal').textContent    = rule.dasar_pasal || '-';
+  const spDefault = rule.sp_level || 1;
+
+  const tingkatEl = document.getElementById('info-tingkat');
+  tingkatEl.textContent = rule.tingkat || '-';
+  tingkatEl.className   = 'col-8 ' + (
+    rule.tingkat === 'Berat' ? 'text-danger fw-bold' :
+    rule.tingkat === 'Sedang' ? 'text-warning fw-bold' : 'text-info'
+  );
+  document.getElementById('info-default-sp').textContent = SP_LABEL[spDefault] || `SP ${spDefault}`;
+  document.getElementById('pelanggaran-info').classList.remove('d-none');
+
+  // Ambil saran dari server (real-time cek SP aktif)
+  const empId = document.getElementById('id_employee')?.value
+             || '{{ employee.pk|default:"" }}';
+  if (empId) {
+    fetch(`{% url 'sp_suggest' %}?employee_id=${empId}&kode=${kode}`)
+      .then(r => r.json())
+      .then(data => {
+        // Update saran level
+        if (data.suggestion && data.suggestion.suggested_level) {
+          document.getElementById('id_level').value = data.suggestion.suggested_level;
+        }
+        // Tampilkan warning
+        const warn = document.getElementById('suggestion-warning');
+        const txt  = document.getElementById('suggestion-text');
+        if (data.suggestion && data.suggestion.warning) {
+          txt.textContent = data.suggestion.warning;
+          warn.classList.remove('d-none');
+        } else {
+          warn.classList.add('d-none');
+        }
+        // Update history
+        updateHistory(data.sp_history);
+      });
+  } else {
+    // Tidak ada employee, set level dari rule saja
+    document.getElementById('id_level').value = spDefault;
+  }
+});
+
+// ── Employee change → reload history ─────────────────────────────────────────
+const empSelect = document.getElementById('id_employee');
+if (empSelect) {
+  empSelect.addEventListener('change', function() {
+    const empId = this.value;
+    if (!empId) return;
+    fetch(`{% url 'sp_suggest' %}?employee_id=${empId}`)
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('card-sp-history').style.display = 'block';
+        updateHistory(data.sp_history);
+      });
+  });
+}
+
+function updateHistory(history) {
+  const body = document.getElementById('sp-history-body');
+  if (!history || !history.length) {
+    body.innerHTML = '<div class="text-muted small text-center py-2">Belum ada riwayat SP</div>';
+    return;
+  }
+  body.innerHTML = history.map(h => `
+    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded
+         ${h.status === 'aktif' ? 'bg-warning bg-opacity-10 border border-warning' : 'bg-light'} mb-1 small">
+      <div>
+        <span class="badge ${h.level === 1 ? 'bg-warning text-dark' : 'bg-danger'} me-1">SP ${h.level}</span>
+        ${h.label_pelanggaran.substring(0,40)}
+      </div>
+      <div class="text-muted text-nowrap ms-2">
+        ${h.tanggal_sp}
+        <span class="badge ${h.status === 'aktif' ? 'bg-success' : 'bg-secondary'} ms-1">${h.status}</span>
+      </div>
+    </div>
+  `).join('');
+}
+</script>
+{% endblock %}

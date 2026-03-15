@@ -1,0 +1,67 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}{{ location.name }}{% endblock %}
+{% block breadcrumb %}Asset Management / Detail Lokasi{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="{% url 'locations:location_list' %}" class="text-secondary text-decoration-none small"><i class="fas fa-arrow-left me-1"></i>Lokasi</a>
+        <h4 class="text-white mb-0 mt-1">{{ location.name }}</h4>
+        <p class="text-secondary mb-0">{{ location.get_full_path }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'locations:location_update' location.pk %}" class="btn btn-warning btn-sm"><i class="fas fa-edit me-1"></i>Edit</a>
+        <a href="{% url 'locations:location_delete' location.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash me-1"></i>Hapus</a>
+    </div>
+</div>
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header border-secondary"><h6 class="text-white mb-0">Detail Lokasi</h6></div>
+            <div class="card-body">
+                <table class="table table-dark table-borderless mb-0">
+                    <tr><td class="text-secondary">Kode</td><td class="text-white font-monospace">{{ location.code }}</td></tr>
+                    <tr><td class="text-secondary">Nama</td><td class="text-white">{{ location.name }}</td></tr>
+                    <tr><td class="text-secondary">Tipe</td><td><span class="badge bg-secondary">{{ location.type|default:"-" }}</span></td></tr>
+                    <tr><td class="text-secondary">Induk</td><td class="text-white">{{ location.parent.name|default:"-" }}</td></tr>
+                    <tr><td class="text-secondary">Kapasitas</td><td class="text-white">{{ location.capacity|default:"-" }}</td></tr>
+                    <tr><td class="text-secondary">Deskripsi</td><td class="text-secondary">{{ location.description|default:"-" }}</td></tr>
+                </table>
+            </div>
+        </div>
+        {% if location.children.all %}
+        <div class="card bg-dark border-secondary mt-3">
+            <div class="card-header border-secondary"><h6 class="text-white mb-0">Sub-Lokasi</h6></div>
+            <div class="list-group list-group-flush bg-transparent">
+                {% for child in location.children.all %}
+                <a href="{% url 'locations:location_detail' child.pk %}" class="list-group-item list-group-item-action bg-transparent text-white border-secondary">
+                    <span class="font-monospace text-info small me-2">{{ child.code }}</span> {{ child.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="col-md-7">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header border-secondary"><h6 class="text-white mb-0">Aset di Lokasi Ini ({{ location.asset_set.count }})</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-dark table-hover mb-0">
+                    <thead><tr><th class="text-secondary fw-normal small ps-3">Kode</th><th class="text-secondary fw-normal small">Nama Aset</th><th class="text-secondary fw-normal small">Status</th></tr></thead>
+                    <tbody>
+                    {% for asset in location.asset_set.all|slice:":20" %}
+                    <tr class="border-secondary">
+                        <td class="ps-3"><a href="{% url 'assets:asset_detail' asset.pk %}" class="text-info font-monospace text-decoration-none small">{{ asset.asset_code }}</a></td>
+                        <td class="text-white small">{{ asset.asset_name }}</td>
+                        <td><span class="badge bg-secondary">{{ asset.status }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-center text-secondary py-3">Tidak ada aset</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

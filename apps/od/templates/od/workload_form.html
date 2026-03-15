@@ -1,0 +1,76 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ action }} Workload Standard{% endblock %}
+{% block breadcrumb %}OD — {{ action }} Workload Standard{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-scale-balanced me-2" style="color:#818cf8;"></i>{{ action }} Workload Standard</h4>
+  <a href="{% url 'od:workload_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:680px;">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label fw-medium">Departemen</label>
+        <select name="department_id" class="form-select">
+          <option value="">— Semua / Tidak Spesifik —</option>
+          {% for dept in depts %}
+          <option value="{{ dept.id }}" {% if obj and obj.department_id == dept.id %}selected{% endif %}>{{ dept.nama }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-medium">Jabatan <span class="text-danger">*</span></label>
+        <select name="jabatan_id" class="form-select" required>
+          <option value="">Pilih Jabatan</option>
+          {% for jab in jabatans %}
+          <option value="{{ jab.id }}" {% if obj and obj.jabatan_id == jab.id %}selected{% endif %}>{{ jab.nama }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-medium">Nama Aktivitas / Beban Kerja <span class="text-danger">*</span></label>
+        <input type="text" name="nama_aktivitas" class="form-control" required
+               value="{{ obj.nama_aktivitas|default:'' }}" placeholder="Misal: Input Data Harian, Laporan Mingguan">
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-medium">Standar Output <span class="text-danger">*</span></label>
+          <input type="number" name="standar_output" class="form-control" required step="0.01" min="0"
+                 value="{{ obj.standar_output|default:'' }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-medium">Satuan</label>
+          <select name="satuan" class="form-select">
+            <option value="jam/hari" {% if obj and obj.satuan == 'jam/hari' %}selected{% endif %}>Jam per Hari</option>
+            <option value="jam/minggu" {% if obj and obj.satuan == 'jam/minggu' %}selected{% endif %}>Jam per Minggu</option>
+            <option value="unit/hari" {% if obj and obj.satuan == 'unit/hari' %}selected{% endif %}>Unit per Hari</option>
+            <option value="unit/bulan" {% if obj and obj.satuan == 'unit/bulan' %}selected{% endif %}>Unit per Bulan</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label fw-medium">Deskripsi</label>
+        <textarea name="deskripsi" class="form-control" rows="3"
+                  placeholder="Penjelasan tambahan tentang beban kerja ini">{{ obj.deskripsi|default:'' }}</textarea>
+      </div>
+      {% if obj %}
+      <div class="mb-4">
+        <div class="form-check">
+          <input type="checkbox" name="aktif" class="form-check-input" id="aktifCheck" {% if obj.aktif %}checked{% endif %}>
+          <label class="form-check-label" for="aktifCheck">Aktif</label>
+        </div>
+      </div>
+      {% endif %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i> Simpan
+        </button>
+        <a href="{% url 'od:workload_list' %}" class="btn btn-outline-secondary">Batal</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

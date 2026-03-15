@@ -1,0 +1,36 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Categories{% endblock %}
+{% block breadcrumb %}Asset Management / Kategori{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>Category List</h4>
+            <a href="{% url 'assets:category_create' %}" class="btn btn-primary btn-sm">Add Category</a>
+        </div>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for category in categories %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{% url 'assets:category_detail' category.pk %}">{{ category.name }}</a>
+                    <span class="badge bg-primary rounded-pill">{{ category.assets.count }}</span>
+                </li>
+                {% if category.children.exists %}
+                <ul class="list-group ms-4">
+                    {% for child in category.children.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{% url 'assets:category_detail' child.pk %}">{{ child.name }}</a>
+                        <span class="badge bg-secondary rounded-pill">{{ child.assets.count }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                {% empty %}
+                <li class="list-group-item">No categories yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

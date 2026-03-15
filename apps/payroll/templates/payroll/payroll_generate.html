@@ -1,0 +1,124 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Generate Payroll{% endblock %}
+{% block breadcrumb %}Payroll / Generate{% endblock %}
+{% block extra_css %}
+<style>
+.mode-card { cursor:pointer; border:2px solid var(--border); border-radius:10px; padding:1rem; transition:.2s; }
+.mode-card:hover, .mode-card.active { border-color:var(--red); background:rgba(230,51,41,.06); }
+.mode-card .mode-icon { font-size:1.6rem; margin-bottom:.4rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-cogs me-2 text-primary"></i>Generate Payroll</h4>
+    <a href="{% url 'payroll_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Pilih Periode Payroll</h5></div>
+            <div class="card-body">
+                <form method="post" id="payrollForm">
+                    {% csrf_token %}
+
+                    {# Mode Selector #}
+                    <div class="mb-3">
+                        <div class="label-with-help"><label class="form-label fw-semibold" for="id_mode_periode">Mode Periode<div class="hris-tooltip-wrap"><span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span><div class="hris-tooltip-box" role="tooltip"><strong>Bulanan</strong>: standar, pilih bulan dan tahun. <strong>Custom</strong>: untuk periode cut-off khusus, misalnya tanggal 10–9 bulan berikutnya.</div></div></div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="mode-card active text-center" id="modeStd" onclick="setMode('standard')">
+                                    <div class="mode-icon">📅</div>
+                                    <div class="fw-semibold" style="font-size:.9rem;">Bulan Kalender</div>
+                                    <div class="text-muted" style="font-size:.78rem;">1 – akhir bulan</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mode-card text-center" id="modeCustom" onclick="setMode('custom')">
+                                    <div class="mode-icon">🗓️</div>
+                                    <div class="fw-semibold" style="font-size:.9rem;">Tanggal Custom</div>
+                                    <div class="text-muted" style="font-size:.78rem;">misal 10 Feb – 9 Mar</div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="mode" id="modeInput" value="standard">
+                    </div>
+
+                    {# Standard: pilih bulan #}
+                    <div id="blockStandard">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Periode (Bulan - Tahun) *</label>
+                            <input type="month" name="periode" id="periodeInput" class="form-control">
+                            <small class="text-muted">Format: YYYY-MM (contoh: 2025-02)</small>
+                        </div>
+                    </div>
+
+                    {# Custom: pilih tanggal mulai & selesai #}
+                    <div id="blockCustom" style="display:none;">
+                        <div class="alert alert-warning py-2 mb-3" style="font-size:.82rem;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Untuk payroll <strong>10 Feb – 9 Mar</strong>, isi: Label = <code>2025-02</code>, Mulai = <code>2025-02-10</code>, Selesai = <code>2025-03-09</code>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Label Periode *</label>
+                                <input type="text" name="periode_custom" class="form-control" placeholder="2025-02" maxlength="7" pattern="\d{4}-\d{2}">
+                                <small class="text-muted">YYYY-MM (untuk kode payroll)</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Tanggal Mulai *</label>
+                                <input type="date" name="start_date" class="form-control" value="2025-02-10">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Tanggal Selesai *</label>
+                                <input type="date" name="end_date" class="form-control" value="2025-03-09">
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if job_sites %}
+                    <div class="mb-3">
+                        <div class="label-with-help"><label class="form-label fw-semibold" for="id_job_site">Filter Job Site <span class="text-muted fw-normal">(opsional)</span><div class="hris-tooltip-wrap"><span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span><div class="hris-tooltip-box" role="tooltip">Biarkan kosong untuk generate payroll semua lokasi sekaligus. Pilih satu site jika ingin generate per lokasi saja.</div></div></div>
+                        <select name="job_site" class="form-select">
+                            <option value="">Semua Job Site</option>
+                            {% for js in job_sites %}
+                            <option value="{{ js.id }}">{{ js.nama }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Kosongkan untuk generate semua karyawan aktif</small>
+                    </div>
+                    {% endif %}
+                    <div class="alert alert-info py-2" style="font-size:.82rem;">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Sistem akan otomatis menghitung: gaji pokok, tunjangan, lembur, PPH21, BPJS, dan denda keterlambatan untuk semua karyawan aktif yang sudah memiliki data upah.
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play me-1"></i>Generate Payroll
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function setMode(m) {
+    document.getElementById('modeInput').value = m;
+    if (m === 'standard') {
+        document.getElementById('modeStd').classList.add('active');
+        document.getElementById('modeCustom').classList.remove('active');
+        document.getElementById('blockStandard').style.display = '';
+        document.getElementById('blockCustom').style.display = 'none';
+        document.getElementById('periodeInput').required = true;
+    } else {
+        document.getElementById('modeCustom').classList.add('active');
+        document.getElementById('modeStd').classList.remove('active');
+        document.getElementById('blockStandard').style.display = 'none';
+        document.getElementById('blockCustom').style.display = '';
+        document.getElementById('periodeInput').required = false;
+    }
+}
+</script>
+{% endblock %}

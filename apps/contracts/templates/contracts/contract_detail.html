@@ -1,0 +1,43 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Detail Kontrak {{ contract.nomor_kontrak }}{% endblock %}
+{% block breadcrumb %}Kontrak / {{ contract.nomor_kontrak }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-file-contract me-2"></i>{{ contract.nomor_kontrak }}</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'contract_edit' contract.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-edit me-1"></i>Edit</a>
+        {% if contract.tipe_kontrak != 'PKWTT' and contract.status == 'Aktif' %}
+        <a href="{% url 'contract_renew' contract.pk %}" class="btn btn-success btn-sm ms-1"><i class="fas fa-sync me-1"></i>Perpanjang</a>
+        {% endif %}
+        {% if contract.tipe_kontrak == 'PKWT' %}
+        <a href="{% url 'pkwt_print' contract.pk %}" target="_blank" class="btn btn-danger btn-sm ms-1"><i class="fas fa-file-pdf me-1"></i>Print PKWT</a>
+        {% elif contract.tipe_kontrak == 'PKWTT' %}
+        <a href="{% url 'pkwtt_print' contract.pk %}" target="_blank" class="btn btn-danger btn-sm ms-1"><i class="fas fa-file-pdf me-1"></i>Print PKWTT</a>
+        {% elif contract.tipe_kontrak == 'Perjanjian Harian Lepas' %}
+        <a href="{% url 'phl_print' contract.pk %}" target="_blank" class="btn btn-danger btn-sm ms-1"><i class="fas fa-file-pdf me-1"></i>Print PHL</a>
+        {% endif %}
+        <a href="{% url 'contract_delete' contract.pk %}" class="btn btn-danger btn-sm ms-1"><i class="fas fa-trash-alt me-1"></i>Hapus</a>
+        <a href="{% url 'contract_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
+    </div>
+</div>
+<div class="card" style="max-width:600px;">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-6"><small class="text-muted">Karyawan</small><div class="fw-bold"><a href="{% url 'employee_detail' contract.employee.pk %}">{{ contract.employee.nama }}</a></div></div>
+            <div class="col-6"><small class="text-muted">Tipe Kontrak</small><div class="fw-bold">{{ contract.tipe_kontrak }}</div></div>
+            <div class="col-6"><small class="text-muted">Tanggal Mulai</small><div>{{ contract.tanggal_mulai|date:"d F Y" }}</div></div>
+            <div class="col-6"><small class="text-muted">Tanggal Selesai</small><div>{{ contract.tanggal_selesai|date:"d F Y"|default:"Tidak Terbatas (PKWTT)" }}</div></div>
+            {% if contract.sisa_hari is not None %}
+            <div class="col-6"><small class="text-muted">Sisa Hari</small>
+                <div><span class="badge {% if contract.sisa_hari <= 30 %}bg-danger{% elif contract.sisa_hari <= 60 %}bg-warning text-dark{% else %}bg-success{% endif %}">{{ contract.sisa_hari }} hari</span></div>
+            </div>{% endif %}
+            <div class="col-6"><small class="text-muted">Status</small><div><span class="badge {% if contract.status == 'Aktif' %}bg-success{% else %}bg-secondary{% endif %}">{{ contract.status }}</span></div></div>
+            <div class="col-6"><small class="text-muted">Jabatan (Kontrak)</small><div>{{ contract.jabatan|default:"-" }}</div></div>
+            <div class="col-6"><small class="text-muted">Departemen (Kontrak)</small><div>{{ contract.departemen|default:"-" }}</div></div>
+            <div class="col-6"><small class="text-muted">Gaji Pokok</small><div class="fw-bold">Rp {{ contract.gaji_pokok|floatformat:"0g" }}</div></div>
+            {% if contract.keterangan %}<div class="col-12"><small class="text-muted">Keterangan</small><div>{{ contract.keterangan }}</div></div>{% endif %}
+            {% if contract.file_kontrak %}<div class="col-12"><small class="text-muted">File Kontrak</small><div><a href="{{ contract.file_kontrak.url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-download me-1"></i>Download</a></div></div>{% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

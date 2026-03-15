@@ -1,0 +1,86 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Surat PHK{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">Industrial Relation</li>
+      <li class="breadcrumb-item active">Surat PHK</li>
+    </ol>
+  </nav>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <span class="fs-4">📋</span>
+      <h4 class="mb-0 fw-bold">Surat PHK</h4>
+    </div>
+    <a href="{% url 'surat_phk_create' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-circle me-1"></i>Buat Surat PHK
+    </a>
+  </div>
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">{{ msg|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    {% endfor %}
+  {% endif %}
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <div class="table-responsive-wrap">
+<table class="table table-hover table-sm align-middle mb-0 datatable">
+          <thead class="table-light">
+            <tr>
+              <th>Karyawan</th><th>Nomor Surat</th><th>Tgl Surat</th>
+              <th>Alasan PHK</th><th class="text-end">Total Kompensasi</th>
+              <th class="text-center">Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in surat_phk_list %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ s.snap_nama }}</div>
+                <div class="text-muted small">{{ s.snap_nik }}</div>
+              </td>
+              <td class="small">{{ s.nomor_surat|default:"-" }}</td>
+              <td class="small">{{ s.tanggal_surat|date:"d/m/Y" }}</td>
+              <td class="small">{{ s.snap_alasan_phk }}</td>
+              <td class="text-end fw-semibold small">Rp {{ s.snap_grand_total|floatformat:"0g" }}</td>
+              <td class="text-center">
+                <span class="badge {% if s.status == 'final' %}bg-success{% else %}bg-secondary{% endif %}">
+                  {{ s.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <div class="d-flex gap-1 justify-content-end">
+                  <a href="{% url 'surat_phk_detail' s.pk %}" class="btn btn-xs btn-outline-secondary">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{% url 'surat_phk_print' s.pk %}" target="_blank" class="btn btn-xs btn-outline-primary">
+                    <i class="bi bi-printer"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr class="dt-empty">
+                    <td colspan="7" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-file-circle-xmark"></i></div>
+                            <div class="empty-state-title">Belum ada Surat PHK</div>
+                            <div class="empty-state-desc">Surat PHK akan muncul setelah proses pemutusan hubungan kerja diproses.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'surat_phk_create' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Buat Surat PHK</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

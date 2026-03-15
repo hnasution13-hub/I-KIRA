@@ -1,0 +1,237 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit{% else %}Tambah{% endif %} Kontrak{% endblock %}
+{% block breadcrumb %}Kontrak / {% if instance %}Edit{% else %}Tambah{% endif %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-file-signature me-2 text-primary"></i>{% if instance %}Edit Kontrak{% else %}Tambah Kontrak Baru{% endif %}</h4>
+    <a href="{% url 'contract_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="contractForm">
+{% csrf_token %}
+<div class="row g-4">
+
+    <!-- Kolom Kiri -->
+    <div class="col-lg-8">
+
+        <!-- Data Karyawan -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold"><i class="fas fa-user me-2 text-primary"></i>Data Karyawan</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="label-with-help"><label class="form-label fw-semibold" for="id_contract_emp">Karyawan *</label>
+                        </div><select name="employee" id="id_contract_emp" id="selectEmployee" class="form-select" required {% if instance %}disabled{% endif %}>
+                            <option value="">-- Pilih Karyawan --</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.pk }}" {% if instance.employee_id == emp.pk %}selected{% endif %}>
+                                {{ emp.nik }} - {{ emp.nama }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if instance %}<input type="hidden" name="employee" value="{{ instance.employee_id }}">{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Jabatan (dalam kontrak)</label>
+                        <input type="text" name="jabatan" id="inputJabatan" class="form-control"
+                               value="{{ instance.jabatan|default:'' }}" placeholder="Otomatis dari data karyawan">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Departemen (dalam kontrak)</label>
+                        <input type="text" name="departemen" id="inputDepartemen" class="form-control"
+                               value="{{ instance.departemen|default:'' }}" placeholder="Otomatis dari data karyawan">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Gaji Pokok</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" name="gaji_pokok" id="inputGaji" class="form-control" min="0"
+                                   value="{{ instance.gaji_pokok|default:0 }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Status Gaji</label>
+                        <select name="status_gaji" id="selectStatusGaji" class="form-select">
+                            <option value="reguler" {% if not instance or instance.status_gaji == 'reguler' %}selected{% endif %}>Reguler</option>
+                            <option value="all_in" {% if instance.status_gaji == 'all_in' %}selected{% endif %}>All-In</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail Kontrak -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold"><i class="fas fa-file-contract me-2 text-primary"></i>Detail Kontrak</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Tipe Kontrak *</label>
+                        <select name="tipe_kontrak" id="selectTipe" class="form-select" required>
+                            <option value="PKWT" {% if instance.tipe_kontrak == 'PKWT' or not instance %}selected{% endif %}>PKWT</option>
+                            <option value="PKWTT" {% if instance.tipe_kontrak == 'PKWTT' %}selected{% endif %}>PKWTT</option>
+                            <option value="Perjanjian Harian Lepas" {% if instance.tipe_kontrak == 'Perjanjian Harian Lepas' %}selected{% endif %}>Perjanjian Harian Lepas</option>
+                            <option value="Borongan" {% if instance.tipe_kontrak == 'Borongan' %}selected{% endif %}>Borongan</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="Aktif" {% if not instance or instance.status == 'Aktif' %}selected{% endif %}>Aktif</option>
+                            <option value="Expired" {% if instance.status == 'Expired' %}selected{% endif %}>Expired</option>
+                            <option value="Terminated" {% if instance.status == 'Terminated' %}selected{% endif %}>Terminated</option>
+                            <option value="Renewed" {% if instance.status == 'Renewed' %}selected{% endif %}>Diperpanjang</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="id_kontrak_mulai">Tanggal Mulai *</label>
+                        <input type="date" name="tanggal_mulai" id="id_kontrak_mulai" class="form-control"
+                               value="{{ instance.tanggal_mulai|date:'Y-m-d'|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="label-with-help"><label class="form-label fw-semibold" for="id_kontrak_selesai">Tanggal Selesai
+                <div class="hris-tooltip-wrap"><span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span><div class="hris-tooltip-box" role="tooltip">Kosongkan untuk PKWTT. Sistem akan otomatis mengingatkan 30 hari sebelum berakhir.</div></div></div></label>
+                        <input type="date" name="tanggal_selesai" id="id_kontrak_selesai" id="inputTglSelesai" class="form-control"
+                               value="{{ instance.tanggal_selesai|date:'Y-m-d'|default:'' }}">
+                        <small class="text-muted" id="hintTglSelesai">Kosongkan untuk PKWTT</small>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">File Kontrak</label>
+                        <input type="file" name="file_kontrak" class="form-control">
+                        {% if instance.file_kontrak %}<small class="text-muted">File saat ini: {{ instance.file_kontrak.name }}</small>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Keterangan</label>
+                        <textarea name="keterangan" class="form-control" rows="2">{{ instance.keterangan|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Penandatangan -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold"><i class="fas fa-signature me-2 text-primary"></i>Penandatangan (Pemberi Kerja)</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Nama Penandatangan</label>
+                        <input type="text" name="nama_penandatangan" class="form-control"
+                               value="{{ instance.nama_penandatangan|default:'' }}"
+                               placeholder="Contoh: Rony Andreas Sianturi">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Jabatan Penandatangan</label>
+                        <input type="text" name="jabatan_penandatangan" class="form-control"
+                               value="{{ instance.jabatan_penandatangan|default:'' }}"
+                               placeholder="Contoh: HR Manager">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mb-4">
+            <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>Simpan</button>
+            <a href="{% url 'contract_list' %}" class="btn btn-outline-secondary">Batal</a>
+        </div>
+
+    </div>
+
+    <!-- Kolom Kanan -->
+    <div class="col-lg-4">
+        <div class="card" id="cardInfoKaryawan" {% if not instance %}style="display:none;"{% endif %}>
+            <div class="card-header fw-semibold"><i class="fas fa-info-circle me-2 text-info"></i>Info dari Database</div>
+            <div class="card-body">
+                <small class="text-muted d-block mb-1">Jabatan</small>
+                <div class="fw-semibold mb-2" id="infoJabatan">{{ instance.jabatan|default:'-' }}</div>
+                <small class="text-muted d-block mb-1">Departemen</small>
+                <div class="fw-semibold mb-2" id="infoDepartemen">{{ instance.departemen|default:'-' }}</div>
+                <small class="text-muted d-block mb-1">Gaji Pokok</small>
+                <div class="fw-semibold mb-2" id="infoGaji">Rp {{ instance.gaji_pokok|floatformat:"0g"|default:'0' }}</div>
+                <small class="text-muted d-block mb-1">Status Gaji</small>
+                <div class="fw-semibold" id="infoStatusGaji">{{ instance.get_status_gaji_display|default:'-' }}</div>
+            </div>
+        </div>
+
+        {% if instance %}
+        <div class="card mt-3">
+            <div class="card-header fw-semibold"><i class="fas fa-print me-2 text-danger"></i>Generate Dokumen</div>
+            <div class="card-body">
+                {% if instance.tipe_kontrak == 'PKWT' %}
+                <a href="{% url 'pkwt_print' instance.pk %}" target="_blank" class="btn btn-danger w-100">
+                    <i class="fas fa-file-pdf me-1"></i>Print / Save PDF PKWT
+                </a>
+                {% elif instance.tipe_kontrak == 'PKWTT' %}
+                <a href="{% url 'pkwtt_print' instance.pk %}" target="_blank" class="btn btn-danger w-100">
+                    <i class="fas fa-file-pdf me-1"></i>Print / Save PDF PKWTT
+                </a>
+                {% elif instance.tipe_kontrak == 'Perjanjian Harian Lepas' %}
+                <a href="{% url 'phl_print' instance.pk %}" target="_blank" class="btn btn-danger w-100">
+                    <i class="fas fa-file-pdf me-1"></i>Print / Save PDF PHL
+                </a>
+                {% else %}
+                <p class="text-muted small mb-0">Generate dokumen belum tersedia untuk tipe kontrak Borongan.</p>
+                {% endif %}
+                <small class="text-muted d-block mt-2">Simpan perubahan terlebih dahulu sebelum generate.</small>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+</form>
+
+<script>
+(function () {
+    const apiUrl = "{% url 'contract_api_employee_info' %}";
+    const selectEmp      = document.getElementById('selectEmployee');
+    const cardInfo       = document.getElementById('cardInfoKaryawan');
+    const selectTipe     = document.getElementById('selectTipe');
+    const inputTglSelesai = document.getElementById('inputTglSelesai');
+    const hintTglSelesai  = document.getElementById('hintTglSelesai');
+
+    function formatRupiah(n) {
+        return 'Rp ' + Number(n).toLocaleString('id-ID');
+    }
+
+    function fetchEmployeeInfo(empId) {
+        if (!empId) { cardInfo.style.display = 'none'; return; }
+        fetch(apiUrl + '?employee_id=' + empId)
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) return;
+                document.getElementById('inputJabatan').value     = data.jabatan;
+                document.getElementById('inputDepartemen').value  = data.departemen;
+                document.getElementById('inputGaji').value        = data.gaji_pokok;
+                document.getElementById('selectStatusGaji').value = data.status_gaji;
+                document.getElementById('infoJabatan').textContent    = data.jabatan    || '-';
+                document.getElementById('infoDepartemen').textContent = data.departemen || '-';
+                document.getElementById('infoGaji').textContent       = formatRupiah(data.gaji_pokok);
+                document.getElementById('infoStatusGaji').textContent = data.status_gaji === 'all_in' ? 'All-In' : 'Reguler';
+                cardInfo.style.display = 'block';
+            })
+            .catch(() => {});
+    }
+
+    if (selectEmp) {
+        selectEmp.addEventListener('change', function () { fetchEmployeeInfo(this.value); });
+        if (selectEmp.value) fetchEmployeeInfo(selectEmp.value);
+    }
+
+    function updateTglHint() {
+        const tipe = selectTipe ? selectTipe.value : '';
+        if (tipe === 'PKWTT') {
+            hintTglSelesai.textContent = 'Tidak perlu diisi untuk PKWTT';
+            inputTglSelesai.value = '';
+            inputTglSelesai.disabled = true;
+        } else {
+            hintTglSelesai.textContent = 'Wajib diisi untuk PKWT / Harian / Borongan';
+            inputTglSelesai.disabled = false;
+        }
+    }
+    if (selectTipe) {
+        selectTipe.addEventListener('change', updateTglHint);
+        updateTglHint();
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ tipe_label }} — Soal {{ soal_idx|add:1 }} dari {{ total }}</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body { background:#f4f6fb; font-family:'Segoe UI',sans-serif; }
+
+/* ── Header ── */
+.test-header { background:#fff; border-bottom:1px solid #e0e0e0; padding:.6rem 1.2rem;
+               position:sticky; top:0; z-index:100; }
+
+/* ── Paket navbar ── */
+.paket-nav { display:flex; gap:6px; flex-wrap:wrap; }
+.paket-tab { display:flex; align-items:center; gap:5px; padding:.28rem .8rem;
+             border-radius:20px; font-size:.78rem; font-weight:600;
+             border:2px solid #e0e0e0; color:#777; background:#f8f8f8;
+             text-decoration:none; transition:.12s; }
+.paket-tab.done   { border-color:#43a047; color:#43a047; background:#f1f8f1; }
+.paket-tab.aktif  { border-color:#7b1fa2; color:#fff; background:#7b1fa2; }
+.paket-tab .check { font-size:.7rem; }
+
+/* ── Timer ── */
+.timer { font-size:1.05rem; font-weight:700; color:#c62828; }
+.timer.warning { animation:blink .8s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+
+/* ── Nomor soal dots ── */
+.progress-nav { display:flex; flex-wrap:wrap; gap:4px; margin-top:.5rem; }
+.q-dot { width:26px; height:26px; border-radius:6px; border:2px solid #ccc;
+         display:flex; align-items:center; justify-content:center;
+         font-size:.68rem; font-weight:700; cursor:pointer;
+         text-decoration:none; color:#555; }
+.q-dot.answered { background:#388e3c; border-color:#388e3c; color:#fff; }
+.q-dot.current  { border-color:#7b1fa2; color:#7b1fa2; }
+
+/* ── Kartu soal ── */
+.soal-card { border-radius:12px; border:none; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+.opsi-label { display:block; padding:.9rem 1.2rem; border:2px solid #e0e0e0;
+              border-radius:8px; cursor:pointer; transition:.15s; margin-bottom:.6rem; }
+.opsi-label:hover { border-color:#7b1fa2; background:#f9f4ff; }
+input[type=radio]:checked + .opsi-label { border-color:#7b1fa2; background:#f3e5f5; }
+
+/* ── Likert ── */
+.likert-row { display:flex; justify-content:space-between; gap:6px; }
+.likert-btn { flex:1; padding:.6rem .2rem; border:2px solid #e0e0e0; border-radius:8px;
+              text-align:center; cursor:pointer; font-size:.83rem; transition:.15s; }
+.likert-btn:hover   { border-color:#7b1fa2; background:#f9f4ff; }
+.likert-btn.selected{ border-color:#7b1fa2; background:#7b1fa2; color:#fff; }
+
+.btn-next { background:#7b1fa2; border:none; border-radius:8px; font-weight:600; }
+.btn-next:hover { background:#6a1b9a; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="test-header">
+    <div class="d-flex justify-content-between align-items-start gap-2">
+
+        <!-- Paket navbar -->
+        <div>
+            {% if paket_nav and paket_nav|length > 1 %}
+            <div class="paket-nav mb-1">
+                {% for t in paket_nav %}
+                <span class="paket-tab {% if t.selesai %}done{% elif t.aktif %}aktif{% endif %}">
+                    {% if t.selesai %}<i class="fas fa-check check"></i>{% endif %}
+                    {{ t.label }}
+                </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="d-flex align-items-center gap-3">
+                <span class="fw-semibold" style="font-size:.95rem;">{{ tipe_label }}</span>
+                <span class="text-muted small">— {{ session.get_peserta_nama }}</span>
+            </div>
+        </div>
+
+        <!-- Progress + Timer -->
+        <div class="d-flex align-items-center gap-3 flex-shrink-0">
+            <div class="text-end">
+                <span class="text-muted small">{{ answered_count }}/{{ total }} dijawab</span>
+                <div class="progress mt-1" style="height:4px;width:100px;">
+                    <div class="progress-bar"
+                         style="width:{% widthratio answered_count total 100 %}%;background:#7b1fa2;"></div>
+                </div>
+            </div>
+            {% if sisa_detik is not None %}
+            <div class="timer" id="timer">
+                <i class="fas fa-clock me-1"></i><span id="timerDisplay">--:--</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Nomor soal dots -->
+    <div class="progress-nav mt-2">
+        {% for s in soal_list %}
+        <a href="/advanced-test/tes/{{ session.token }}/mulai/?tipe={{ tipe_aktif }}&q={{ forloop.counter0 }}"
+           class="q-dot {% if s.id in answered_ids %}answered{% endif %} {% if forloop.counter0 == soal_idx %}current{% endif %}">
+            {{ forloop.counter }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ═══ ANTI-CHEAT BANNER ═══ -->
+<div id="anticheatBanner" style="display:none;background:#c62828;color:#fff;
+     text-align:center;padding:.6rem 1rem;font-size:.85rem;font-weight:600;
+     position:sticky;top:0;z-index:200;">
+    ⚠️ Peringatan: Anda terdeteksi berpindah tab/window (<span id="anticheatCount">0</span>x).
+    Lebih dari 3x akan mengakhiri tes secara otomatis.
+</div>
+
+<!-- ═══ KONTEN SOAL ═══ -->
+<div class="container py-4" style="max-width:720px;">
+
+    {% if error_kosong %}
+    <!-- Error: soal belum di-seed -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+            <h5 class="fw-bold">Bank Soal Belum Tersedia</h5>
+            <p class="text-muted">Soal untuk tes <strong>{{ tipe_label }}</strong> belum ada di database.</p>
+            <div class="alert alert-light border text-start small mx-auto mt-3" style="max-width:420px;">
+                <strong>Admin:</strong> Jalankan perintah berikut di server:<br>
+                <code>python manage.py seed_advanced_soal --aktifkan</code>
+            </div>
+        </div>
+    </div>
+
+    {% elif soal %}
+    <!-- Kartu soal -->
+    <div class="card soal-card mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <span class="badge" style="background:#7b1fa2;">
+                    Soal {{ soal_idx|add:1 }} dari {{ total }}
+                </span>
+                <span class="badge bg-light text-secondary">{{ soal.get_tingkat_kesulitan_display }}</span>
+            </div>
+            <h5 class="fw-semibold mb-4" style="line-height:1.6;">{{ soal.pertanyaan }}</h5>
+
+            <form method="post" id="soalForm">
+                {% csrf_token %}
+                <input type="hidden" name="soal_id"  value="{{ soal.pk }}">
+                <input type="hidden" name="next_idx" value="{{ next_idx }}">
+
+                <!-- Pilihan Ganda -->
+                {% if soal.tipe_soal == 'pilihan_ganda' %}
+                {% for key, text in soal.opsi_list %}
+                <div>
+                    <input type="radio" name="jawaban" id="opt_{{ key }}" value="{{ key }}"
+                           class="d-none" required onchange="this.form.submit()">
+                    <label for="opt_{{ key }}" class="opsi-label">
+                        <span class="badge bg-secondary me-2">{{ key }}</span>{{ text }}
+                    </label>
+                </div>
+                {% endfor %}
+
+                <!-- Likert (Big Five) -->
+                {% elif soal.tipe_soal == 'likert' %}
+                <input type="hidden" name="likert_val" id="likertVal" required>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between text-muted mb-2" style="font-size:.8rem;">
+                        <span>Sangat Tidak Setuju</span><span>Sangat Setuju</span>
+                    </div>
+                    <div class="likert-row">
+                        {% for i in "12345" %}
+                        <div class="likert-btn" id="lbtn_{{ i }}" onclick="selectLikert({{ i }})">
+                            <div class="fw-bold">{{ i }}</div>
+                            <div style="font-size:.7rem;">
+                                {% if i == '1' %}STS{% elif i == '2' %}TS{% elif i == '3' %}N{% elif i == '4' %}S{% else %}SS{% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-next text-white w-100 mt-2"
+                        id="likertSubmit" disabled>
+                    {% if is_last %}Selesaikan Tes Ini{% else %}Lanjut <i class="fas fa-arrow-right ms-1"></i>{% endif %}
+                </button>
+                {% endif %}
+
+                {% if is_last and soal.tipe_soal == 'pilihan_ganda' %}
+                <input type="hidden" name="submit_tipe" value="1">
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Navigasi bawah -->
+    <div class="d-flex justify-content-between align-items-center">
+        {% if soal_idx > 0 %}
+        <a href="/advanced-test/tes/{{ session.token }}/mulai/?tipe={{ tipe_aktif }}&q={{ soal_idx|add:-1 }}"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Sebelumnya
+        </a>
+        {% else %}<span></span>{% endif %}
+
+        {% if not is_last %}
+        <a href="/advanced-test/tes/{{ session.token }}/mulai/?tipe={{ tipe_aktif }}&q={{ next_idx }}"
+           class="btn btn-outline-primary btn-sm">
+            Lewati <i class="fas fa-arrow-right ms-1"></i>
+        </a>
+        {% else %}
+        <form method="post" id="submitForm">
+            {% csrf_token %}
+            <input type="hidden" name="soal_id"   value="{{ soal.pk }}">
+            <input type="hidden" name="jawaban"   value="">
+            <input type="hidden" name="submit_tipe" value="1">
+            <button type="submit" class="btn btn-success btn-sm">
+                <i class="fas fa-flag-checkered me-1"></i>Selesaikan Tes Ini
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+// ── Timer ──────────────────────────────────────────────
+{% if sisa_detik is not None %}
+let sisa = {{ sisa_detik }};
+const timerEl  = document.getElementById('timerDisplay');
+const timerDiv = document.getElementById('timer');
+function tick() {
+    if (sisa <= 0) {
+        timerEl.textContent = '00:00';
+        const f = document.getElementById('submitForm') || document.getElementById('soalForm');
+        if (f) f.submit();
+        return;
+    }
+    const m = String(Math.floor(sisa / 60)).padStart(2,'0');
+    const s = String(sisa % 60).padStart(2,'0');
+    timerEl.textContent = m + ':' + s;
+    if (sisa <= 60) timerDiv.classList.add('warning');
+    sisa--;
+    setTimeout(tick, 1000);
+}
+tick();
+{% endif %}
+
+// ── Anti-cheat: tab switching detection ──────────────────────
+(function() {
+    const WARN_LIMIT = 3;
+    let warnCount = parseInt(sessionStorage.getItem('adv_warn_{{ session.token }}_{{ tipe_aktif }}') || '0');
+    const warnBanner = document.getElementById('anticheatBanner');
+    const warnCountEl = document.getElementById('anticheatCount');
+
+    function updateBanner() {
+        if (warnCount > 0 && warnBanner) {
+            warnBanner.style.display = 'block';
+            if (warnCountEl) warnCountEl.textContent = warnCount;
+        }
+    }
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            warnCount++;
+            sessionStorage.setItem('adv_warn_{{ session.token }}_{{ tipe_aktif }}', warnCount);
+            updateBanner();
+            if (warnCount >= WARN_LIMIT) {
+                // Auto-submit setelah 3x pindah tab
+                const f = document.getElementById('submitForm') || document.getElementById('soalForm');
+                if (f) {
+                    const inp = document.createElement('input');
+                    inp.type = 'hidden'; inp.name = 'submit_tipe'; inp.value = '1';
+                    f.appendChild(inp);
+                    f.submit();
+                }
+            }
+        }
+    });
+    updateBanner();
+})();
+function selectLikert(val) {
+    document.getElementById('likertVal').value = val;
+    document.querySelectorAll('.likert-btn').forEach((el, i) => {
+        el.classList.toggle('selected', i + 1 === val);
+    });
+    document.getElementById('likertSubmit').disabled = false;
+    setTimeout(() => document.getElementById('likertSubmit').click(), 400);
+}
+</script>
+</body>
+</html>

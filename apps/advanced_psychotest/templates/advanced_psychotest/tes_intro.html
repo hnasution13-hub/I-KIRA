@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paket Tes Psikometri — {{ session.get_peserta_nama }}</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body { background:#f4f6fb; font-family:'Segoe UI',sans-serif; }
+.hero-card  { border-radius:16px; border:none; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+.tes-item   { border-radius:12px; border:2px solid #e0e0e0; padding:1rem 1.2rem;
+              margin-bottom:.75rem; transition:.15s; background:#fff; }
+.tes-item.done      { border-color:#43a047; background:#f1f8f1; }
+.tes-item.aktif     { border-color:#7b1fa2; background:#faf4ff; }
+.tes-item.menunggu  { opacity:.6; }
+.step-num   { width:34px; height:34px; border-radius:50%; display:flex; align-items:center;
+              justify-content:center; font-weight:700; font-size:.9rem; flex-shrink:0; }
+.step-done  { background:#43a047; color:#fff; }
+.step-aktif { background:#7b1fa2; color:#fff; }
+.step-wait  { background:#e0e0e0; color:#888; }
+.connector  { width:2px; height:20px; background:#e0e0e0; margin:2px auto; }
+.connector.done { background:#43a047; }
+.btn-start  { background:#7b1fa2; border:none; padding:.8rem 2.5rem; font-size:1rem;
+              font-weight:700; border-radius:10px; letter-spacing:.3px; }
+.btn-start:hover { background:#6a1b9a; }
+.badge-dur  { background:#f3e5f5; color:#7b1fa2; border-radius:20px;
+              padding:.2rem .75rem; font-size:.78rem; font-weight:600; }
+.badge-soal { background:#e8eaf6; color:#3949ab; border-radius:20px;
+              padding:.2rem .75rem; font-size:.78rem; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="container py-5" style="max-width:620px;">
+
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <div style="font-size:2.8rem; margin-bottom:.5rem;">📋</div>
+        <h3 class="fw-bold mb-1">Paket Tes Psikometri</h3>
+        <p class="text-muted mb-0">
+            Halo, <strong>{{ session.get_peserta_nama }}</strong>!<br>
+            <span style="font-size:.9rem;">
+                Berikut adalah tes yang perlu Anda kerjakan dalam sesi ini.
+            </span>
+        </p>
+    </div>
+
+    <!-- Checklist paket tes -->
+    <div class="card hero-card mb-4">
+        <div class="card-body p-4">
+            <h6 class="fw-semibold mb-3">
+                <i class="fas fa-list-check me-2" style="color:#7b1fa2;"></i>
+                Daftar Tes dalam Paket Ini
+                <span class="badge bg-light text-secondary border ms-1">{{ paket_info|length }} tes</span>
+            </h6>
+
+            {% for tes in paket_info %}
+            {% if not forloop.first %}
+            <div class="connector {% if tes.selesai %}done{% endif %}"></div>
+            {% endif %}
+
+            <div class="tes-item
+                {% if tes.selesai %}done
+                {% elif tes.tipe == tes_aktif %}aktif
+                {% else %}menunggu{% endif %}">
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Step number / status -->
+                    <div class="step-num
+                        {% if tes.selesai %}step-done
+                        {% elif tes.tipe == tes_aktif %}step-aktif
+                        {% else %}step-wait{% endif %}">
+                        {% if tes.selesai %}
+                            <i class="fas fa-check" style="font-size:.8rem;"></i>
+                        {% else %}
+                            {{ forloop.counter }}
+                        {% endif %}
+                    </div>
+
+                    <!-- Info tes -->
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span style="font-size:1.2rem;">{{ tes.icon }}</span>
+                            <span class="fw-semibold">{{ tes.label }}</span>
+                            {% if tes.selesai %}
+                                <span class="badge bg-success ms-auto">✓ Selesai</span>
+                            {% elif tes.tipe == tes_aktif %}
+                                <span class="badge ms-auto" style="background:#7b1fa2;">▶ Selanjutnya</span>
+                            {% else %}
+                                <span class="badge bg-light text-muted border ms-auto">Menunggu</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-muted mt-1" style="font-size:.82rem;">{{ tes.deskripsi }}</div>
+                        <div class="d-flex gap-2 mt-2 flex-wrap">
+                            <span class="badge-soal"><i class="fas fa-list me-1"></i>{{ tes.n_soal }} soal</span>
+                            <span class="badge-dur"><i class="fas fa-clock me-1"></i>{{ tes.durasi }} menit</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if semua_selesai %}
+            <div class="alert alert-success mt-3 mb-0">
+                <i class="fas fa-check-circle me-2"></i>
+                Semua tes telah Anda selesaikan. Terima kasih!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Ketentuan -->
+    <div class="card hero-card mb-4">
+        <div class="card-body p-4">
+            <h6 class="fw-semibold mb-2">
+                <i class="fas fa-shield-alt text-success me-2"></i>Ketentuan Umum
+            </h6>
+            <ul class="text-muted mb-0" style="font-size:.88rem; line-height:1.8;">
+                <li>Kerjakan sendiri tanpa bantuan orang lain atau alat bantu.</li>
+                <li>Timer per tes berjalan begitu Anda menekan "Mulai".</li>
+                <li>Tes otomatis disubmit saat waktu habis.</li>
+                <li>Setelah satu tes selesai, Anda akan langsung lanjut ke tes berikutnya.</li>
+                <li>Pastikan koneksi internet stabil selama mengerjakan.</li>
+                <li>Hasil tidak dapat diubah setelah disubmit.</li>
+                <li>Link ini berlaku sampai: <strong>{{ session.expired_at|date:"d/m/Y H:i" }}</strong></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tombol aksi -->
+    {% if semua_selesai %}
+    <div class="text-center">
+        <div class="text-muted" style="font-size:.9rem;">
+            <i class="fas fa-check-circle text-success me-1"></i>
+            Sesi ini sudah selesai. Tim HR akan menghubungi Anda.
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center">
+        <a href="{% url 'adv_tes_mulai' session.token %}{% if tes_aktif %}?tipe={{ tes_aktif }}{% endif %}"
+           class="btn btn-start text-white">
+            {% if session.status == 'started' %}
+                <i class="fas fa-play me-2"></i>Lanjutkan Tes
+            {% else %}
+                <i class="fas fa-play me-2"></i>Mulai Tes
+            {% endif %}
+        </a>
+        <p class="text-muted mt-3 mb-0" style="font-size:.78rem;">
+            Dengan menekan tombol di atas, Anda menyetujui ketentuan di atas.
+        </p>
+    </div>
+    {% endif %}
+
+</div>
+</body>
+</html>

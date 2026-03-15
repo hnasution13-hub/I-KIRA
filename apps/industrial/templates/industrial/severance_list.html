@@ -1,0 +1,109 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Data Pesangon{% endblock %}
+{% block breadcrumb %}Industrial Relation / Data Pesangon{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0"><i class="fas fa-hand-holding-usd me-2 text-warning"></i>Data Pesangon / PHK</h4>
+    <small class="text-muted">PP No. 35/2021 &amp; UU No. 11/2020 (Cipta Kerja)
+      <span class="badge bg-danger ms-1">UPH 15% Tidak Berlaku</span>
+    </small>
+  </div>
+  <a href="{% url 'severance_calculator' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-calculator me-1"></i>Hitung Pesangon
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive-wrap">
+<table class="table table-hover datatable mb-0" id="tbl-pesangon">
+      <thead class="table-light">
+        <tr>
+          <th>Karyawan</th>
+          <th>Tgl PHK</th>
+          <th>Alasan</th>
+          <th>Dasar Pasal</th>
+          <th>Masa Kerja</th>
+          <th class="text-end">UP</th>
+          <th class="text-end">UPMK</th>
+          <th class="text-end">Uang Pisah / PKWT</th>
+          <th class="text-end fw-bold">Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in severances %}
+        <tr>
+          <td class="fw-semibold">
+            {{ s.employee.nama }}<br>
+            <small class="text-muted">{{ s.employee.nik }}</small>
+          </td>
+          <td>{{ s.tanggal_phk|date:"d/m/Y" }}</td>
+          <td><span class="badge bg-secondary">{{ s.alasan_phk }}</span></td>
+          <td>
+            {% if s.dasar_pasal == '61A' %}
+              <span class="badge bg-warning text-dark">PKWT Ps.61A</span>
+            {% elif s.dasar_pasal %}
+              <span class="badge bg-light text-dark border">{{ s.dasar_pasal }}</span>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>{{ s.masa_kerja_tahun }} thn {{ s.masa_kerja_bulan }} bln</td>
+          <td class="text-end">
+            {% if s.pesangon > 0 %}Rp {{ s.pesangon|floatformat:"0g" }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-end">
+            {% if s.upmk > 0 %}Rp {{ s.upmk|floatformat:"0g" }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-end">
+            {% if s.kompensasi_pkwt > 0 %}
+              <span class="text-warning fw-semibold">Rp {{ s.kompensasi_pkwt|floatformat:"0g" }}</span>
+              <br><small class="badge bg-warning text-dark">PKWT</small>
+            {% elif s.uang_pisah > 0 %}
+              <span class="text-info fw-semibold">Rp {{ s.uang_pisah|floatformat:"0g" }}</span>
+              <br><small class="badge bg-info text-dark">Keb.Perusahaan</small>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="text-end fw-bold text-success">Rp {{ s.total_pesangon|floatformat:"0g" }}</td>
+          <td>
+            <a href="{% url 'severance_detail' s.pk %}" class="btn btn-sm btn-outline-secondary" title="Detail">
+              <i class="fas fa-eye"></i>
+            </a>
+            {% if s.perjanjian_bersama %}
+              <a href="{% url 'pb_detail' s.perjanjian_bersama.pk %}" class="btn btn-sm btn-outline-success" title="Lihat PB">
+                🤝
+              </a>
+            {% else %}
+              <a href="{% url 'pb_create' %}?severance={{ s.pk }}" class="btn btn-sm btn-primary" title="Buat Perjanjian Bersama">
+                <i class="fas fa-handshake"></i>
+              </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="dt-empty">
+          <tr class="dt-empty">
+                    <td colspan="10" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-hand-holding-dollar"></i></div>
+                            <div class="empty-state-title">Belum ada data pesangon / PHK</div>
+                            <div class="empty-state-desc">Data pesangon akan muncul setelah proses PHK diinput.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'severance_calculator' %}" class="btn btn-outline"><i class="fas fa-arrow-right" aria-hidden="true"></i> Kalkulator Pesangon</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+</div>
+  </div>
+</div>
+{% endblock %}

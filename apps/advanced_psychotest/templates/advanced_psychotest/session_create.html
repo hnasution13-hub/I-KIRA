@@ -1,0 +1,174 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Buat Sesi Advanced Test - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Recruitment / Advanced Test / Buat Sesi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-plus-circle me-2" style="color:#7b1fa2;"></i>Buat Sesi Advanced Test</h4>
+    <a href="{% url 'candidate_detail' candidate.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali ke Kandidat
+    </a>
+</div>
+
+<!-- Info Kandidat -->
+<div class="card mb-4" style="border-left:4px solid #7b1fa2;">
+    <div class="card-body py-3">
+        <div class="row g-3 align-items-center">
+            <div class="col-auto">
+                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                    style="width:48px;height:48px;background:#7b1fa2;font-size:1.2rem;">
+                    {{ candidate.nama|first }}
+                </div>
+            </div>
+            <div class="col">
+                <div class="fw-bold fs-6">{{ candidate.nama }}</div>
+                <small class="text-muted">{{ candidate.jabatan_dilamar|default:"-" }} &bull; {{ candidate.email|default:"-" }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="max-width:680px;">
+    <div class="card-header fw-semibold">
+        <i class="fas fa-tasks me-2"></i>Pilih Paket Tes
+        <small class="text-muted fw-normal ms-2">Centang satu atau lebih tes yang harus dikerjakan kandidat</small>
+    </div>
+    <div class="card-body">
+        <form method="post" id="sessionForm">
+            {% csrf_token %}
+
+            <div class="alert alert-warning d-none mb-3" id="alertKosong">
+                <i class="fas fa-exclamation-triangle me-2"></i>Pilih minimal satu tipe tes.
+            </div>
+
+            <!-- Daftar tes dengan checkbox -->
+            <div class="mb-4">
+                {% for val, label in test_type_choices %}
+                <div class="test-card border rounded mb-2" id="card_{{ val }}">
+                    <div class="p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <input class="form-check-input flex-shrink-0 test-check" type="checkbox"
+                                   name="paket" id="cb_{{ val }}" value="{{ val }}"
+                                   onchange="toggleCard('{{ val }}')">
+                            <label for="cb_{{ val }}" class="flex-grow-1 mb-0" style="cursor:pointer;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="font-size:1.3rem;">
+                                        {% if val == 'raven' %}🔲{% elif val == 'cogspeed' %}⚡{% elif val == 'bigfive' %}⭐{% elif val == 'sjt' %}⚖️{% elif val == 'cfit' %}🌐{% endif %}
+                                    </span>
+                                    <span class="fw-semibold">{{ label }}</span>
+                                    <span class="badge bg-light text-muted border ms-1" style="font-size:.75rem;">
+                                        {% if val == 'raven' %}20 soal &bull; 25 mnt
+                                        {% elif val == 'cogspeed' %}30 soal &bull; 12 mnt
+                                        {% elif val == 'bigfive' %}25 soal &bull; 20 mnt
+                                        {% elif val == 'sjt' %}15 soal &bull; 30 mnt
+                                        {% elif val == 'cfit' %}20 soal &bull; 20 mnt{% endif %}
+                                    </span>
+                                </div>
+                                <div class="text-muted mt-1" style="font-size:.81rem;">
+                                    {% if val == 'raven' %}Penalaran visual &amp; logika non-verbal
+                                    {% elif val == 'cogspeed' %}Kecepatan &amp; ketepatan kognitif
+                                    {% elif val == 'bigfive' %}Kepribadian OCEAN — tidak ada jawaban benar/salah
+                                    {% elif val == 'sjt' %}Penilaian situasi kerja nyata
+                                    {% elif val == 'cfit' %}Intelegensi minim bias budaya{% endif %}
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Durasi row — muncul setelah dicentang -->
+                        <div class="d-none mt-3 pt-2 border-top" id="dur_{{ val }}">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-clock text-muted small"></i>
+                                <span class="text-muted" style="font-size:.84rem;">Durasi:</span>
+                                <input type="number" name="durasi_{{ val }}" id="dur_input_{{ val }}"
+                                       class="form-control form-control-sm" style="width:75px;"
+                                       value="{% if val == 'raven' %}25{% elif val == 'cogspeed' %}12{% elif val == 'bigfive' %}20{% elif val == 'sjt' %}30{% elif val == 'cfit' %}20{% endif %}"
+                                       min="5" max="180">
+                                <span class="text-muted" style="font-size:.82rem;">menit</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Ringkasan paket yang dipilih -->
+            <div class="card bg-light border-0 mb-4 d-none" id="summaryBox">
+                <div class="card-body py-3">
+                    <div class="fw-semibold mb-2" style="font-size:.9rem;">
+                        <i class="fas fa-clipboard-list me-1" style="color:#7b1fa2;"></i>Paket yang akan dikirim ke kandidat:
+                    </div>
+                    <div id="summaryList" class="d-flex flex-wrap gap-2 mb-2"></div>
+                    <div class="text-muted" style="font-size:.8rem;">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Kandidat mengerjakan tes di atas secara berurutan melalui satu link.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Masa berlaku -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Masa Berlaku Link (hari)</label>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="number" name="expired_days" class="form-control" style="width:100px;"
+                           value="7" min="1" max="60">
+                    <span class="text-muted" style="font-size:.85rem;">hari sejak link dibuat</span>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" onclick="return validasi()">
+                    <i class="fas fa-paper-plane me-1"></i>Buat Sesi &amp; Generate Link
+                </button>
+                <a href="{% url 'candidate_detail' candidate.pk %}" class="btn btn-outline-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.test-card { transition:.12s; }
+.test-card:hover { border-color:#ce93d8 !important; background:#fdf8ff; }
+.test-card.selected { border-color:#7b1fa2 !important; background:#faf4ff; }
+</style>
+
+<script>
+const DEFAULT_DUR = {{ test_durations|safe }};
+const LABEL_SHORT = { raven:"Raven's", cogspeed:"Cogn. Speed", bigfive:"Big Five", sjt:"SJT", cfit:"CFIT" };
+const ICONS       = { raven:"🔲", cogspeed:"⚡", bigfive:"⭐", sjt:"⚖️", cfit:"🌐" };
+
+function toggleCard(val) {
+    const cb  = document.getElementById('cb_' + val);
+    const dur = document.getElementById('dur_' + val);
+    const crd = document.getElementById('card_' + val);
+    if (cb.checked) {
+        crd.classList.add('selected');
+        dur.classList.remove('d-none');
+        document.getElementById('dur_input_' + val).value = DEFAULT_DUR[val] || 25;
+    } else {
+        crd.classList.remove('selected');
+        dur.classList.add('d-none');
+    }
+    updateSummary();
+}
+
+function updateSummary() {
+    const checked = [...document.querySelectorAll('.test-check:checked')].map(c => c.value);
+    const box  = document.getElementById('summaryBox');
+    const list = document.getElementById('summaryList');
+    if (!checked.length) { box.classList.add('d-none'); return; }
+    box.classList.remove('d-none');
+    list.innerHTML = checked.map(v =>
+        `<span class="badge rounded-pill px-3 py-2" style="background:#7b1fa2;font-size:.83rem;">
+            ${ICONS[v]} ${LABEL_SHORT[v]}
+        </span>`
+    ).join('');
+}
+
+function validasi() {
+    const ok = document.querySelectorAll('.test-check:checked').length > 0;
+    document.getElementById('alertKosong').classList.toggle('d-none', ok);
+    if (!ok) window.scrollTo(0, 0);
+    return ok;
+}
+</script>
+{% endblock %}

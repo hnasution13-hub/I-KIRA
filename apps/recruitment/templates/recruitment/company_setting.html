@@ -1,0 +1,135 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Pengaturan Perusahaan{% endblock %}
+{% block breadcrumb %}Rekrutmen / Pengaturan Perusahaan{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-building me-2 text-primary"></i>Pengaturan Perusahaan
+    </h4>
+    <a href="{% url 'offering_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="row g-4">
+
+        <!-- Logo -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header fw-semibold"><i class="fas fa-image me-2 text-primary"></i>Logo Perusahaan</div>
+                <div class="card-body text-center">
+                    <div id="logoPreview" class="mb-3 p-3 border rounded bg-light"
+                         style="min-height:120px; display:flex; align-items:center; justify-content:center;">
+                        {% if setting.logo %}
+                            <img src="{{ setting.logo.url }}" alt="Logo" id="currentLogo"
+                                 style="max-height:100px; max-width:100%; object-fit:contain;">
+                        {% else %}
+                            <span class="text-muted small" id="noLogoText">
+                                <i class="fas fa-image fa-2x d-block mb-2 opacity-25"></i>
+                                Belum ada logo
+                            </span>
+                        {% endif %}
+                    </div>
+                    <input type="file" name="logo" id="logoInput" class="form-control mb-2"
+                           accept="image/png,image/jpeg,image/gif,image/svg+xml">
+                    <div class="text-muted small mb-2">PNG, JPG, SVG — maks 2MB</div>
+                    {% if setting.logo %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="hapus_logo" id="hapusLogo">
+                        <label class="form-check-label text-danger" for="hapusLogo">Hapus logo</label>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Perusahaan -->
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="fas fa-building me-2 text-primary"></i>Identitas Perusahaan</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nama Perusahaan *</label>
+                        <input type="text" name="nama_perusahaan" class="form-control"
+                               value="{{ setting.nama_perusahaan }}" required
+                               placeholder="contoh: PT. Transon Bumindo Resources">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nama HRD Manager</label>
+                        <input type="text" name="hrd_manager" class="form-control"
+                               value="{{ setting.hrd_manager }}"
+                               placeholder="Nama yang muncul di tanda tangan">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="fas fa-hashtag me-2 text-primary"></i>Format Nomor Offering Letter</div>
+                <div class="card-body">
+                    <label class="form-label fw-semibold">Format Nomor</label>
+                    <input type="text" name="format_nomor_ol" id="formatInput" class="form-control mb-2"
+                           value="{{ setting.format_nomor_ol }}"
+                           placeholder="OL/{YYYY}{MM}/{SEQ:04d}">
+                    <div class="alert alert-light border small mb-2">
+                        <strong>Variabel yang tersedia:</strong><br>
+                        <code>{YYYY}</code> = Tahun 4 digit (misal: 2025)<br>
+                        <code>{YY}</code> = Tahun 2 digit (misal: 25)<br>
+                        <code>{MM}</code> = Bulan 2 digit (misal: 06)<br>
+                        <code>{DD}</code> = Tanggal 2 digit (misal: 15)<br>
+                        <code>{SEQ}</code> = Nomor urut (misal: 1)<br>
+                        <code>{SEQ:04d}</code> = Nomor urut 4 digit (misal: 0001)
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small">Preview:</span>
+                        <code id="formatPreview" class="bg-light px-2 py-1 rounded border">OL/202506/0001</code>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="fas fa-save me-1"></i>Simpan Pengaturan
+            </button>
+        </div>
+
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Preview logo sebelum upload
+document.getElementById('logoInput').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const preview = document.getElementById('logoPreview');
+        preview.innerHTML = `<img src="${e.target.result}" style="max-height:100px;max-width:100%;object-fit:contain;">`;
+    };
+    reader.readAsDataURL(file);
+});
+
+// Preview format nomor
+const formatInput = document.getElementById('formatInput');
+const formatPreview = document.getElementById('formatPreview');
+const now = new Date();
+const YYYY = now.getFullYear();
+const YY   = String(YYYY).slice(-2);
+const MM   = String(now.getMonth()+1).padStart(2,'0');
+const DD   = String(now.getDate()).padStart(2,'0');
+
+function updatePreview() {
+    let fmt = formatInput.value;
+    fmt = fmt.replace('{YYYY}', YYYY).replace('{YY}', YY)
+             .replace('{MM}', MM).replace('{DD}', DD);
+    fmt = fmt.replace(/\{SEQ:(\d+)d\}/g, (_, n) => '1'.padStart(parseInt(n), '0'));
+    fmt = fmt.replace('{SEQ}', '1');
+    formatPreview.textContent = fmt;
+}
+formatInput.addEventListener('input', updatePreview);
+updatePreview();
+</script>
+{% endblock %}

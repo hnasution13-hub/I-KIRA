@@ -1,0 +1,541 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Dashboard - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+/* .stat-card — sudah ada di base_dashboard.html */
+.stat-value { font-size: 1.9rem; font-weight: 700; line-height: 1.1; margin-bottom: 4px; }
+.stat-label { font-size: .76rem; color: var(--muted); font-weight: 500; }
+.stat-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.badge-pending { background: rgba(251,191,36,.15); color: #fbbf24; border-radius: 4px; padding: 3px 9px; font-size:.72rem; font-weight:600; }
+.badge-aktif   { background: rgba(34,197,94,.15);  color: #4ade80; border-radius: 4px; padding: 3px 9px; font-size:.72rem; font-weight:600; }
+
+/* Override Bootstrap card inside dark theme */
+.card { background: var(--bg2) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; color: var(--text) !important; }
+.card-header { background: transparent !important; border-bottom: 1px solid var(--border) !important; color: var(--text) !important; padding: 14px 18px !important; }
+.card-body { color: var(--text) !important; }
+.table { color: var(--text) !important; }
+.table thead th { color: var(--muted) !important; border-color: var(--border) !important; background: transparent !important; font-size:.72rem; letter-spacing:.5px; text-transform:uppercase; }
+.table tbody td { border-color: var(--border) !important; }
+.table-light { --bs-table-bg: transparent !important; }
+.table-hover tbody tr:hover { background: rgba(255,255,255,.02) !important; }
+.btn-outline-primary { color: #60a5fa !important; border-color: #60a5fa !important; font-size:.78rem; }
+.btn-outline-primary:hover { background: rgba(59,130,246,.1) !important; }
+.btn-outline-danger { color: #f87171 !important; border-color: #f87171 !important; font-size:.78rem; }
+.btn-outline-danger:hover { background: rgba(230,51,41,.1) !important; }
+.text-muted { color: var(--muted) !important; }
+a { color: inherit; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">Dashboard</h4>
+        <small class="text-muted">Selamat datang, {{ request.user.get_full_name|default:request.user.username }}</small>
+    </div>
+    <span class="text-muted" style="font-size:0.85rem;">
+        <i class="fas fa-calendar me-1"></i>{% now "d F Y" %}
+    </span>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value text-primary">{{ total_karyawan }}</div>
+                    <div class="stat-label">Total Karyawan Aktif</div>
+                </div>
+                <div class="stat-icon" style="background:#e8f4fd;color:#1976d2;">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value text-success">{{ karyawan_baru_bulan_ini }}</div>
+                    <div class="stat-label">Join Bulan Ini</div>
+                </div>
+                <div class="stat-icon" style="background:#e8f5e9;color:#388e3c;">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value text-warning">{{ cuti_pending }}</div>
+                    <div class="stat-label">Cuti Pending</div>
+                </div>
+                <div class="stat-icon" style="background:#fff8e1;color:#f57c00;">
+                    <i class="fas fa-calendar-times"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value text-danger">{{ kontrak_expiring }}</div>
+                    <div class="stat-label">Kontrak Hampir Habis</div>
+                </div>
+                <div class="stat-icon" style="background:#fce4ec;color:#c62828;">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value" style="color:#7b1fa2;">{{ kandidat_proses }}</div>
+                    <div class="stat-label">Kandidat Dalam Proses</div>
+                </div>
+                <div class="stat-icon" style="background:#f3e5f5;color:#7b1fa2;">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value text-danger">{{ pelanggaran_pending }}</div>
+                    <div class="stat-label">Pelanggaran Pending</div>
+                </div>
+                <div class="stat-icon" style="background:#fce4ec;color:#c62828;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value text-info">{{ mprf_open }}</div>
+                    <div class="stat-label">Lowongan Terbuka</div>
+                </div>
+                <div class="stat-icon" style="background:#e0f7fa;color:#00838f;">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Row -->
+<div class="row g-3">
+    <!-- Cuti Pending -->
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-calendar-alt me-2 text-warning"></i>Pengajuan Cuti Terbaru</h5>
+                <a href="{% url 'leave_list' %}" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Karyawan</th>
+                            <th>Tipe</th>
+                            <th>Tanggal</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leave_pending_list %}
+                        <tr>
+                            <td class="fw-semibold">{{ leave.employee.nama }}</td>
+                            <td><small>{{ leave.tipe_cuti }}</small></td>
+                            <td><small>{{ leave.tanggal_mulai|date:"d/m/Y" }}</small></td>
+                            <td><span class="badge badge-pending">Pending</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">Tidak ada pengajuan</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kontrak Hampir Habis -->
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-file-contract me-2 text-danger"></i>Kontrak Hampir Habis (30 hari)</h5>
+                <a href="{% url 'contract_expiring' %}" class="btn btn-sm btn-outline-danger">Lihat Semua</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Karyawan</th>
+                            <th>No. Kontrak</th>
+                            <th>Berakhir</th>
+                            <th>Sisa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contract in kontrak_alert %}
+                        <tr>
+                            <td class="fw-semibold">{{ contract.employee.nama }}</td>
+                            <td><small>{{ contract.nomor_kontrak }}</small></td>
+                            <td><small>{{ contract.tanggal_selesai|date:"d/m/Y" }}</small></td>
+                            <td>
+                                <span class="badge bg-danger">{{ contract.sisa_hari }} hari</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">Tidak ada kontrak hampir habis</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Karyawan Terbaru -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-users me-2 text-primary"></i>Karyawan Terbaru</h5>
+                <a href="{% url 'employee_list' %}" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>NIK</th><th>Nama</th><th>Departemen</th><th>Jabatan</th><th>Join</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in recent_employees %}
+                        <tr>
+                            <td><small class="text-muted">{{ emp.nik }}</small></td>
+                            <td><a href="{% url 'employee_detail' emp.pk %}" class="fw-semibold text-decoration-none">{{ emp.nama }}</a></td>
+                            <td>{{ emp.department|default:"-" }}</td>
+                            <td>{{ emp.jabatan|default:"-" }}</td>
+                            <td><small>{{ emp.join_date|date:"d/m/Y" }}</small></td>
+                            <td><span class="badge badge-aktif">{{ emp.status }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-3">Belum ada karyawan</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafik Row 1: Kontrak & Provinsi -->
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-contract me-2 text-primary"></i>Status Perjanjian Kerja</h5>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    {% if chart_contract_data %}
+                    <div style="max-width:260px;width:100%;"><canvas id="contractChart"></canvas></div>
+                    <div class="mt-3 w-100" id="contractLegend"></div>
+                    {% else %}
+                    <div class="text-muted text-center py-4">
+                        <i class="fas fa-file-contract fa-2x mb-2 d-block opacity-25"></i>Belum ada data kontrak aktif
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-map-marked-alt me-2 text-success"></i>Populasi per Provinsi</h5>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    {% if chart_prov_data %}
+                    <div style="max-width:260px;width:100%;"><canvas id="provChart"></canvas></div>
+                    <div class="mt-3 w-100" id="provLegend"></div>
+                    {% else %}
+                    <div class="text-muted text-center py-4">
+                        <i class="fas fa-map-marked-alt fa-2x mb-2 d-block opacity-25"></i>Data provinsi belum tersedia
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafik Row 2: PKWT vs PKWTT -->
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-lg-5">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0"><i class="fas fa-id-card me-2" style="color:#f59e0b;"></i>Komposisi Status Karyawan</h5>
+                    <span class="badge" style="background:rgba(245,158,11,.15);color:#f59e0b;font-size:.72rem;">
+                        {{ total_karyawan }} Aktif
+                    </span>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    {% if chart_pkwt_data and chart_pkwt_data != "[]" %}
+                    <div style="max-width:220px;width:100%;"><canvas id="pkwtChart"></canvas></div>
+                    <div class="mt-3 w-100" id="pkwtLegend"></div>
+                    {% else %}
+                    <div class="text-muted text-center py-4">
+                        <i class="fas fa-id-card fa-2x mb-2 d-block opacity-25"></i>Belum ada data
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Rekap Absensi per Periode -->
+        <div class="col-12 col-lg-7">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <h5 class="mb-0"><i class="fas fa-calendar-check me-2 text-info"></i>Rekap Absensi</h5>
+                    <div class="btn-group btn-group-sm" role="group" id="rekapToggle">
+                        <button class="btn btn-outline-secondary active" data-period="hari">Hari Ini</button>
+                        <button class="btn btn-outline-secondary" data-period="7hari">7 Hari</button>
+                        <button class="btn btn-outline-secondary" data-period="bulan">Bulan Ini</button>
+                        <button class="btn btn-outline-secondary" data-period="tahun">Tahun Ini</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="rekapContent">
+                        {% for period_key, rekap in rekap_periods.items %}{% endfor %}
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafik Row 3: Trend Absensi 7 Hari -->
+    <div class="row g-3 mt-1 mb-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Trend Absensi 7 Hari Terakhir</h5>
+                    <span class="text-muted" style="font-size:.78rem;">{{ today|date:"d M Y" }}</span>
+                </div>
+                <div class="card-body" style="position:relative;height:260px;">
+                    <canvas id="absenTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{# Data absensi rekap untuk JS #}
+<script>
+const REKAP_DATA = {
+    hari  : { {% for k,v in rekap_hari_ini.items %}"{{ k }}": {{ v }},{% endfor %} },
+    "7hari": { {% for k,v in rekap_7hari.items %}"{{ k }}": {{ v }},{% endfor %} },
+    bulan : { {% for k,v in rekap_bulan_ini.items %}"{{ k }}": {{ v }},{% endfor %} },
+    tahun : { {% for k,v in rekap_tahun_ini.items %}"{{ k }}": {{ v }},{% endfor %} },
+};
+const ABSEN_COLORS = {
+    "Hadir"       : "#22c55e",
+    "Tidak Hadir" : "#ef4444",
+    "Izin"        : "#f59e0b",
+    "Sakit"       : "#3b82f6",
+    "Cuti"        : "#a855f7",
+    "WFH"         : "#06b6d4",
+};
+const ABSEN_ICONS = {
+    "Hadir"       : "fa-check-circle",
+    "Tidak Hadir" : "fa-times-circle",
+    "Izin"        : "fa-clock",
+    "Sakit"       : "fa-heartbeat",
+    "Cuti"        : "fa-umbrella-beach",
+    "WFH"         : "fa-home",
+};
+const PERIOD_LABELS = { hari:"Hari Ini", "7hari":"7 Hari", bulan:"Bulan Ini", tahun:"Tahun Ini" };
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const PALETTE = [
+    '#1976d2','#388e3c','#f57c00','#c62828','#7b1fa2',
+    '#00838f','#558b2f','#ad1457','#4527a0','#0277bd',
+    '#6d4c41','#37474f','#e65100','#1b5e20','#880e4f',
+];
+
+function buildDonut(canvasId, legendId, labels, data) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    const total = data.reduce((a, b) => a + b, 0);
+    const colors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#fff',
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/total*100)}%)`
+                    }
+                }
+            }
+        }
+    });
+
+    // Custom legend
+    const legend = document.getElementById(legendId);
+    if (!legend) return;
+    legend.innerHTML = labels.map((lbl, i) => `
+        <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:0.8rem;">
+            <span>
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
+                    background:${colors[i]};margin-right:6px;"></span>${lbl}
+            </span>
+            <span class="fw-semibold">${data[i]}
+                <span class="text-muted">(${Math.round(data[i]/total*100)}%)</span>
+            </span>
+        </div>
+    `).join('');
+}
+
+{% if chart_contract_data %}
+buildDonut('contractChart','contractLegend',{{ chart_contract_labels|safe }},{{ chart_contract_data|safe }});
+{% endif %}
+{% if chart_prov_data %}
+buildDonut('provChart','provLegend',{{ chart_prov_labels|safe }},{{ chart_prov_data|safe }});
+{% endif %}
+
+// ── PKWT vs PKWTT Donut ──────────────────────────────────────────────────────
+{% if chart_pkwt_data and chart_pkwt_data != "[]" %}
+(function() {
+    const labels = {{ chart_pkwt_labels|safe }};
+    const data   = {{ chart_pkwt_data|safe }};
+    const colors = ['#3b82f6','#22c55e','#f59e0b','#a855f7','#6b7280'];
+    const total  = data.reduce((a,b)=>a+b,0);
+    const ctx    = document.getElementById('pkwtChart');
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth:2, borderColor:'#1e1e1e', hoverOffset:6 }] },
+        options: {
+            cutout: '65%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw} (${Math.round(c.raw/total*100)}%)` } }
+            }
+        }
+    });
+    const leg = document.getElementById('pkwtLegend');
+    if (leg) leg.innerHTML = labels.map((lbl,i) => `
+        <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:.8rem;">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colors[i]};margin-right:6px;"></span>${lbl}</span>
+            <span class="fw-semibold">${data[i]} <span class="text-muted">(${Math.round(data[i]/total*100)}%)</span></span>
+        </div>`).join('');
+})();
+{% endif %}
+
+// ── Rekap Absensi Toggle ─────────────────────────────────────────────────────
+function renderRekap(period) {
+    const rekap   = REKAP_DATA[period];
+    const keys    = Object.keys(rekap).filter(k => k !== 'Libur');
+    const total   = keys.reduce((a,k) => a + rekap[k], 0);
+    const content = document.getElementById('rekapContent');
+    if (!content) return;
+
+    content.innerHTML = `
+        <div class="row g-2 mb-3">
+            ${keys.map(k => `
+            <div class="col-6 col-md-4">
+                <div class="d-flex align-items-center gap-2 p-2 rounded" style="background:var(--surface);border:1px solid var(--border);">
+                    <div style="width:36px;height:36px;border-radius:8px;background:${ABSEN_COLORS[k]}22;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas ${ABSEN_ICONS[k]}" style="color:${ABSEN_COLORS[k]};font-size:.9rem;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:1.1rem;font-weight:700;line-height:1;">${rekap[k]}</div>
+                        <div style="font-size:.7rem;color:var(--muted);">${k}</div>
+                    </div>
+                </div>
+            </div>`).join('')}
+        </div>
+        <div style="height:6px;border-radius:999px;overflow:hidden;background:var(--surface2);display:flex;">
+            ${total > 0 ? keys.filter(k=>rekap[k]>0).map(k =>
+                `<div title="${k}: ${rekap[k]}" style="width:${Math.round(rekap[k]/total*100)}%;background:${ABSEN_COLORS[k]};transition:width .4s;"></div>`
+            ).join('') : '<div style="width:100%;background:var(--muted2);"></div>'}
+        </div>
+        <div class="d-flex justify-content-between mt-1" style="font-size:.7rem;color:var(--muted);">
+            <span>Total: <strong style="color:var(--text);">${total}</strong> record</span>
+            <span>${PERIOD_LABELS[period]}</span>
+        </div>`;
+}
+
+document.querySelectorAll('#rekapToggle button').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('#rekapToggle button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        renderRekap(this.dataset.period);
+    });
+});
+renderRekap('hari');
+
+// ── Trend Absensi 7 Hari — Line Chart ────────────────────────────────────────
+(function() {
+    const ctx = document.getElementById('absenTrendChart');
+    if (!ctx) return;
+    const labels   = {{ absen_7hari_labels|safe }};
+    const datasets = {{ absen_7hari_datasets|safe }};
+    new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { color: '#c8c8c8', usePointStyle: true, pointStyleWidth: 8, font: { size: 11 } }
+                },
+                tooltip: { backgroundColor: '#252525', titleColor: '#f0f0f0', bodyColor: '#c8c8c8', borderColor: '#3a3a3a', borderWidth: 1 }
+            },
+            scales: {
+                x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#888', font: { size: 11 } } },
+                y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#888', font: { size: 11 }, stepSize: 1 }, beginAtZero: true }
+            }
+        }
+    });
+})();
+
+</script>
+{% endblock %}

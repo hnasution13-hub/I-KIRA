@@ -1,0 +1,134 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit Soal{% else %}Tambah Soal{% endif %} - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Psikotes / Bank Soal / {% if instance %}Edit{% else %}Tambah{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-pen me-2" style="color:#7b1fa2;"></i>
+        {% if instance %}Edit Soal{% else %}Tambah Soal Baru{% endif %}
+    </h4>
+    <a href="{% url 'soal_bank_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<div class="card" style="max-width:720px;">
+    <div class="card-body">
+        <form method="post" id="soalForm">
+            {% csrf_token %}
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kategori <span class="text-danger">*</span></label>
+                    <select name="kategori" class="form-select" id="kategoriSelect" required onchange="toggleTipe()">
+                        <option value="">-- Pilih --</option>
+                        {% for val, label in kategori_choices %}
+                        <option value="{{ val }}" {% if instance.kategori == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Tipe Soal</label>
+                    <select name="tipe" class="form-select" id="tipeSelect">
+                        {% for val, label in tipe_choices %}
+                        <option value="{{ val }}" {% if instance.tipe == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Pertanyaan / Soal <span class="text-danger">*</span></label>
+                    <textarea name="pertanyaan" class="form-control" rows="3" required>{{ instance.pertanyaan|default:"" }}</textarea>
+                </div>
+
+                <!-- Pilihan Ganda -->
+                <div id="pilihanSection" class="col-12">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Opsi A</label>
+                            <input type="text" name="opsi_a" class="form-control" value="{{ instance.opsi_a|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Opsi B</label>
+                            <input type="text" name="opsi_b" class="form-control" value="{{ instance.opsi_b|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Opsi C</label>
+                            <input type="text" name="opsi_c" class="form-control" value="{{ instance.opsi_c|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Opsi D</label>
+                            <input type="text" name="opsi_d" class="form-control" value="{{ instance.opsi_d|default:'' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Jawaban Benar</label>
+                            <select name="jawaban_benar" class="form-select">
+                                <option value="">-- Pilih --</option>
+                                {% for opt in "ABCD" %}
+                                <option value="{{ opt }}" {% if instance.jawaban_benar == opt %}selected{% endif %}>{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DISC Section -->
+                <div id="discSection" class="col-12" style="display:none;">
+                    <div class="alert alert-info py-2 mb-2" style="font-size:0.85rem;">
+                        Untuk soal DISC, isi dimensi (D/I/S/C) yang berkorespondensi dengan setiap opsi jawaban.
+                    </div>
+                    <div class="row g-2">
+                        {% for lbl in "ABCD" %}
+                        <div class="col-md-6">
+                            <label class="form-label">Dimensi DISC Opsi {{ lbl }}</label>
+                            <select name="disc_{{ lbl|lower }}" class="form-select">
+                                <option value="">--</option>
+                                {% for d in "DISC" %}
+                                <option value="{{ d }}" {% if instance %}{% if lbl == 'A' and instance.disc_a == d %}selected{% elif lbl == 'B' and instance.disc_b == d %}selected{% elif lbl == 'C' and instance.disc_c == d %}selected{% elif lbl == 'D' and instance.disc_d == d %}selected{% endif %}{% endif %}>{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Urutan Tampil</label>
+                    <input type="number" name="urutan" class="form-control" value="{{ instance.urutan|default:0 }}" min="0">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="aktif" id="aktifCheck"
+                            {% if not instance or instance.aktif %}checked{% endif %}>
+                        <label class="form-check-label" for="aktifCheck">Soal Aktif</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Simpan</button>
+                <a href="{% url 'soal_bank_list' %}" class="btn btn-outline-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleTipe() {
+    const kat = document.getElementById('kategoriSelect').value;
+    const tipe = document.getElementById('tipeSelect');
+    const disc = document.getElementById('discSection');
+    const pilihan = document.getElementById('pilihanSection');
+    if (kat === 'disc') {
+        tipe.value = 'disc_set';
+        disc.style.display = '';
+        pilihan.style.display = 'none';
+    } else {
+        tipe.value = 'pilihan_ganda';
+        disc.style.display = 'none';
+        pilihan.style.display = '';
+    }
+}
+toggleTipe();
+</script>
+{% endblock %}

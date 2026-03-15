@@ -1,0 +1,79 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Audit Log{% endblock %}
+{% block breadcrumb %}Asset Management / Audit Log{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="text-white mb-1"><i class="fas fa-history me-2 text-primary"></i>Audit Log</h4>
+        <p class="text-secondary mb-0">Rekam jejak semua aktivitas pengguna di sistem</p>
+    </div>
+    <a href="{% url 'audit:statistics' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-chart-bar me-1"></i>Statistik</a>
+</div>
+<!-- Filter -->
+<div class="card bg-dark border-secondary mb-4"><div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-2"><label class="form-label text-secondary small">Username</label>
+            <input type="text" name="username" value="{{ request.GET.username }}" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Username...">
+        </div>
+        <div class="col-md-2"><label class="form-label text-secondary small">Aksi</label>
+            <select name="action" class="form-select form-select-sm bg-dark text-white border-secondary">
+                <option value="">-- Semua --</option>
+                <option value="LOGIN">Login</option>
+                <option value="LOGOUT">Logout</option>
+                <option value="CREATE">Create</option>
+                <option value="UPDATE">Update</option>
+                <option value="DELETE">Delete</option>
+                <option value="EXPORT">Export</option>
+            </select>
+        </div>
+        <div class="col-md-2"><label class="form-label text-secondary small">Dari Tanggal</label>
+            <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="form-control form-control-sm bg-dark text-white border-secondary">
+        </div>
+        <div class="col-md-2"><label class="form-label text-secondary small">Sampai Tanggal</label>
+            <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="form-control form-control-sm bg-dark text-white border-secondary">
+        </div>
+        <div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-search me-1"></i>Filter</button></div>
+        <div class="col-md-2"><a href="{% url 'audit:log_list' %}" class="btn btn-outline-secondary btn-sm w-100">Reset</a></div>
+    </form>
+</div></div>
+<!-- Table -->
+<div class="card bg-dark border-secondary"><div class="card-body p-0">
+    <div class="table-responsive">
+        <div class="table-responsive-wrap">
+<table class="table table-dark table-hover mb-0">
+            <thead><tr class="border-secondary">
+                <th class="text-secondary fw-normal ps-4">Waktu</th>
+                <th class="text-secondary fw-normal">User</th>
+                <th class="text-secondary fw-normal">Aksi</th>
+                <th class="text-secondary fw-normal">Deskripsi</th>
+                <th class="text-secondary fw-normal">IP</th>
+            </tr></thead>
+            <tbody>
+            {% for log in logs %}
+            <tr class="border-secondary">
+                <td class="ps-4 text-secondary small font-monospace">{{ log.timestamp|date:"d/m/Y H:i:s" }}</td>
+                <td class="text-white small">{{ log.username }}</td>
+                <td>
+                    {% if log.action == 'LOGIN' %}<span class="badge bg-success">Login</span>
+                    {% elif log.action == 'LOGOUT' %}<span class="badge bg-secondary">Logout</span>
+                    {% elif log.action == 'CREATE' %}<span class="badge bg-primary">Create</span>
+                    {% elif log.action == 'UPDATE' %}<span class="badge bg-warning text-dark">Update</span>
+                    {% elif log.action == 'DELETE' %}<span class="badge bg-danger">Delete</span>
+                    {% elif log.action == 'EXPORT' %}<span class="badge bg-info text-dark">Export</span>
+                    {% else %}<span class="badge bg-secondary">{{ log.action }}</span>{% endif %}
+                </td>
+                <td class="text-secondary small">{{ log.description|truncatechars:80 }}</td>
+                <td class="text-secondary small font-monospace">{{ log.ip_address|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-secondary py-5"><i class="fas fa-history fa-2x mb-2 d-block"></i>Belum ada log</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+</div>
+    </div>
+</div>
+{% if is_paginated %}<div class="card-footer border-secondary">{% include 'includes/pagination.html' %}</div>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Penugasan Aset{% endblock %}
+{% block breadcrumb %}Asset Management / Penugasan Aset{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="{% url 'movements:movement_list' %}" class="text-secondary text-decoration-none small"><i class="fas fa-arrow-left me-1"></i>Mutasi</a>
+        <h4 class="text-white mb-1 mt-1"><i class="fas fa-user-tag me-2 text-primary"></i>Penugasan Aset Saat Ini</h4>
+        <p class="text-secondary mb-0 small">Status penugasan aset terkini ke masing-masing PIC</p>
+    </div>
+    <a href="{% url 'movements:movement_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Tambah Mutasi</a>
+</div>
+<div class="card bg-dark border-secondary"><div class="card-body p-0">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+            <thead><tr class="border-secondary">
+                <th class="text-secondary fw-normal ps-4">Aset</th>
+                <th class="text-secondary fw-normal">PIC</th>
+                <th class="text-secondary fw-normal">Lokasi</th>
+                <th class="text-secondary fw-normal">Kondisi</th>
+                <th class="text-secondary fw-normal">Tgl. Penugasan</th>
+                <th class="text-secondary fw-normal">Mutasi Terakhir</th>
+                <th class="text-secondary fw-normal">Aksi</th>
+            </tr></thead>
+            <tbody>
+            {% for asgn in assignments %}
+            <tr class="border-secondary">
+                <td class="ps-4"><a href="{% url 'assets:asset_detail' asgn.asset.pk %}" class="text-info text-decoration-none font-monospace small">{{ asgn.asset_code }}</a><br><span class="text-secondary small">{{ asgn.asset.asset_name|truncatechars:30 }}</span></td>
+                <td class="text-white">{{ asgn.current_pic_name|default:"<span class='text-secondary'>-</span>" }}</td>
+                <td class="text-secondary small">{{ asgn.current_location_name|default:"-" }}</td>
+                <td><span class="badge bg-secondary">{{ asgn.current_condition|default:"-" }}</span></td>
+                <td class="text-secondary small">{{ asgn.assignment_date|date:"d M Y"|default:"-" }}</td>
+                <td class="text-secondary small">{{ asgn.last_movement_date|date:"d M Y"|default:"-" }}</td>
+                <td><a href="{% url 'movements:assignment_detail' asgn.pk %}" class="btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center text-secondary py-5"><i class="fas fa-user-tag fa-2x mb-2 d-block"></i>Belum ada penugasan</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if is_paginated %}<div class="card-footer border-secondary">{% include 'includes/pagination.html' %}</div>{% endif %}
+</div>
+{% endblock %}

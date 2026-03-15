@@ -1,0 +1,19 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Hapus Assignment{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+<div class="col-md-5">
+<div class="card border-danger">
+    <div class="card-header bg-danger text-white fw-semibold">Konfirmasi Hapus Assignment</div>
+    <div class="card-body text-center py-4">
+        <p>Hapus assignment: <strong>{{ obj }}</strong>?</p>
+        <form method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger px-4 me-2">Ya, Hapus</button>
+            <a href="{% url 'assignment_list' %}" class="btn btn-outline-secondary px-4">Batal</a>
+        </form>
+    </div>
+</div>
+</div>
+</div>
+{% endblock %}

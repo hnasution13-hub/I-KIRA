@@ -1,0 +1,112 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Perjanjian Bersama PHK{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <span class="fs-4">🤝</span>
+      <h4 class="mb-0 fw-bold">Perjanjian Bersama PHK</h4>
+    </div>
+    <a href="{% url 'pb_create' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-circle me-1"></i>Buat PB Baru
+    </a>
+  </div>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+        {{ msg|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <div class="table-responsive-wrap">
+<table class="table table-hover align-middle mb-0 datatable">
+          <thead class="table-light">
+            <tr>
+              <th>No. PB</th>
+              <th>Karyawan</th>
+              <th>Status</th>
+              <th>Tgl PHK</th>
+              <th>Tgl PB</th>
+              <th class="text-end">Grand Total</th>
+              <th class="text-center">Status PB</th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pb in pbs %}
+            <tr>
+              <td class="small text-muted">{{ pb.nomor_pb|default:"—" }}</td>
+              <td>
+                <div class="fw-semibold">{{ pb.snap_nama }}</div>
+                <div class="text-muted small">{{ pb.snap_nik }}</div>
+              </td>
+              <td>
+                <span class="badge {% if pb.snap_status_karyawan == 'PKWT' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                  {{ pb.snap_status_karyawan }}
+                </span>
+              </td>
+              <td>{{ pb.tanggal_phk|date:"d/m/Y" }}</td>
+              <td>{{ pb.tanggal_pb|date:"d/m/Y" }}</td>
+              <td class="text-end fw-semibold">Rp {{ pb.grand_total|floatformat:"0g" }}</td>
+              <td class="text-center">
+                {% if pb.status == 'final' %}
+                  <span class="badge bg-success">Final</span>
+                {% else %}
+                  <span class="badge bg-secondary">Draft</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                  <a href="{% url 'pb_detail' pb.pk %}"
+                     class="btn btn-outline-primary" title="Detail">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{% url 'pb_print' pb.pk %}"
+                     class="btn btn-outline-success" title="Print" target="_blank">
+                    <i class="bi bi-printer"></i>
+                  </a>
+                  <a href="{% url 'pb_edit' pb.pk %}"
+                     class="btn btn-outline-secondary" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <tr class="dt-empty">
+                    <td colspan="8" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-handshake"></i></div>
+                            <div class="empty-state-title">Belum ada Perjanjian Bersama</div>
+                            <div class="empty-state-desc">Tambah perjanjian bersama antara perusahaan dan karyawan.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'pb_create' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah PB</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <i class="bi bi-folder2-open fs-3 d-block mb-2"></i>
+                Belum ada Perjanjian Bersama.
+                <a href="{% url 'pb_create' %}">Buat sekarang →</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

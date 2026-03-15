@@ -1,0 +1,82 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Approval Matrix{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="mb-1">Approval Matrix</h4>
+    <small class="text-muted">
+      Atur siapa yang menyetujui apa. Jika kosong, sistem otomatis pakai hierarki jabatan.
+    </small>
+  </div>
+  <a href="{% url 'approval_matrix_add' %}" class="btn btn-primary btn-sm">+ Tambah Rule</a>
+</div>
+
+{% if not matrices %}
+<div class="alert alert-info">
+  Belum ada aturan approval. Sistem akan otomatis menggunakan hierarki jabatan (field <em>Atasan Jabatan</em>).
+  <a href="{% url 'approval_matrix_add' %}">Tambah aturan eksplisit</a> jika perlu multi-level atau modul tertentu.
+</div>
+{% else %}
+
+{% for modul_label, rows in grouped.items %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-transparent border-bottom py-2">
+    <h6 class="mb-0">{{ modul_label }}</h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Jabatan Pemohon</th>
+          <th class="text-center">Level</th>
+          <th>Approver</th>
+          <th class="text-center">Auto (hari)</th>
+          <th class="text-center">Email</th>
+          <th class="text-center">Aktif</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in rows %}
+        <tr>
+          <td>{{ m.jabatan_pemohon.nama }}<br><small class="text-muted">{{ m.jabatan_pemohon.level }}</small></td>
+          <td class="text-center"><span class="badge bg-secondary">L{{ m.level_approval }}</span></td>
+          <td>
+            {% if m.jabatan_approver %}
+              {{ m.jabatan_approver.nama }}
+            {% else %}
+              <span class="text-muted fst-italic">↑ auto dari hierarki</span>
+            {% endif %}
+          </td>
+          <td class="text-center">{% if m.auto_approve_hari %}{{ m.auto_approve_hari }} hari{% else %}—{% endif %}</td>
+          <td class="text-center">{% if m.notif_email %}✓{% else %}—{% endif %}</td>
+          <td class="text-center">
+            <span class="badge {% if m.aktif %}bg-success{% else %}bg-secondary{% endif %}">
+              {% if m.aktif %}Aktif{% else %}Nonaktif{% endif %}
+            </span>
+          </td>
+          <td>
+            <a href="{% url 'approval_matrix_edit' m.pk %}" class="btn btn-xs btn-outline-secondary btn-sm">Edit</a>
+            <a href="{% url 'approval_matrix_delete' m.pk %}" class="btn btn-xs btn-outline-danger btn-sm ms-1">Hapus</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="card border-0 shadow-sm mt-2">
+  <div class="card-body py-3">
+    <h6 class="mb-2">Cara kerja approval otomatis</h6>
+    <ol class="text-muted small mb-0">
+      <li>Jika ada rule eksplisit di tabel ini → pakai rule tersebut (bisa multi-level).</li>
+      <li>Jika tidak ada rule → sistem naik lewat <strong>Atasan Jabatan</strong> di data jabatan secara otomatis.</li>
+      <li>Approver adalah karyawan aktif yang memegang jabatan approver di saat pengajuan.</li>
+    </ol>
+  </div>
+</div>
+{% endblock %}

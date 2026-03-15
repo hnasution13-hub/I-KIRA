@@ -1,0 +1,30 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Add-On Tidak Aktif{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-center" style="min-height:60vh;">
+    <div class="text-center" style="max-width:480px;">
+        <div class="mb-4">
+            <i class="fas fa-lock fa-4x text-warning"></i>
+        </div>
+        <h4 class="fw-bold mb-2">Add-On Belum Aktif</h4>
+        <p class="text-muted mb-1">
+            Fitur <strong>{{ addon_label }}</strong> memerlukan lisensi add-on yang aktif.
+        </p>
+        <p class="text-muted mb-4">
+            Hubungi administrator sistem untuk mengaktifkan add-on ini.
+        </p>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary px-4">
+            <i class="fas fa-home me-2"></i>Kembali ke Dashboard
+        </a>
+        {% if request.user.role == 'admin' %}
+        <div class="mt-4 p-3 bg-light rounded text-start">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1 text-primary"></i>
+                <strong>Admin:</strong> Aktifkan add-on melalui
+                <a href="/admin/core/addonlicense/">Django Admin → Lisensi Add-On</a>
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

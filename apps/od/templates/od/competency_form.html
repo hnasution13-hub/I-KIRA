@@ -1,0 +1,65 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ action }} Kompetensi{% endblock %}
+{% block breadcrumb %}OD — {{ action }} Kompetensi{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-brain me-2" style="color:#818cf8;"></i>{{ action }} Kompetensi</h4>
+  <a href="{% url 'od:competency_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:760px;">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-3 mb-3">
+        <div class="col-md-3">
+          <label class="form-label fw-medium">Kode <span class="text-danger">*</span></label>
+          <input type="text" name="kode" class="form-control text-uppercase" required
+                 value="{{ obj.kode|default:'' }}" placeholder="Misal: TC-01">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label fw-medium">Nama Kompetensi <span class="text-danger">*</span></label>
+          <input type="text" name="nama" class="form-control" required
+                 value="{{ obj.nama|default:'' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-medium">Kategori</label>
+          <select name="kategori_id" class="form-select">
+            <option value="">— Tanpa Kategori —</option>
+            {% for k in kategori_list %}
+            <option value="{{ k.id }}" {% if obj and obj.kategori_id == k.id %}selected{% endif %}>{{ k.nama }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-medium">Deskripsi Umum</label>
+        <textarea name="deskripsi" class="form-control" rows="2">{{ obj.deskripsi|default:'' }}</textarea>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-medium mb-2">Level Descriptor (1 = Dasar, 5 = Expert)</label>
+        {% for i in "12345" %}
+        <div class="d-flex gap-2 align-items-start mb-2">
+          <span class="badge bg-primary mt-1" style="min-width:52px; text-align:center;">Level {{ i }}</span>
+          <input type="text" name="level_{{ i }}_desc" class="form-control form-control-sm"
+                 placeholder="Deskripsi level {{ i }}..."
+                 value="{% if i == '1' %}{{ obj.level_1_desc|default:'' }}{% elif i == '2' %}{{ obj.level_2_desc|default:'' }}{% elif i == '3' %}{{ obj.level_3_desc|default:'' }}{% elif i == '4' %}{{ obj.level_4_desc|default:'' }}{% else %}{{ obj.level_5_desc|default:'' }}{% endif %}">
+        </div>
+        {% endfor %}
+      </div>
+      {% if obj %}
+      <div class="mb-3">
+        <div class="form-check">
+          <input type="checkbox" name="aktif" class="form-check-input" id="aktifCheck" {% if obj.aktif %}checked{% endif %}>
+          <label class="form-check-label" for="aktifCheck">Aktif</label>
+        </div>
+      </div>
+      {% endif %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Simpan</button>
+        <a href="{% url 'od:competency_list' %}" class="btn btn-outline-secondary">Batal</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

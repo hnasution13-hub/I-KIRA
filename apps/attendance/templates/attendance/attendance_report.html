@@ -1,0 +1,178 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Laporan Absensi{% endblock %}
+{% block breadcrumb %}Absensi / Laporan{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Laporan Absensi</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'export_attendance_excel' %}?bulan={{ bulan }}&tahun={{ tahun }}&department={{ dept_filter }}"
+           class="btn btn-success btn-sm {% if not bulan %}disabled{% endif %}">
+            <i class="fas fa-file-excel me-1"></i>Export Excel
+        </a>
+    </div>
+</div>
+
+<div class="card mb-3"><div class="card-body py-3">
+    <!-- Shortcut -->
+    <div class="d-flex gap-2 flex-wrap mb-2">
+        <small class="text-muted align-self-center me-1"><i class="fas fa-bolt"></i> Shortcut:</small>
+        <a href="?bulan=2&tahun=2025"
+           class="btn btn-sm {% if bulan == 2 and tahun == 2025 %}btn-primary{% else %}btn-outline-secondary{% endif %} py-0 px-2"
+           style="font-size:.78rem;">
+            {% if bulan == 2 and tahun == 2025 %}<b>✓ Feb 2025</b>{% else %}Feb 2025{% endif %}
+        </a>
+        <a href="?bulan=3&tahun=2025"
+           class="btn btn-sm py-0 px-2 {% if bulan == 3 and tahun == 2025 %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+           style="font-size:.78rem;">
+            {% if bulan == 3 and tahun == 2025 %}<b>✓ Mar 2025</b>{% else %}Mar 2025{% endif %}
+        </a>
+    </div>
+
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label fw-semibold small">Bulan</label>
+            <select name="bulan" class="form-select form-select-sm">
+                <option value="">-- Pilih Bulan --</option>
+                {% for m, nama in bulan_choices %}
+                <option value="{{ m }}" {% if bulan == m %}selected{% endif %}>{{ nama }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold small">Tahun</label>
+            <input type="number" name="tahun" class="form-control form-control-sm"
+                   value="{{ tahun }}" min="2020" max="2030">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold small">Departemen</label>
+            <select name="department" class="form-select form-select-sm">
+                <option value="">Semua Departemen</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}" {% if dept_filter == d.id|stringformat:"s" %}selected{% endif %}>{{ d.nama }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-search me-1"></i>Tampilkan
+            </button>
+        </div>
+    </form>
+</div></div>
+
+{% if summary %}
+<!-- Stat cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <div class="stat-card">
+            <div class="stat-value text-primary">{{ summary.total_karyawan }}</div>
+            <div class="stat-label">Karyawan</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="stat-card">
+            <div class="stat-value text-success">{{ summary.rata_hadir|floatformat:1 }}</div>
+            <div class="stat-label">Rata Hari Hadir</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="stat-card">
+            <div class="stat-value text-danger">{{ summary.total_alpha }}</div>
+            <div class="stat-label">Total Alpha</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="stat-card">
+            <div class="stat-value text-warning">{{ summary.total_sakit }}</div>
+            <div class="stat-label">Sakit</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--red);">{{ summary.total_telat }}</div>
+            <div class="stat-label">Menit Telat</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="stat-card">
+            <div class="stat-value text-info">{{ summary.total_lembur|floatformat:1 }}</div>
+            <div class="stat-label">Jam Lembur</div>
+        </div>
+    </div>
+</div>
+
+<div class="card"><div class="card-body p-0">
+    <table class="table table-hover datatable mb-0" id="tbl-absensi">
+        <thead class="table-light">
+            <tr>
+                <th>NIK</th>
+                <th>Nama Karyawan</th>
+                <th>Departemen</th>
+                <th class="text-center">Hari Kerja</th>
+                <th class="text-center text-success">Hadir</th>
+                <th class="text-center text-danger">Alpha</th>
+                <th class="text-center text-warning">Sakit</th>
+                <th class="text-center">Izin/Cuti</th>
+                <th class="text-center text-danger">Telat (mnt)</th>
+                <th class="text-center text-info">Lembur (jam)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in report_data %}
+            <tr>
+                <td><small class="text-muted">{{ r.employee.nik }}</small></td>
+                <td class="fw-semibold">{{ r.employee.nama }}</td>
+                <td><small>{{ r.employee.department|default:"-" }}</small></td>
+                <td class="text-center">{{ r.hari_kerja }}</td>
+                <td class="text-center fw-bold text-success">{{ r.hari_hadir }}</td>
+                <td class="text-center {% if r.hari_absen > 0 %}text-danger fw-bold{% else %}text-muted{% endif %}">{{ r.hari_absen }}</td>
+                <td class="text-center {% if r.hari_sakit > 0 %}text-warning{% else %}text-muted{% endif %}">{{ r.hari_sakit }}</td>
+                <td class="text-center">{{ r.hari_izin }}</td>
+                <td class="text-center {% if r.total_telat > 60 %}text-danger{% elif r.total_telat > 0 %}text-warning{% else %}text-muted{% endif %}">
+                    {{ r.total_telat }}
+                </td>
+                <td class="text-center {% if r.total_lembur > 0 %}text-info fw-semibold{% else %}text-muted{% endif %}">
+                    {% if r.total_lembur > 0 %}{{ r.total_lembur|floatformat:1 }}{% else %}-{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                    Tidak ada data absensi untuk periode ini
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        {% if report_data %}
+        <tfoot class="table-light fw-bold">
+            <tr>
+                <td colspan="3">Total ({{ report_data|length }} karyawan)</td>
+                <td class="text-center">—</td>
+                <td class="text-center text-success">{{ summary.total_hadir }}</td>
+                <td class="text-center text-danger">{{ summary.total_alpha }}</td>
+                <td class="text-center text-warning">{{ summary.total_sakit }}</td>
+                <td class="text-center">{{ summary.total_izin }}</td>
+                <td class="text-center text-danger">{{ summary.total_telat }}</td>
+                <td class="text-center text-info">{{ summary.total_lembur|floatformat:1 }}</td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+</div></div>
+
+{% else %}
+<div class="card"><div class="card-body text-center py-5 text-muted">
+    <i class="fas fa-calendar-alt fa-3x mb-3 d-block"></i>
+    <h5>Pilih periode dan klik Tampilkan</h5>
+    <p class="mb-3">Atau gunakan shortcut di atas untuk data simulasi Feb/Mar 2025</p>
+    <a href="?bulan=2&tahun=2025" class="btn btn-primary btn-sm me-2">
+        <i class="fas fa-bolt me-1"></i>Lihat Feb 2025
+    </a>
+    <a href="?bulan=3&tahun=2025" class="btn btn-outline-primary btn-sm">
+        Lihat Mar 2025
+    </a>
+</div></div>
+{% endif %}
+
+{% endblock %}

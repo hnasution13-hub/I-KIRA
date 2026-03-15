@@ -1,0 +1,287 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit{% else %}Buat{% endif %} Offering Letter{% endblock %}
+{% block breadcrumb %}Rekrutmen / Offering Letter / {% if instance %}Edit{% else %}Buat{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-envelope-open-text me-2 text-primary"></i>
+        {% if instance %}Edit{% else %}Buat{% endif %} Offering Letter
+    </h4>
+    <a href="{% url 'offering_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<form method="post" id="olForm">
+    {% csrf_token %}
+    <div class="row g-4">
+
+        <!-- ── Kolom Kiri ── -->
+        <div class="col-lg-8">
+
+            <!-- Kandidat & Jabatan -->
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="fas fa-user me-2 text-primary"></i>Data Kandidat</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Kandidat *</label>
+                            <select name="candidate" class="form-select" required id="selectCandidate">
+                                <option value="">-- Pilih Kandidat --</option>
+                                {% for c in candidates %}
+                                <option value="{{ c.pk }}"
+                                    data-jabatan="{{ c.jabatan_dilamar }}"
+                                    {% if instance.candidate_id == c.pk or prefill_candidate and prefill_candidate.pk == c.pk %}selected{% endif %}>
+                                    {{ c.nama }} — {{ c.jabatan_dilamar }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Jabatan *</label>
+                            <input type="text" name="jabatan" id="inputJabatan" class="form-control"
+                                   value="{% if instance %}{{ instance.jabatan }}{% elif prefill_candidate %}{{ prefill_candidate.jabatan_dilamar }}{% endif %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Departemen</label>
+                            <select name="department" class="form-select">
+                                <option value="">-- Pilih --</option>
+                                {% for d in departments %}
+                                <option value="{{ d.id }}" {% if instance.department_id == d.id %}selected{% endif %}>
+                                    {{ d.nama }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tanggal & Lokasi -->
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="fas fa-map-marker-alt me-2 text-primary"></i>Tanggal & Lokasi</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tanggal Surat *</label>
+                            <input type="date" name="tanggal_surat" class="form-control"
+                                   value="{{ instance.tanggal_surat|date:'Y-m-d'|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mulai Kerja *</label>
+                            <input type="date" name="tanggal_mulai_kerja" class="form-control"
+                                   value="{{ instance.tanggal_mulai_kerja|date:'Y-m-d'|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Site / Lokasi Surat</label>
+                            <input type="text" name="site_lokasi" class="form-control"
+                                   placeholder="contoh: Site Laroenai"
+                                   value="{{ instance.site_lokasi|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Point of Hire (POH)</label>
+                            <input type="text" name="point_of_hire" class="form-control"
+                                   placeholder="contoh: Pekanbaru"
+                                   value="{{ instance.point_of_hire|default:'' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Lokasi Kerja Lengkap</label>
+                            <input type="text" name="lokasi_kerja" class="form-control"
+                                   placeholder="contoh: Site Laroenai, Bungku Pesisir, Morowali - Sulawesi Tengah"
+                                   value="{{ instance.lokasi_kerja|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Expected Join Date</label>
+                            <input type="text" name="join_date_text" class="form-control"
+                                   placeholder="contoh: As Soon As Possible"
+                                   value="{{ instance.join_date_text|default:'As Soon As Possible' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">No. Arsip</label>
+                            <input type="text" name="no_arsip" class="form-control"
+                                   placeholder="contoh: 102/CLO/HRD/VI/TBR/2023"
+                                   value="{{ instance.no_arsip|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remunerasi -->
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="fas fa-money-bill-wave me-2 text-primary"></i>Remunerasi</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Gaji Pokok *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="number" name="gaji_pokok" class="form-control" min="0"
+                                       value="{{ instance.gaji_pokok|default:0 }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Fixed Allowance</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="number" name="fixed_allowance" class="form-control" min="0"
+                                       value="{{ instance.fixed_allowance|default:0 }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tunjangan Lain</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="number" name="tunjangan_total" class="form-control" min="0"
+                                       value="{{ instance.tunjangan_total|default:0 }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Masa Probasi (bulan)</label>
+                            <input type="number" name="masa_probasi" class="form-control" min="0" max="24"
+                                   value="{{ instance.masa_probasi|default:3 }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Status</label>
+                            <select name="status" class="form-select">
+                                {% for val, label in instance.STATUS_CHOICES|default:"" %}
+                                    <option value="{{ val }}" {% if instance.status == val %}selected{% endif %}>{{ label }}</option>
+                                {% empty %}
+                                    <option value="Draft" selected>Draft</option>
+                                    <option value="Sent">Dikirim</option>
+                                    <option value="Accepted">Diterima</option>
+                                    <option value="Rejected">Ditolak</option>
+                                    <option value="Expired">Kadaluarsa</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keterangan -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <label class="form-label fw-semibold">Catatan / Keterangan Internal</label>
+                    <textarea name="keterangan" class="form-control" rows="3"
+                              placeholder="Catatan internal (tidak muncul di dokumen)">{{ instance.keterangan|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fas fa-save me-1"></i>Simpan
+                </button>
+                {% if instance %}
+                <a href="{% url 'offering_print' instance.pk %}" target="_blank" class="btn btn-success px-4">
+                    <i class="fas fa-print me-1"></i>Preview & Print
+                </a>
+                {% endif %}
+                <a href="{% url 'offering_list' %}" class="btn btn-outline-secondary">Batal</a>
+            </div>
+
+        </div><!-- /col-lg-8 -->
+
+        <!-- ── Kolom Kanan — Nomor & Template ── -->
+        <div class="col-lg-4">
+
+            <!-- Nomor Surat -->
+            <div class="card mb-3 border-primary">
+                <div class="card-header bg-primary text-white fw-semibold">
+                    <i class="fas fa-hashtag me-2"></i>Nomor Surat
+                </div>
+                <div class="card-body">
+                    {% if instance %}
+                    <div class="alert alert-light border mb-0 text-center">
+                        <div class="fw-bold fs-5">{{ instance.nomor }}</div>
+                        <small class="text-muted">Nomor tidak dapat diubah setelah dibuat</small>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-2 py-2 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Nomor akan digenerate otomatis saat disimpan.<br>
+                        Format saat ini: <code>{{ setting.format_nomor_ol }}</code>
+                    </div>
+                    <a href="{% url 'company_setting' %}" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="fas fa-cog me-1"></i>Ubah Format Nomor
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Template -->
+            <div class="card mb-3">
+                <div class="card-header fw-semibold">
+                    <i class="fas fa-layer-group me-2 text-primary"></i>Template Draft
+                </div>
+                <div class="card-body">
+                    <label class="form-label fw-semibold">Pilih Template</label>
+                    <select name="template" class="form-select mb-2" id="selectTemplate">
+                        <option value="">-- Default --</option>
+                        {% for tpl in templates %}
+                        <option value="{{ tpl.pk }}"
+                            {% if instance.template_id == tpl.pk %}selected
+                            {% elif not instance and tpl.is_default %}selected{% endif %}>
+                            {{ tpl.nama }}{% if tpl.is_default %} ★{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if templates %}
+                    <div id="tplPreview" class="bg-light rounded p-2 small text-muted" style="min-height:60px;">
+                        Pilih template untuk melihat preview isi...
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning py-2 small mb-0">
+                        Belum ada template. <a href="{% url 'template_add' %}">Buat template baru →</a>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'template_list' %}" class="btn btn-sm btn-outline-secondary w-100 mt-2">
+                        <i class="fas fa-edit me-1"></i>Kelola Template
+                    </a>
+                </div>
+            </div>
+
+        </div><!-- /col-lg-4 -->
+
+    </div><!-- /row -->
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-fill jabatan dari kandidat yang dipilih
+document.getElementById('selectCandidate').addEventListener('change', function () {
+    const opt = this.options[this.selectedIndex];
+    const jabatan = opt.dataset.jabatan || '';
+    if (jabatan && !document.getElementById('inputJabatan').value) {
+        document.getElementById('inputJabatan').value = jabatan;
+    }
+});
+
+// Preview template via AJAX
+const selectTemplate = document.getElementById('selectTemplate');
+const tplPreview     = document.getElementById('tplPreview');
+
+if (selectTemplate && tplPreview) {
+    selectTemplate.addEventListener('change', function () {
+        const id = this.value;
+        if (!id) {
+            tplPreview.innerHTML = '<span class="text-muted">Template default akan digunakan.</span>';
+            return;
+        }
+        tplPreview.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin me-1"></i>Memuat...</span>';
+        fetch(`{% url 'offering_get_template' %}?id=${id}`)
+            .then(r => r.json())
+            .then(d => {
+                tplPreview.innerHTML = `
+                    <div class="mb-1"><strong>Working Day:</strong> ${d.working_day_text.substring(0,80)}...</div>
+                    <div class="mb-1"><strong>Employment Status:</strong> ${d.employment_status_text.substring(0,80)}...</div>
+                    <div><strong>PPh 21:</strong> ${d.pph21_text}</div>`;
+            })
+            .catch(() => { tplPreview.innerHTML = '<span class="text-danger">Gagal memuat template.</span>'; });
+    });
+    // Trigger on load jika sudah ada pilihan
+    if (selectTemplate.value) selectTemplate.dispatchEvent(new Event('change'));
+}
+</script>
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Data Kandidat{% endblock %}
+{% block breadcrumb %}Rekrutmen / Kandidat{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold mb-0"><i class="fas fa-user-tie me-2 text-primary"></i>Data Kandidat</h4>
+  <div class="d-flex gap-2">
+    <a href="{% url 'ats_scan' %}" class="btn btn-success btn-sm">
+      <i class="fas fa-robot me-1"></i>Upload CV (ATS)
+    </a>
+    <a href="{% url 'candidate_add' %}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus me-1"></i>Tambah Manual
+    </a>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="card mb-3 border-0 bg-light">
+  <div class="card-body py-2 px-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold mb-1">Cari Nama / Email</label>
+        <input type="text" name="q" class="form-control form-control-sm"
+               value="{{ q_search }}" placeholder="Nama atau email...">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold mb-1">Filter Posisi</label>
+        <select name="jabatan" class="form-select form-select-sm">
+          <option value="">-- Semua Posisi --</option>
+          {% for j in jabatan_list %}
+            <option value="{{ j }}" {% if q_jabatan == j %}selected{% endif %}>{{ j }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold mb-1">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">-- Semua --</option>
+          {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if q_status == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold mb-1">Urutkan</label>
+        <select name="sort" class="form-select form-select-sm">
+          <option value="terbaru" {% if sort == 'terbaru' %}selected{% endif %}>Terbaru</option>
+          <option value="skor" {% if sort == 'skor' %}selected{% endif %}>⭐ Skor Tertinggi</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-1">
+        <button type="submit" class="btn btn-primary btn-sm w-100">
+          <i class="fas fa-filter me-1"></i>Filter
+        </button>
+        <a href="{% url 'candidate_list' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TABEL -->
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive-wrap">
+<table class="table table-hover mb-0" id="tblKandidat">
+      <thead class="table-light">
+        <tr>
+          <th>Kandidat</th>
+          <th>Posisi Dilamar</th>
+          <th>Pendidikan</th>
+          <th>Pengalaman</th>
+          <th>Skor Total</th>
+          <th>Status</th>
+          <th>Tgl Melamar</th>
+          <th class="text-center">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in candidates %}
+        <tr>
+          <!-- Nama -->
+          <td>
+            <a href="{% url 'candidate_detail' c.pk %}" class="fw-semibold text-decoration-none text-dark">
+              {{ c.nama }}
+            </a><br>
+            <small class="text-muted">{{ c.email|default:"-" }}</small>
+          </td>
+          <!-- Posisi -->
+          <td>
+            {{ c.jabatan_dilamar }}
+            {% if c.mprf %}
+              <br><small class="text-muted">{{ c.mprf.nomor_mprf }}</small>
+            {% endif %}
+          </td>
+          <!-- Pendidikan -->
+          <td>{{ c.pendidikan|default:"-" }}</td>
+          <!-- Pengalaman -->
+          <td>{{ c.pengalaman_tahun }} thn</td>
+          <!-- Skor Total -->
+          <td>
+            {% if c.total_score is not None %}
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" style="height:8px; min-width:60px;">
+                  <div class="progress-bar bg-{{ c.rekomendasi_color }}"
+                       style="width:{{ c.total_score }}%"></div>
+                </div>
+                <span class="fw-bold small text-{{ c.rekomendasi_color }}">
+                  {{ c.total_score }}
+                </span>
+                <span class="badge bg-{{ c.rekomendasi_color }}">{{ c.total_grade }}</span>
+              </div>
+              <small class="text-{{ c.rekomendasi_color }}">{{ c.total_rekomendasi }}</small>
+              <!-- Modul yang sudah diisi -->
+              <div class="d-flex gap-1 mt-1">
+                {% for mod in c.active_modules %}
+                  <span class="badge bg-light text-dark border" style="font-size:10px;">
+                    <i class="fas {{ mod.icon }} me-1"></i>{{ mod.nama }} {{ mod.score }}
+                  </span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <span class="text-muted small"><i class="fas fa-minus"></i> Belum scan</span>
+            {% endif %}
+          </td>
+          <!-- Status -->
+          <td>
+            <span class="badge
+              {% if c.status == 'Hired' %}bg-success
+              {% elif c.status == 'Rejected' or c.status == 'Withdrawn' %}bg-danger
+              {% elif c.status == 'Offering' %}bg-primary
+              {% else %}bg-warning text-dark{% endif %}">
+              {{ c.status }}
+            </span>
+          </td>
+          <!-- Tgl -->
+          <td><small>{{ c.tanggal_melamar|date:"d/m/Y" }}</small></td>
+          <!-- Aksi -->
+          <td class="text-center">
+            <a href="{% url 'candidate_detail' c.pk %}"
+               class="btn btn-sm btn-outline-info" title="Lihat Detail">
+              <i class="fas fa-eye"></i>
+            </a>
+            <a href="{% url 'candidate_print' c.pk %}"
+               class="btn btn-sm btn-outline-secondary ms-1" title="Print Laporan" target="_blank">
+              <i class="fas fa-print"></i>
+            </a>
+            <a href="{% url 'candidate_edit' c.pk %}"
+               class="btn btn-sm btn-outline-primary ms-1" title="Edit">
+              <i class="fas fa-edit"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="dt-empty">
+                    <td colspan="8" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-user-plus"></i></div>
+                            <div class="empty-state-title">Belum ada kandidat</div>
+                            <div class="empty-state-desc">Tambah kandidat baru atau buat Manpower Request terlebih dahulu.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'candidate_add' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Kandidat</a>
+                                <a href="{% url 'mprf_add' %}" class="btn btn-outline"><i class="fas fa-arrow-right" aria-hidden="true"></i> Buat MPRF</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+          <i class="fas fa-users fa-2x d-block mb-2 opacity-25"></i>
+          Belum ada kandidat{% if q_jabatan or q_status or q_search %} yang sesuai filter{% endif %}
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+</div>
+  </div>
+</div>
+
+<script>
+$(document).ready(function() {
+  $('#tblKandidat').DataTable({
+    paging: false, searching: false, ordering: false,
+    info: false,
+  });
+});
+</script>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="mt-3">
+  <ul class="pagination pagination-sm justify-content-center">
+    {% if page_obj.has_previous %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q_search }}&jabatan={{ q_jabatan }}&status={{ q_status }}&sort={{ sort }}">‹ Prev</a></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">Hal {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q_search }}&jabatan={{ q_jabatan }}&status={{ q_status }}&sort={{ sort }}">Next ›</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

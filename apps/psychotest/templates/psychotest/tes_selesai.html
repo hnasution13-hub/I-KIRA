@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hasil Psikotes</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-light">
+<div class="container py-5" style="max-width:700px">
+  <div class="card shadow">
+    <div class="card-body p-4">
+      <div class="text-center mb-4">
+        <i class="fas fa-check-circle fa-4x text-success mb-3 d-block"></i>
+        <h4 class="fw-bold">Tes Selesai!</h4>
+        <p class="text-muted">Terima kasih, <strong>{{ session.candidate.nama }}</strong>. Jawaban Anda telah diterima.</p>
+      </div>
+      {% if result %}
+      <hr>
+      <h5 class="fw-semibold mb-3">Ringkasan Hasil</h5>
+      <div class="row g-3 mb-3 text-center">
+        {% if result.skor_logika is not None %}
+        <div class="col-4"><div class="rounded bg-primary bg-opacity-10 p-3">
+          <div class="fw-bold fs-3 text-primary">{{ result.skor_logika }}</div>
+          <small class="text-muted">Logika</small>
+        </div></div>{% endif %}
+        {% if result.skor_verbal is not None %}
+        <div class="col-4"><div class="rounded bg-success bg-opacity-10 p-3">
+          <div class="fw-bold fs-3 text-success">{{ result.skor_verbal }}</div>
+          <small class="text-muted">Verbal</small>
+        </div></div>{% endif %}
+        {% if result.skor_numerik is not None %}
+        <div class="col-4"><div class="rounded bg-warning bg-opacity-10 p-3">
+          <div class="fw-bold fs-3 text-warning">{{ result.skor_numerik }}</div>
+          <small class="text-muted">Numerik</small>
+        </div></div>{% endif %}
+      </div>
+      {% if result.disc_profil %}
+      <div class="text-center mb-3">
+        <h6 class="text-muted">Profil Kepribadian DISC</h6>
+        <canvas id="discChart" height="200" style="max-width:350px;margin:auto"></canvas>
+        <div class="mt-2">
+          <span class="badge bg-dark fs-6">{{ result.disc_profil }}</span>
+        </div>
+        {% if disc_deskripsi and result.disc_dominant %}
+        {% with info=disc_deskripsi|get_key:result.disc_dominant %}
+        {% if info %}
+        <div class="alert alert-light border mt-3 text-start small">
+          <strong>{{ info.nama }}:</strong> {{ info.deskripsi }}
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+      </div>
+      {% endif %}
+      {% endif %}
+      <div class="alert alert-info small">
+        <i class="fas fa-info-circle me-1"></i>Hasil lengkap akan ditinjau oleh tim HR. Anda akan dihubungi untuk tahapan selanjutnya.
+      </div>
+    </div>
+  </div>
+</div>
+{% if result and result.disc_profil %}
+<script>
+new Chart(document.getElementById('discChart'), {
+  type: 'bar',
+  data: {
+    labels: ['D', 'I', 'S', 'C'],
+    datasets: [{
+      data: [{{ result.disc_d }}, {{ result.disc_i }}, {{ result.disc_s }}, {{ result.disc_c }}],
+      backgroundColor: ['rgba(220,53,69,0.8)','rgba(13,202,240,0.8)','rgba(25,135,84,0.8)','rgba(111,66,193,0.8)'],
+      borderRadius: 6,
+    }]
+  },
+  options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}} }
+});
+</script>
+{% endif %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</body></html>

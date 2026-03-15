@@ -1,0 +1,83 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Kategori Kompetensi{% endblock %}
+{% block breadcrumb %}OD — Kategori Kompetensi{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-tags me-2" style="color:#818cf8;"></i>Kategori Kompetensi</h4>
+  <div class="d-flex gap-2">
+    <a href="{% url 'od:competency_list' %}" class="btn btn-sm btn-outline-secondary">← Kompetensi</a>
+    <a href="{% url 'od:competency_category_create' %}" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus me-1"></i> Tambah Kategori
+    </a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for m in messages %}
+  <div class="alert alert-{{ m.tags }} alert-dismissible fade show" role="alert">
+    {{ m }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    {% if kategori_list %}
+    <table class="table table-hover mb-0 datatable">
+      <thead class="table-light">
+        <tr>
+          <th style="width:40px">Urutan</th>
+          <th>Nama Kategori</th>
+          <th>Warna</th>
+          <th>Deskripsi</th>
+          <th>Status</th>
+          <th class="text-end">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for k in kategori_list %}
+        <tr>
+          <td class="text-center text-muted">{{ k.urutan }}</td>
+          <td>
+            <span class="badge" style="background:{{ k.warna }}; font-size:.85rem; padding:5px 10px;">
+              {{ k.nama }}
+            </span>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div style="width:20px;height:20px;border-radius:4px;background:{{ k.warna }};border:1px solid #dee2e6;"></div>
+              <small class="text-muted font-monospace">{{ k.warna }}</small>
+            </div>
+          </td>
+          <td><small class="text-muted">{{ k.deskripsi|truncatechars:60|default:"—" }}</small></td>
+          <td>
+            {% if k.aktif %}
+              <span class="badge bg-success-subtle text-success">Aktif</span>
+            {% else %}
+              <span class="badge bg-secondary-subtle text-secondary">Nonaktif</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{% url 'od:competency_category_edit' k.pk %}" class="btn btn-xs btn-outline-primary me-1">Edit</a>
+            <form method="post" action="{% url 'od:competency_category_delete' k.pk %}" class="d-inline"
+                  onsubmit="return confirm('Hapus kategori {{ k.nama }}?')">
+              {% csrf_token %}
+              <button class="btn btn-xs btn-outline-danger">Hapus</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="fas fa-tags fa-2x mb-3 d-block"></i>
+      Belum ada kategori kompetensi.
+      <div class="mt-2">
+        <a href="{% url 'od:competency_category_create' %}" class="btn btn-primary btn-sm">Tambah Sekarang</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Onboarding{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="d-flex gap-3 align-items-center mb-3">
+        <a href="{% url 'candidate_detail' candidate.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
+        <h4 class="mb-0 fw-bold">Onboarding — {{ candidate.nama }}</h4>
+      </div>
+      <div class="card shadow-sm"><div class="card-body p-4">
+        <form method="post">{% csrf_token %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Tanggal Mulai Kerja</label>
+              <input type="date" name="tanggal_mulai" class="form-control"
+                     value="{{ instance.tanggal_mulai|date:'Y-m-d'|default:'' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Masa Probasi (bulan)</label>
+              <input type="number" name="masa_probasi" class="form-control"
+                     value="{{ instance.masa_probasi|default:3 }}">
+            </div>
+          </div>
+
+          <h6 class="fw-semibold mb-2">Checklist Dokumen</h6>
+          <div class="row g-2 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="doc_ktp" id="doc_ktp"
+                       {% if instance.doc_ktp %}checked{% endif %}>
+                <label class="form-check-label small" for="doc_ktp">KTP</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="doc_ijazah" id="doc_ijazah"
+                       {% if instance.doc_ijazah %}checked{% endif %}>
+                <label class="form-check-label small" for="doc_ijazah">Ijazah</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="doc_skck" id="doc_skck"
+                       {% if instance.doc_skck %}checked{% endif %}>
+                <label class="form-check-label small" for="doc_skck">SKCK</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="doc_foto" id="doc_foto"
+                       {% if instance.doc_foto %}checked{% endif %}>
+                <label class="form-check-label small" for="doc_foto">Foto 4x6</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="doc_npwp" id="doc_npwp"
+                       {% if instance.doc_npwp %}checked{% endif %}>
+                <label class="form-check-label small" for="doc_npwp">NPWP</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="doc_bpjs" id="doc_bpjs"
+                       {% if instance.doc_bpjs %}checked{% endif %}>
+                <label class="form-check-label small" for="doc_bpjs">Kartu BPJS</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="doc_rekening" id="doc_rekening"
+                       {% if instance.doc_rekening %}checked{% endif %}>
+                <label class="form-check-label small" for="doc_rekening">Buku Rekening</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="doc_kontrak" id="doc_kontrak"
+                       {% if instance.doc_kontrak %}checked{% endif %}>
+                <label class="form-check-label small" for="doc_kontrak">Kontrak Kerja</label>
+              </div>
+            </div>
+          </div>
+
+          <h6 class="fw-semibold mb-2">Checklist Orientasi</h6>
+          <div class="row g-2 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="ori_perkenalan" id="ori_perkenalan"
+                       {% if instance.ori_perkenalan %}checked{% endif %}>
+                <label class="form-check-label small" for="ori_perkenalan">Perkenalan Tim</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="ori_sop" id="ori_sop"
+                       {% if instance.ori_sop %}checked{% endif %}>
+                <label class="form-check-label small" for="ori_sop">Penjelasan SOP</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="ori_fasilitas" id="ori_fasilitas"
+                       {% if instance.ori_fasilitas %}checked{% endif %}>
+                <label class="form-check-label small" for="ori_fasilitas">Pengenalan Fasilitas</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check border rounded p-2">
+                <input class="form-check-input" type="checkbox" name="ori_sistem" id="ori_sistem"
+                       {% if instance.ori_sistem %}checked{% endif %}>
+                <label class="form-check-label small" for="ori_sistem">Akses Sistem</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Catatan</label>
+            <textarea name="catatan" class="form-control" rows="2">{{ instance.catatan|default:'' }}</textarea>
+          </div>
+
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="selesai" id="selesai"
+                   {% if instance.selesai %}checked{% endif %}>
+            <label class="form-check-label" for="selesai">
+              <strong>Onboarding Selesai</strong> (akan update status ke Hired)
+            </label>
+          </div>
+
+          {% if not instance.employee_created %}
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" name="create_employee" value="yes" id="create_emp">
+            <label class="form-check-label" for="create_emp">Auto-buat Employee Record</label>
+          </div>
+          {% endif %}
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'candidate_detail' candidate.pk %}" class="btn btn-outline-secondary">Batal</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-1"></i>Simpan Onboarding
+            </button>
+          </div>
+        </form>
+      </div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

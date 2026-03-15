@@ -1,0 +1,109 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Slip Gaji - {{ detail.employee.nama }}{% endblock %}
+{% block breadcrumb %}Payroll / Slip Gaji{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0">Slip Gaji</h4>
+    <button class="btn btn-outline-secondary" onclick="window.print()">
+        <i class="fas fa-print me-1"></i>Print
+    </button>
+</div>
+
+<div class="card" style="max-width:700px; margin:auto;" id="slip-print">
+    <div class="card-body p-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+            <div>
+                <h5 class="fw-bold mb-1" style="color:#c40000;">{{ COMPANY_NAME }}</h5>
+                <div class="text-muted" style="font-size:0.8rem;">Slip Gaji Periode {{ detail.payroll.periode }}</div>
+            </div>
+            <div class="text-end">
+                <div class="badge bg-success">{{ detail.payroll.get_status_display }}</div>
+            </div>
+        </div>
+        <!-- Employee Info -->
+        <div class="row mb-3">
+            <div class="col-6">
+                <small class="text-muted d-block">Nama</small>
+                <strong>{{ detail.employee.nama }}</strong>
+            </div>
+            <div class="col-6">
+                <small class="text-muted d-block">NIK</small>
+                <strong>{{ detail.employee.nik }}</strong>
+            </div>
+            <div class="col-6 mt-2">
+                <small class="text-muted d-block">Departemen</small>
+                <strong>{{ detail.employee.department|default:"-" }}</strong>
+            </div>
+            <div class="col-6 mt-2">
+                <small class="text-muted d-block">Jabatan</small>
+                <strong>{{ detail.employee.jabatan|default:"-" }}</strong>
+            </div>
+        </div>
+
+        <!-- Absensi -->
+        <div class="bg-light rounded p-3 mb-3">
+            <div class="row text-center">
+                <div class="col-3">
+                    <div class="fw-bold">{{ detail.hari_kerja }}</div><small class="text-muted">Hari Kerja</small>
+                </div>
+                <div class="col-3">
+                    <div class="fw-bold text-success">{{ detail.hari_hadir }}</div><small class="text-muted">Hadir</small>
+                </div>
+                <div class="col-3">
+                    <div class="fw-bold text-danger">{{ detail.hari_absen }}</div><small class="text-muted">Absen</small>
+                </div>
+                <div class="col-3">
+                    <div class="fw-bold text-info">{{ detail.jam_lembur }}</div><small class="text-muted">Jam Lembur</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Pendapatan -->
+            <div class="col-6">
+                <h6 class="fw-bold mb-2 text-success">Pendapatan</h6>
+                <table class="table table-sm">
+                    <tr><td>Gaji Pokok</td><td class="text-end">{{ detail.gaji_pokok|floatformat:0 }}</td></tr>
+                    {% if detail.tunjangan_jabatan %}<tr><td>Tunj. Jabatan</td><td class="text-end">{{ detail.tunjangan_jabatan|floatformat:0 }}</td></tr>{% endif %}
+                    {% if detail.tunjangan_transport %}<tr><td>Tunj. Transport</td><td class="text-end">{{ detail.tunjangan_transport|floatformat:0 }}</td></tr>{% endif %}
+                    {% if detail.tunjangan_makan %}<tr><td>Tunj. Makan</td><td class="text-end">{{ detail.tunjangan_makan|floatformat:0 }}</td></tr>{% endif %}
+                    {% if detail.tunjangan_komunikasi %}<tr><td>Tunj. Komunikasi</td><td class="text-end">{{ detail.tunjangan_komunikasi|floatformat:0 }}</td></tr>{% endif %}
+                    {% if detail.tunjangan_kesehatan %}<tr><td>Tunj. Kesehatan</td><td class="text-end">{{ detail.tunjangan_kesehatan|floatformat:0 }}</td></tr>{% endif %}
+                    {% if detail.upah_lembur %}<tr><td>Upah Lembur</td><td class="text-end">{{ detail.upah_lembur|floatformat:0 }}</td></tr>{% endif %}
+                    <tr class="table-success fw-bold"><td>Total Kotor</td><td class="text-end">{{ detail.gaji_kotor|floatformat:0 }}</td></tr>
+                </table>
+            </div>
+            <!-- Potongan -->
+            <div class="col-6">
+                <h6 class="fw-bold mb-2 text-danger">Potongan</h6>
+                <table class="table table-sm">
+                    {% if detail.potongan_telat %}<tr><td>Denda Telat</td><td class="text-end text-danger">{{ detail.potongan_telat|floatformat:0 }}</td></tr>{% endif %}
+                    {% if detail.potongan_absen %}<tr><td>Potongan Absen</td><td class="text-end text-danger">{{ detail.potongan_absen|floatformat:0 }}</td></tr>{% endif %}
+                    <tr><td>BPJS Kesehatan</td><td class="text-end text-danger">{{ detail.bpjs_kesehatan|floatformat:0 }}</td></tr>
+                    <tr><td>BPJS Ketenagakerjaan</td><td class="text-end text-danger">{{ detail.bpjs_ketenagakerjaan|floatformat:0 }}</td></tr>
+                    <tr><td>PPH 21</td><td class="text-end text-danger">{{ detail.pph21|floatformat:0 }}</td></tr>
+                    <tr class="table-danger fw-bold"><td>Total Potongan</td><td class="text-end">{{ detail.total_potongan|floatformat:0 }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Take Home Pay -->
+        <div class="border-top pt-3 mt-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">GAJI BERSIH</h5>
+                <h4 class="fw-bold mb-0" style="color:#c40000;">
+                    Rp {{ detail.gaji_bersih|floatformat:"0g" }}
+                </h4>
+            </div>
+            {% if detail.employee.nama_bank %}
+            <div class="text-muted mt-2" style="font-size:0.8rem;">
+                Transfer ke: {{ detail.employee.nama_bank }} - {{ detail.employee.no_rek }}
+                a/n {{ detail.employee.nama_rek }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

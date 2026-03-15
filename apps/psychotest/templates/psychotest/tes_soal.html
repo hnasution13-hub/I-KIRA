@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Psikotes — {{ kategori_label }}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+  .soal-card { border-left: 4px solid #0d6efd; }
+  .disc-card { border-left: 4px solid #6f42c1; }
+  .option-label { cursor:pointer; padding:10px 15px; border-radius:8px; border:2px solid #e9ecef; display:block; margin-bottom:8px; transition:.2s; }
+  .option-label:hover { border-color:#0d6efd; background:#f0f5ff; }
+  input[type=radio]:checked + .option-label { border-color:#0d6efd; background:#e8f0ff; }
+  input[type=radio] { display:none; }
+  #timer { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-light bg-white shadow-sm sticky-top">
+  <div class="container">
+    <span class="navbar-brand fw-bold">Psikotes — {{ kategori_label }}</span>
+    <div class="d-flex align-items-center gap-3">
+      <span class="badge bg-secondary">{{ kategori_aktif_idx|add:1 }}/{{ paket|length }}</span>
+      {% if durasi_menit %}
+      <span class="badge bg-danger fs-6" id="timer">{{ durasi_menit }}:00</span>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4" style="max-width:720px">
+  <form method="post" id="soal-form">
+    {% csrf_token %}
+
+    {% for soal in soal_list %}
+    {% with nomor=forloop.counter|add:soal_nomor_start %}
+    <div class="card mb-3 {% if soal.tipe == 'disc_set' %}disc-card{% else %}soal-card{% endif %} shadow-sm">
+      <div class="card-body">
+        <p class="fw-semibold mb-3">
+          <span class="badge bg-primary me-2">{{ nomor }}</span>
+          {{ soal.pertanyaan }}
+        </p>
+
+        {% if soal.tipe == 'disc_set' %}
+        <div class="row g-2">
+          <div class="col-6">
+            <p class="small text-muted fw-semibold mb-2">PALING mencerminkan saya:</p>
+            {% for key, text in soal.opsi_list %}
+            <div>
+              <input type="radio" name="most_{{ soal.id }}" value="{{ key }}" id="most_{{ soal.id }}_{{ key }}"
+                {% for sid, val in existing_disc_most.items %}{% if sid == soal.id %}{% if val == key %}checked{% endif %}{% endif %}{% endfor %}
+                required>
+              <label for="most_{{ soal.id }}_{{ key }}" class="option-label">
+                <span class="fw-semibold text-primary">{{ key }}.</span> {{ text }}
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="col-6">
+            <p class="small text-muted fw-semibold mb-2">PALING TIDAK mencerminkan saya:</p>
+            {% for key, text in soal.opsi_list %}
+            <div>
+              <input type="radio" name="least_{{ soal.id }}" value="{{ key }}" id="least_{{ soal.id }}_{{ key }}"
+                {% for sid, val in existing_disc_least.items %}{% if sid == soal.id %}{% if val == key %}checked{% endif %}{% endif %}{% endfor %}
+                required>
+              <label for="least_{{ soal.id }}_{{ key }}" class="option-label">
+                <span class="fw-semibold text-purple">{{ key }}.</span> {{ text }}
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% else %}
+        {% for key, text in soal.opsi_list %}
+        <div>
+          <input type="radio" name="soal_{{ soal.id }}" value="{{ key }}" id="soal_{{ soal.id }}_{{ key }}"
+            {% for sid, val in existing_jawaban.items %}{% if sid == soal.id %}{% if val == key %}checked{% endif %}{% endif %}{% endfor %}>
+          <label for="soal_{{ soal.id }}_{{ key }}" class="option-label">
+            <span class="fw-semibold text-primary">{{ key }}.</span> {{ text }}
+          </label>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+
+    <div class="d-flex justify-content-between mt-4">
+      <span class="text-muted small align-self-center">
+        Bagian {{ kategori_aktif_idx|add:1 }} dari {{ paket|length }}
+      </span>
+      <button type="submit" class="btn btn-primary btn-lg px-5">
+        {% if kategori_aktif_idx|add:1 == paket|length %}
+          Selesai &amp; Kirim <i class="fas fa-paper-plane ms-2"></i>
+        {% else %}
+          Lanjut <i class="fas fa-arrow-right ms-2"></i>
+        {% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+{% if durasi_menit %}
+let seconds = {{ durasi_menit }} * 60;
+const timerEl = document.getElementById('timer');
+const tick = setInterval(() => {
+  seconds--;
+  if (seconds <= 0) { clearInterval(tick); document.getElementById('soal-form').submit(); return; }
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  timerEl.textContent = m + ':' + s;
+  if (seconds <= 60) timerEl.classList.add('bg-warning');
+  if (seconds <= 30) { timerEl.classList.remove('bg-warning'); timerEl.classList.add('bg-danger'); }
+}, 1000);
+{% endif %}
+</script>
+</body></html>

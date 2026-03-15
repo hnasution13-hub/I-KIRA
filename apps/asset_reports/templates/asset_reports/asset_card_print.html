@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kartu Aset — {{ asset.asset_code }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Arial', sans-serif; font-size: 11px; color: #1a1a1a; background: #fff; }
+
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm 14mm; }
+
+    /* HEADER */
+    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 8px; margin-bottom: 12px; }
+    .company-info { flex: 1; }
+    .company-name { font-size: 15px; font-weight: bold; color: #1e3a5f; }
+    .doc-title { text-align: right; }
+    .doc-title h2 { font-size: 14px; font-weight: bold; color: #1e3a5f; text-transform: uppercase; letter-spacing: 1px; }
+    .doc-title p { font-size: 10px; color: #555; }
+
+    /* SECTION TITLE */
+    .section-title { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.8px; color: #fff; background: #1e3a5f; padding: 4px 8px; margin: 12px 0 6px; }
+
+    /* INFO GRID */
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #d1d5db; }
+    .info-row { display: contents; }
+    .info-label { background: #f8fafc; padding: 5px 8px; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
+    .info-value { padding: 5px 8px; color: #1a1a1a; border-bottom: 1px solid #e5e7eb; }
+    .info-label.right { border-left: 1px solid #e5e7eb; }
+
+    /* STATUS BADGE */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: bold; }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-inactive { background: #fee2e2; color: #991b1b; }
+    .badge-maintenance { background: #fef9c3; color: #854d0e; }
+
+    /* NILAI BUKU BOX */
+    .nilai-box { border: 2px solid #1e3a5f; padding: 8px 16px; display: inline-block; margin: 8px 0; border-radius: 4px; }
+    .nilai-box .label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+    .nilai-box .amount { font-size: 16px; font-weight: bold; color: #1e3a5f; }
+
+    /* TABLES */
+    table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    thead tr { background: #f1f5f9; }
+    th { padding: 5px 7px; text-align: left; font-weight: 600; color: #374151; border: 1px solid #d1d5db; }
+    td { padding: 5px 7px; border: 1px solid #e5e7eb; vertical-align: top; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .text-muted { color: #9ca3af; font-style: italic; }
+
+    /* DEPRECIATION SUMMARY */
+    .depr-summary { display: flex; gap: 16px; margin: 8px 0; }
+    .depr-card { flex: 1; border: 1px solid #e5e7eb; padding: 8px; border-radius: 4px; text-align: center; }
+    .depr-card .dc-label { font-size: 9px; color: #6b7280; }
+    .depr-card .dc-value { font-size: 13px; font-weight: bold; color: #1e3a5f; }
+
+    /* SIGNATURE */
+    .signature-section { margin-top: 20px; display: flex; justify-content: flex-end; }
+    .signature-box { text-align: center; width: 180px; }
+    .signature-box .sig-date { font-size: 10px; margin-bottom: 48px; }
+    .signature-box .sig-line { border-top: 1px solid #374151; padding-top: 4px; font-size: 10px; }
+
+    /* FOOTER */
+    .footer { margin-top: 16px; padding-top: 6px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 9px; color: #9ca3af; }
+
+    @media print {
+      body { background: #fff; }
+      .page { padding: 10mm 12mm; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- PRINT BUTTON -->
+  <div class="no-print" style="text-align:right; margin-bottom:12px;">
+    <button onclick="window.print()"
+            style="background:#1e3a5f;color:#fff;border:none;padding:6px 18px;border-radius:4px;cursor:pointer;font-size:12px;">
+      🖨 Cetak Kartu Aset
+    </button>
+    <button onclick="window.history.back()"
+            style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;padding:6px 18px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:8px;">
+      ← Kembali
+    </button>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="company-info">
+      {% if company.logo %}
+        <img src="{{ company.logo.url }}" alt="Logo" style="height:40px; margin-bottom:4px; display:block;">
+      {% endif %}
+      <div class="company-name">{{ company.nama|default:"PT. Perusahaan" }}</div>
+      <div style="font-size:9px; color:#6b7280;">{{ company.alamat|default:"" }}</div>
+    </div>
+    <div class="doc-title">
+      <h2>Kartu Aset</h2>
+      <p>Asset Record Card</p>
+      <p style="margin-top:4px; font-weight:bold; color:#374151;">{{ asset.asset_code }}</p>
+    </div>
+  </div>
+
+  <!-- IDENTITAS ASET -->
+  <div class="section-title">Identitas Aset</div>
+  <div class="info-grid">
+    <div class="info-label">Nama Aset</div>
+    <div class="info-value" style="font-weight:bold;">{{ asset.asset_name }}</div>
+
+    <div class="info-label">Kode Aset</div>
+    <div class="info-value"><code>{{ asset.asset_code }}</code></div>
+
+    <div class="info-label">Kategori</div>
+    <div class="info-value">{{ asset.category.get_full_path|default:"—" }}</div>
+
+    <div class="info-label">Serial Number</div>
+    <div class="info-value">{{ asset.serial_number|default:"—" }}</div>
+
+    <div class="info-label">Merk / Model</div>
+    <div class="info-value">{{ asset.brand|default:"—" }}{% if asset.model %} / {{ asset.model }}{% endif %}</div>
+
+    <div class="info-label">Kondisi</div>
+    <div class="info-value">{{ asset.condition|default:"—" }}</div>
+
+    <div class="info-label">Status</div>
+    <div class="info-value">
+      {% if asset.status == 'active' %}
+        <span class="badge badge-active">Aktif</span>
+      {% elif asset.status == 'maintenance' %}
+        <span class="badge badge-maintenance">Maintenance</span>
+      {% else %}
+        <span class="badge badge-inactive">{{ asset.get_status_display }}</span>
+      {% endif %}
+    </div>
+
+    <div class="info-label">Deskripsi</div>
+    <div class="info-value">{{ asset.description|default:"—" }}</div>
+  </div>
+
+  <!-- LOKASI & PIC -->
+  <div class="section-title">Lokasi & Penanggung Jawab</div>
+  <div class="info-grid">
+    <div class="info-label">Lokasi</div>
+    <div class="info-value">{{ asset.location.name|default:"—" }}</div>
+
+    <div class="info-label">Penanggung Jawab</div>
+    <div class="info-value">{{ asset.responsible.name|default:"—" }}</div>
+
+    <div class="info-label">Vendor</div>
+    <div class="info-value">{{ asset.vendor.name|default:"—" }}</div>
+
+    <div class="info-label">Garansi s/d</div>
+    <div class="info-value">{{ asset.warranty_expire|date:"d/m/Y"|default:"—" }}</div>
+  </div>
+
+  <!-- FINANSIAL -->
+  <div class="section-title">Data Finansial & Penyusutan</div>
+  <div class="info-grid">
+    <div class="info-label">Tanggal Perolehan</div>
+    <div class="info-value">{{ asset.purchase_date|date:"d/m/Y"|default:"—" }}</div>
+
+    <div class="info-label">Harga Perolehan</div>
+    <div class="info-value">Rp {{ asset.purchase_price|floatformat:0 }}</div>
+
+    <div class="info-label">Nilai Residu</div>
+    <div class="info-value">Rp {{ asset.residual_value|floatformat:0 }}</div>
+
+    <div class="info-label">Masa Manfaat</div>
+    <div class="info-value">{{ asset.useful_life }} tahun</div>
+
+    <div class="info-label">Metode Penyusutan</div>
+    <div class="info-value">{{ asset.depreciation_method|default:"Garis Lurus (Straight-Line)" }}</div>
+
+    <div class="info-label">Nilai Buku Saat Ini</div>
+    <div class="info-value" style="font-weight:bold; color:#1e3a5f;">Rp {{ asset.book_value|floatformat:0 }}</div>
+  </div>
+
+  <!-- RIWAYAT PENYUSUTAN -->
+  {% if depreciations %}
+  <div class="section-title">Riwayat Penyusutan</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Tahun</th>
+        <th class="text-right">Nilai Awal Tahun</th>
+        <th class="text-right">Penyusutan</th>
+        <th class="text-right">Akum. Penyusutan</th>
+        <th class="text-right">Nilai Buku Akhir</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in depreciations %}
+      <tr>
+        <td class="text-center">{{ d.year }}</td>
+        <td class="text-right">Rp {{ d.beginning_value|floatformat:0 }}</td>
+        <td class="text-right">Rp {{ d.depreciation_amount|floatformat:0 }}</td>
+        <td class="text-right">Rp {{ d.accumulated_depreciation|floatformat:0 }}</td>
+        <td class="text-right" style="font-weight:600;">Rp {{ d.book_value|floatformat:0 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- RIWAYAT MUTASI -->
+  <div class="section-title">Riwayat Mutasi & Perpindahan</div>
+  {% if movements %}
+  <table>
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Jenis Mutasi</th>
+        <th>Dari</th>
+        <th>Ke</th>
+        <th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in movements %}
+      <tr>
+        <td>{{ m.movement_date|date:"d/m/Y" }}</td>
+        <td>{{ m.get_movement_type_display }}</td>
+        <td>{{ m.from_pic_name|default:m.from_location_name|default:"—" }}</td>
+        <td>{{ m.to_pic_name|default:m.to_location_name|default:"—" }}</td>
+        <td>{{ m.description|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted" style="padding:8px 0;">Belum ada riwayat mutasi.</p>
+  {% endif %}
+
+  <!-- RIWAYAT MAINTENANCE -->
+  {% if maintenances %}
+  <div class="section-title">Riwayat Pemeliharaan</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Jenis</th>
+        <th>Deskripsi</th>
+        <th class="text-right">Biaya</th>
+        <th>Vendor</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in maintenances %}
+      <tr>
+        <td>{{ m.maintenance_date|date:"d/m/Y" }}</td>
+        <td>{{ m.maintenance_type|default:"—" }}</td>
+        <td>{{ m.description|truncatechars:50|default:"—" }}</td>
+        <td class="text-right">Rp {{ m.cost|floatformat:0|default:"0" }}</td>
+        <td>{{ m.vendor.name|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- SIGNATURE -->
+  <div class="signature-section">
+    <div class="signature-box">
+      <div class="sig-date">{% now "d/m/Y" %}</div>
+      <div class="sig-line">
+        <div>Mengetahui,</div>
+        <div style="font-weight:bold; margin-top:2px;">{{ company.nama_penandatangan_default|default:"__________________" }}</div>
+        <div style="color:#6b7280;">{{ company.jabatan_penandatangan_default|default:"Asset Management" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>{{ company.nama|default:"" }} — Kartu Aset</span>
+    <span>Dicetak: {% now "d/m/Y H:i" %}</span>
+  </div>
+
+</div>
+</body>
+</html>

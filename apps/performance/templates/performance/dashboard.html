@@ -1,0 +1,270 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Dashboard Performance — HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Performance Management{% endblock %}
+
+{% block extra_css %}
+<style>
+.perf-stat { background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px; }
+.perf-stat .val { font-size:2rem;font-weight:700;line-height:1; }
+.perf-stat .lbl { font-size:.76rem;color:var(--muted);margin-top:4px; }
+.badge-predikat { display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700; }
+.rank-row:hover { background:var(--hover)!important; }
+.progress-skor { height:6px;border-radius:3px;background:var(--surface2);overflow:hidden; }
+.progress-skor-fill { height:100%;border-radius:3px;transition:width .6s ease; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0"><i class="fas fa-chart-line me-2" style="color:#e63329;"></i>Performance Management</h4>
+    <small class="text-muted">
+      {% if periode_aktif %}Periode Aktif: <strong>{{ periode_aktif.nama }}</strong>{% else %}Belum ada periode aktif{% endif %}
+    </small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'penilaian_create' %}" class="btn btn-sm btn-danger">
+      <i class="fas fa-plus me-1"></i>Buat Penilaian
+    </a>
+    <a href="{% url 'perf_ranking' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-trophy me-1"></i>Ranking
+    </a>
+  </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="perf-stat">
+      <div class="val text-primary">{{ total_penilaian }}</div>
+      <div class="lbl">Total Penilaian</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="perf-stat">
+      <div class="val text-warning">{{ menunggu_review }}</div>
+      <div class="lbl">Menunggu Review</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="perf-stat">
+      <div class="val text-success">{{ sudah_approved }}</div>
+      <div class="lbl">Sudah Disetujui</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="perf-stat">
+      <div class="val text-info">{{ total_karyawan }}</div>
+      <div class="lbl">Total Karyawan Aktif</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <!-- Distribusi Predikat Donut -->
+  <div class="col-12 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0"><i class="fas fa-award me-2 text-warning"></i>Distribusi Predikat</h6></div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center">
+        {% if chart_predikat_data %}
+        <div style="max-width:200px;width:100%;"><canvas id="predikatChart"></canvas></div>
+        <div class="mt-3 w-100" id="predikatLegend"></div>
+        {% else %}
+        <div class="text-muted text-center py-4"><i class="fas fa-award fa-2x mb-2 d-block opacity-25"></i>Belum ada data</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Rata-rata Skor per Periode Bar -->
+  <div class="col-12 col-lg-8">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Rata-rata Skor per Periode</h6></div>
+      <div class="card-body" style="position:relative;height:220px;">
+        {% if chart_periode_data %}
+        <canvas id="periodeChart"></canvas>
+        {% else %}
+        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+          <div class="text-center"><i class="fas fa-chart-bar fa-2x mb-2 d-block opacity-25"></i>Belum ada data approved</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Ranking Top 10 -->
+  <div class="col-12 col-lg-7">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-trophy me-2 text-warning"></i>Top Karyawan
+          {% if periode_aktif %}<small class="text-muted ms-1">({{ periode_aktif.nama }})</small>{% endif %}
+        </h6>
+        <a href="{% url 'perf_ranking' %}" class="btn btn-outline-secondary btn-sm">Lihat Semua</a>
+      </div>
+      <div class="card-body p-0">
+        {% if ranking %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" style="font-size:.83rem;">
+            <thead><tr>
+              <th style="width:36px;">#</th>
+              <th>Karyawan</th>
+              <th>Skor</th>
+              <th>Predikat</th>
+            </tr></thead>
+            <tbody>
+            {% for p in ranking %}
+            <tr class="rank-row" style="cursor:pointer;" onclick="location.href='{% url 'penilaian_detail' p.pk %}'">
+              <td class="fw-bold {% if forloop.counter == 1 %}text-warning{% elif forloop.counter == 2 %}text-secondary{% elif forloop.counter == 3 %}text-danger{% endif %}">
+                {% if forloop.counter <= 3 %}<i class="fas fa-medal"></i>{% else %}{{ forloop.counter }}{% endif %}
+              </td>
+              <td>
+                <div class="fw-semibold">{{ p.employee.nama }}</div>
+                <div class="text-muted" style="font-size:.73rem;">{{ p.employee.jabatan }}</div>
+              </td>
+              <td>
+                <div class="fw-bold">{{ p.skor_akhir }}%</div>
+                <div class="progress-skor mt-1" style="width:80px;">
+                  <div class="progress-skor-fill" style="width:{{ p.skor_akhir }}%;background:{{ p.predikat_color }};"></div>
+                </div>
+              </td>
+              <td>
+                <span class="badge-predikat" style="background:{{ p.predikat_color }}22;color:{{ p.predikat_color }};">
+                  {{ p.predikat }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-muted text-center py-4">Belum ada penilaian yang disetujui</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Perlu Aksi -->
+  <div class="col-12 col-lg-5">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-clock me-2 text-danger"></i>Perlu Review
+          {% if menunggu_review %}<span class="badge bg-danger ms-1">{{ menunggu_review }}</span>{% endif %}
+        </h6>
+        <a href="{% url 'penilaian_list' %}?status=submit" class="btn btn-outline-secondary btn-sm">Semua</a>
+      </div>
+      <div class="card-body p-0">
+        {% if perlu_aksi %}
+        {% for p in perlu_aksi %}
+        <a href="{% url 'penilaian_review_atasan' p.pk %}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none"
+           style="border-bottom:1px solid var(--border);color:var(--text);">
+          <div style="width:36px;height:36px;border-radius:50%;background:rgba(230,51,41,.12);
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-user" style="color:#e63329;font-size:.8rem;"></i>
+          </div>
+          <div class="flex-grow-1">
+            <div style="font-size:.83rem;font-weight:600;">{{ p.employee.nama }}</div>
+            <div style="font-size:.73rem;color:var(--muted);">{{ p.periode.nama }}</div>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);">
+            {% if p.tanggal_submit %}{{ p.tanggal_submit|date:"d M" }}{% endif %}
+          </div>
+        </a>
+        {% endfor %}
+        {% else %}
+        <div class="text-muted text-center py-4">
+          <i class="fas fa-check-circle fa-2x mb-2 d-block" style="color:#22c55e;opacity:.4;"></i>
+          Semua penilaian sudah diproses
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card mt-3">
+      <div class="card-body p-0">
+        <a href="{% url 'periode_list' %}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none" style="color:var(--text);border-bottom:1px solid var(--border);">
+          <i class="fas fa-calendar-alt" style="color:#3b82f6;width:18px;"></i>
+          <span style="font-size:.83rem;">Kelola Periode Penilaian</span>
+          <i class="fas fa-chevron-right ms-auto text-muted" style="font-size:.7rem;"></i>
+        </a>
+        <a href="{% url 'kpi_template_list' %}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none" style="color:var(--text);border-bottom:1px solid var(--border);">
+          <i class="fas fa-list-check" style="color:#22c55e;width:18px;"></i>
+          <span style="font-size:.83rem;">Library Template KPI</span>
+          <i class="fas fa-chevron-right ms-auto text-muted" style="font-size:.7rem;"></i>
+        </a>
+        <a href="{% url 'penilaian_list' %}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none" style="color:var(--text);">
+          <i class="fas fa-clipboard-list" style="color:#f59e0b;width:18px;"></i>
+          <span style="font-size:.83rem;">Semua Penilaian</span>
+          <i class="fas fa-chevron-right ms-auto text-muted" style="font-size:.7rem;"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const PREDIKAT_COLORS = {
+  'Istimewa'       : '#22c55e',
+  'Sangat Baik'    : '#3b82f6',
+  'Baik'           : '#f59e0b',
+  'Cukup'          : '#f97316',
+  'Perlu Perbaikan': '#ef4444',
+};
+
+{% if chart_predikat_data %}
+(function(){
+  const labels = {{ chart_predikat_labels|safe }};
+  const data   = {{ chart_predikat_data|safe }};
+  const colors = labels.map(l => PREDIKAT_COLORS[l] || '#888');
+  const total  = data.reduce((a,b)=>a+b,0);
+  new Chart(document.getElementById('predikatChart'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth:2, borderColor:'#1e1e1e', hoverOffset:5 }] },
+    options: { cutout:'65%', plugins: {
+      legend: { display:false },
+      tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw} (${Math.round(c.raw/total*100)}%)` } }
+    }}
+  });
+  document.getElementById('predikatLegend').innerHTML = labels.map((l,i) => `
+    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colors[i]};margin-right:6px;"></span>${l}</span>
+      <span class="fw-semibold">${data[i]} <span class="text-muted">(${Math.round(data[i]/total*100)}%)</span></span>
+    </div>`).join('');
+})();
+{% endif %}
+
+{% if chart_periode_data %}
+new Chart(document.getElementById('periodeChart'), {
+  type: 'bar',
+  data: {
+    labels  : {{ chart_periode_labels|safe }},
+    datasets: [{
+      label          : 'Rata-rata Skor (%)',
+      data           : {{ chart_periode_data|safe }},
+      backgroundColor: 'rgba(230,51,41,.7)',
+      borderColor    : '#e63329',
+      borderWidth    : 1,
+      borderRadius   : 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display:false },
+      tooltip: { callbacks: { label: c => ` ${c.raw}%` } }
+    },
+    scales: {
+      x: { grid: { color:'rgba(255,255,255,.04)' }, ticks: { color:'#888', font:{size:11} } },
+      y: { grid: { color:'rgba(255,255,255,.04)' }, ticks: { color:'#888', font:{size:11} },
+           min:0, max:100, beginAtZero:true }
+    }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

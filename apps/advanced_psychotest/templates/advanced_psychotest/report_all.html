@@ -1,0 +1,198 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Dashboard Psikotes Karyawan{% endblock %}
+{% block breadcrumb %}Advanced Test / Report Semua Karyawan{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-users me-2" style="color:#7b1fa2;"></i>Dashboard Psikotes Karyawan
+    </h4>
+    <a href="{% url 'adv_session_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<!-- Filter -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" style="font-size:.85rem;">Departemen</label>
+                <select name="dept" class="form-select form-select-sm">
+                    <option value="">Semua Departemen</option>
+                    {% for d in departments %}
+                    <option value="{{ d.pk }}" {% if dept_filter == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" style="font-size:.85rem;">Tampilkan Grafik Tipe</label>
+                <select name="tipe" class="form-select form-select-sm">
+                    {% for tipe, label in test_type_choices %}
+                    <option value="{{ tipe }}" {% if tipe_filter == tipe %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-sm w-100 fw-semibold text-white" style="background:#7b1fa2;">
+                    <i class="fas fa-filter me-1"></i>Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Rata-rata per Departemen -->
+{% if dept_avg %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-header fw-semibold">
+        <i class="fas fa-building me-2" style="color:#7b1fa2;"></i>Rata-rata Skor {{ tipe_labels|default_if_none:tipe_filter }} per Departemen
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-7">
+                <canvas id="deptChart" height="200"></canvas>
+            </div>
+            <div class="col-md-5">
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead class="table-light"><tr>
+                            <th style="font-size:.8rem;">Departemen</th>
+                            <th style="font-size:.8rem;">Avg Skor</th>
+                            <th style="font-size:.8rem;">Jumlah</th>
+                        </tr></thead>
+                        <tbody>
+                        {% for dept, data in dept_avg.items %}
+                        <tr>
+                            <td style="font-size:.82rem;">{{ dept }}</td>
+                            <td>
+                                <span class="badge {% if data.avg >= 75 %}bg-success{% elif data.avg >= 60 %}bg-primary{% elif data.avg >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                    {{ data.avg }}%
+                                </span>
+                            </td>
+                            <td style="font-size:.82rem;" class="text-muted">{{ data.total }} sesi</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabel Karyawan -->
+{% if profil_list %}
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold d-flex justify-content-between">
+        <span><i class="fas fa-table me-2"></i>Profil Psikotes Karyawan ({{ profil_list|length }} karyawan)</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="font-size:.8rem;">Karyawan</th>
+                        <th style="font-size:.8rem;">Dept / Jabatan</th>
+                        {% for tipe, label in test_type_choices %}
+                        <th class="text-center" style="font-size:.8rem;">{{ label|truncatechars:8 }}</th>
+                        {% endfor %}
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for profil in profil_list %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                 style="width:32px;height:32px;background:#7b1fa2;font-size:.85rem;flex-shrink:0;">
+                                {{ profil.employee.nama|first }}
+                            </div>
+                            <div>
+                                <div class="fw-semibold" style="font-size:.85rem;">{{ profil.employee.nama }}</div>
+                                <div class="text-muted" style="font-size:.72rem;">{{ profil.employee.nik }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:.8rem;" class="text-muted">
+                        {{ profil.employee.department|default:"-" }}<br>
+                        <span style="font-size:.75rem;">{{ profil.employee.jabatan|default:"-" }}</span>
+                    </td>
+                    {% for tipe, label in test_type_choices %}
+                    <td class="text-center">
+                        {% with res=profil.results|default_if_none:None %}
+                        {% if tipe in profil.results %}
+                        <span class="badge
+                            {% if profil.results|default_if_none:None %}
+                            {% with r=profil.results|default_if_none:None %}
+                            {% endwith %}{% endif %}
+                            bg-secondary" style="font-size:.72rem;">
+                            —
+                        </span>
+                        {% else %}—{% endif %}
+                        {% endwith %}
+                    </td>
+                    {% endfor %}
+                    <td>
+                        <a href="{% url 'adv_employee_report' profil.employee.pk %}"
+                           class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;">
+                            <i class="fas fa-chart-line me-1"></i>Detail
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="fas fa-users fa-3x mb-3 d-block opacity-25"></i>
+        Belum ada karyawan yang menyelesaikan sesi psikotes.
+    </div>
+</div>
+{% endif %}
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+    const el = document.getElementById('deptChart');
+    if (!el) return;
+    const data = {{ dept_avg_json|safe }};
+    const labels = Object.keys(data);
+    const scores = labels.map(d => data[d].avg);
+    const colors = scores.map(s => s >= 75 ? '#388e3c' : s >= 60 ? '#1976d2' : s >= 50 ? '#f57c00' : '#c62828');
+
+    new Chart(el, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Rata-rata Skor',
+                data: scores,
+                backgroundColor: colors,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            scales: {
+                y: { min: 0, max: 100, ticks: { callback: v => v + '%' }, grid: { color: '#f0f0f0' } },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}% rata-rata` } }
+            },
+            animation: { duration: 800 }
+        }
+    });
+})();
+</script>
+
+{% endblock %}

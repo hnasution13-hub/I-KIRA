@@ -1,0 +1,24 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Detail Log{% endblock %}
+{% block breadcrumb %}Asset Management / Detail Log{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'audit:log_list' %}" class="text-secondary text-decoration-none small"><i class="fas fa-arrow-left me-1"></i>Audit Log</a>
+    <h4 class="text-white mb-0 mt-1">Detail Log #{{ object.pk }}</h4>
+</div>
+<div class="row"><div class="col-md-7">
+    <div class="card bg-dark border-secondary"><div class="card-header border-secondary"><h6 class="text-white mb-0">Informasi Log</h6></div>
+    <div class="card-body">
+        <table class="table table-dark table-borderless mb-0">
+            <tr><td class="text-secondary">Waktu</td><td class="text-white font-monospace">{{ object.timestamp|date:"d M Y H:i:s" }}</td></tr>
+            <tr><td class="text-secondary">User</td><td class="text-white">{{ object.username }}</td></tr>
+            <tr><td class="text-secondary">Aksi</td><td><span class="badge bg-primary">{{ object.action }}</span></td></tr>
+            <tr><td class="text-secondary">Deskripsi</td><td class="text-white">{{ object.description|default:"-" }}</td></tr>
+            <tr><td class="text-secondary">IP Address</td><td class="text-white font-monospace">{{ object.ip_address|default:"-" }}</td></tr>
+            <tr><td class="text-secondary">Object ID</td><td class="text-white">{{ object.object_id|default:"-" }}</td></tr>
+            <tr><td class="text-secondary">Object</td><td class="text-white">{{ object.object_repr|default:"-" }}</td></tr>
+        </table>
+    </div></div>
+</div></div>
+{% endblock %}

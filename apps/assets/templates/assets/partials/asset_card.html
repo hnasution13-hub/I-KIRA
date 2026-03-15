@@ -1,0 +1,25 @@
+{% load static %}
+<div class="card h-100 shadow-sm">
+    {% if asset.photo %}
+    <img src="{{ asset.photo.url }}" class="card-img-top" alt="{{ asset.name }}" style="height: 180px; object-fit: cover;">
+    {% else %}
+    <img src="{% static 'img/default-asset.jpg' %}" class="card-img-top" alt="Default" style="height: 180px; object-fit: cover;">
+    {% endif %}
+    <div class="card-body">
+        <h5 class="card-title">{{ asset.name }}</h5>
+        <p class="card-text">
+            <strong>Tag:</strong> {{ asset.tag }}<br>
+            <strong>Category:</strong> {{ asset.category.name }}<br>
+            <strong>Status:</strong>
+            <span class="badge 
+                {% if asset.status == 'available' %}bg-success
+                {% elif asset.status == 'assigned' %}bg-warning
+                {% elif asset.status == 'maintenance' %}bg-danger
+                {% else %}bg-secondary{% endif %}">
+                {{ asset.get_status_display }}
+            </span><br>
+            <strong>Current Value:</strong> ${{ asset.current_value|floatformat:2 }}
+        </p>
+        <a href="{{ asset.get_absolute_url }}" class="btn btn-outline-primary btn-sm">View Details</a>
+    </div>
+</div>

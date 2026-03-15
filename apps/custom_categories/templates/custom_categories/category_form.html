@@ -1,0 +1,44 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}Asset Management / Form Kategori{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h4>{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" id="categoryForm">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ form.category_level1|as_crispy_field }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.category_level2|as_crispy_field }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.category_level3|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.custom_field|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.asset_name|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.tag_number|as_crispy_field }}
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                <a href="{% url 'custom_categories:list' %}" class="btn btn-secondary">Batal</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

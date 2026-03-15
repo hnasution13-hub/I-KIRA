@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offering Letter — {{ ol.nomor }}</title>
+{% load static %}
+<style>
+  /* ── SCREEN UI ── */
+  body {
+    margin: 0;
+    background: #e8e8e8;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .toolbar {
+    background: #2c3e50;
+    color: #fff;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 12px;
+  }
+  .toolbar .title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #adb5bd;
+  }
+  .toolbar .title strong { color: #fff; }
+  .toolbar .btn-group { display: flex; gap: 8px; }
+  .toolbar a, .toolbar button {
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-back    { background: rgba(255,255,255,0.12); color: #fff; }
+  .btn-edit    { background: rgba(255,255,255,0.12); color: #fff; }
+  .btn-print   { background: #c0392b; color: #fff; }
+  .btn-back:hover  { background: rgba(255,255,255,0.2); }
+  .btn-edit:hover  { background: rgba(255,255,255,0.2); }
+  .btn-print:hover { background: #a93226; }
+
+  .page-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 48px;
+  }
+
+  /* ── DOCUMENT ── */
+  #document {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fff;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+    padding: 14mm 16mm 16mm;
+    font-family: Arial, sans-serif;
+    font-size: 9pt;
+    color: #000;
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  /* Header */
+  .doc-header {
+    display: flex;
+    align-items: stretch;
+    border: 1.5px solid #000;
+    margin-bottom: 10px;
+  }
+  .doc-logo {
+    padding: 8px 12px;
+    border-right: 1.5px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 110px;
+  }
+  .doc-logo img {
+    max-height: 60px;
+    max-width: 100px;
+    object-fit: contain;
+  }
+  .doc-logo .no-logo {
+    font-size: 9pt;
+    font-weight: bold;
+    color: #c0392b;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .doc-title-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    border-right: 1.5px solid #000;
+  }
+  .doc-title-block .t1 { font-size: 10pt; font-weight: bold; text-align: center; }
+  .doc-title-block .t2 { font-size: 8.5pt; font-style: italic; text-align: center; }
+  .doc-num-block {
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 130px;
+  }
+  .doc-num-block .lbl { font-size: 7.5pt; color: #555; }
+  .doc-num-block .val { font-size: 8.5pt; font-weight: bold; }
+
+  .doc-site { font-size: 8.5pt; margin: 8px 0 10px; }
+
+  .doc-main-title {
+    text-align: center;
+    font-size: 12.5pt;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin: 10px 0 12px;
+    text-transform: uppercase;
+  }
+
+  .doc-intro { font-size: 8.5pt; margin-bottom: 10px; line-height: 1.55; }
+
+  /* Info Table */
+  .info-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+  .info-table td {
+    padding: 3px 6px;
+    border: 1px solid #000;
+    font-size: 8.5pt;
+    vertical-align: top;
+  }
+  .info-table td:first-child { width: 36%; }
+  .info-table td:nth-child(2) { width: 3%; text-align: center; }
+
+  /* Remuneration */
+  .rem-header {
+    border: 1px solid #000;
+    border-top: none;
+    padding: 3px 6px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    background: #f5f5f5;
+  }
+  .rem-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .rem-table td {
+    padding: 2.5px 6px;
+    border: 1px solid #000;
+    border-top: none;
+    font-size: 8.5pt;
+    vertical-align: top;
+  }
+  .rem-table td:first-child { width: 4%; text-align: center; }
+  .rem-table td:nth-child(2) { width: 36%; }
+  .rem-table td:nth-child(3) { width: 3%; text-align: center; }
+
+  .doc-footer-text { font-size: 8.5pt; line-height: 1.6; margin-bottom: 12px; white-space: pre-line; }
+
+  /* Signature */
+  .sign-table { width: 100%; border-collapse: collapse; }
+  .sign-table td {
+    border: 1px solid #000;
+    padding: 5px 8px;
+    vertical-align: top;
+    font-size: 8.5pt;
+  }
+  .sign-area { height: 60px; }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    body    { background: #fff; margin: 0; }
+    .toolbar { display: none !important; }
+    .page-wrap { padding: 0; }
+    #document {
+      box-shadow: none;
+      width: 100%;
+      min-height: auto;
+      padding: 10mm 14mm 14mm;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TOOLBAR (hidden on print) ── -->
+<div class="toolbar">
+    <div class="title">
+        Offering Letter &nbsp;/&nbsp; <strong>{{ ol.candidate.nama }}</strong>
+        &nbsp;—&nbsp; {{ ol.nomor }}
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'offering_list' %}" class="btn-back">
+            ← Kembali
+        </a>
+        <a href="{% url 'offering_edit' ol.pk %}" class="btn-edit">
+            ✏ Edit
+        </a>
+        <button onclick="window.print()" class="btn-print">
+            🖨 Print / Save PDF
+        </button>
+    </div>
+</div>
+
+<!-- ── DOCUMENT ── -->
+<div class="page-wrap">
+<div id="document">
+
+    <!-- Header -->
+    <div class="doc-header">
+        <div class="doc-logo">
+            {% if setting.logo %}
+                <img src="{{ setting.logo.url }}" alt="Logo">
+            {% else %}
+                <div class="no-logo">{{ setting.nama_perusahaan|truncatechars:30 }}</div>
+            {% endif %}
+        </div>
+        <div class="doc-title-block">
+            <div class="t1">SURAT PENAWARAN &amp; KONFIRMASI</div>
+            <div class="t2">(Confirmation &amp; Offering Letter)</div>
+        </div>
+        <div class="doc-num-block">
+            <div class="lbl">No. Dokumen:</div>
+            <div class="val">{{ ol.nomor }}</div>
+        </div>
+    </div>
+
+    <!-- Site & Date -->
+    <div class="doc-site">
+        {% if ol.site_lokasi %}{{ ol.site_lokasi }},{% endif %}
+        &nbsp;&nbsp;{{ ol.tanggal_surat|date:"d F Y" }}
+    </div>
+
+    <!-- Main Title -->
+    <div class="doc-main-title">OFFERING LETTER AND CONFIRMATION FOR EMPLOYMENT</div>
+
+    <!-- Intro -->
+    <div class="doc-intro">
+        Dear Mr./Ms.&nbsp;: <strong>{{ ol.candidate.nama }}</strong>
+        &nbsp;&nbsp;&nbsp; Handphone No. : {{ ol.candidate.no_hp|default:"" }}<br>
+        On behalf of the Management of <strong>{{ setting.nama_perusahaan }}</strong>
+        referring to your interview result with us, we are pleased to offer and confirm you
+        an employment with term &amp; condition as follows:
+    </div>
+
+    <!-- Info Table -->
+    <table class="info-table">
+        <tr>
+            <td>Working Place/Location</td><td>:</td>
+            <td>{{ ol.lokasi_kerja|default:ol.site_lokasi }}</td>
+        </tr>
+        <tr><td>Employee Name</td><td>:</td><td>{{ ol.candidate.nama }}</td></tr>
+        <tr><td>Position/Title</td><td>:</td><td>{{ ol.jabatan }}</td></tr>
+        <tr>
+            <td>Job Description</td><td>:</td>
+            <td>Base on Job Description and Job Direction from Superior</td>
+        </tr>
+        <tr>
+            <td>Working Day</td><td>:</td>
+            <td>{{ tpl.working_day_text }}</td>
+        </tr>
+        <tr>
+            <td>Employment Status</td><td>:</td>
+            <td>{{ tpl.employment_status_text }}</td>
+        </tr>
+        <tr>
+            <td>Expected Join Date</td><td>:</td>
+            <td>{{ ol.join_date_text|default:"As Soon As Possible" }}</td>
+        </tr>
+        <tr>
+            <td>Point of Hire (POH)</td><td>:</td>
+            <td><strong>{{ ol.point_of_hire }}</strong></td>
+        </tr>
+    </table>
+
+    <!-- Remuneration -->
+    <div class="rem-header">Remuneration Package</div>
+    <table class="rem-table">
+        <tr>
+            <td>✓</td><td>Basic Salary</td><td>:</td>
+            <td><strong>{{ ol.gaji_pokok_str }}</strong></td>
+        </tr>
+        <tr>
+            <td>✓</td><td>Fixed Allowance</td><td>:</td>
+            <td><strong>{{ ol.fixed_allowance_str }}</strong></td>
+        </tr>
+        <tr>
+            <td>✓</td><td>Meal Allowance/Benefit/Facility</td><td>:</td>
+            <td>{{ tpl.meal_allowance_text }}</td>
+        </tr>
+        <tr>
+            <td>✓</td><td>Residence Allowance/Benefit/Facility</td><td>:</td>
+            <td>{{ tpl.residence_allowance_text }}</td>
+        </tr>
+        <tr>
+            <td>✓</td><td>Roster Leave</td><td>:</td>
+            <td>{{ tpl.roster_leave_text }}</td>
+        </tr>
+        <tr>
+            <td>✓</td><td>Annual Leave</td><td>:</td>
+            <td>{{ tpl.annual_leave_text }}</td>
+        </tr>
+        <tr>
+            <td>✓</td><td>Non Applicable for overtime job</td><td>:</td>
+            <td>{{ tpl.overtime_text }}</td>
+        </tr>
+        <tr>
+            <td>✓</td><td>BPJS Kesehatan (Medical Insurance)</td><td>:</td>
+            <td>{{ tpl.bpjs_kes_text }}</td>
+        </tr>
+        <tr>
+            <td>✓</td><td>BPJK Ketenagakerjaan Insurance</td><td>:</td>
+            <td>{{ tpl.bpjs_tk_text }}</td>
+        </tr>
+        <tr>
+            <td>✓</td><td>JHT, JP, Health Care Dues By Employee</td><td>:</td>
+            <td>{{ tpl.bpjs_potongan_text }}</td>
+        </tr>
+        <tr>
+            <td>✓</td><td>Income Tax (PPh 21)</td><td>:</td>
+            <td>{{ tpl.pph21_text }}</td>
+        </tr>
+    </table>
+
+    <!-- Footer text -->
+    <div class="doc-footer-text">
+We would expect you to join us on _________________________ as mutually agreed upon by us in writing.
+
+{{ tpl.footer_text }}
+    </div>
+
+    <!-- Signature -->
+    <table class="sign-table">
+        <tr>
+            <td rowspan="3" style="width:33%; vertical-align:top;">
+                <div style="border-bottom:1px solid #000; padding-bottom:4px; margin-bottom:4px; font-size:8pt;">
+                    No. Arsip: {{ ol.no_arsip }}
+                </div>
+            </td>
+            <td colspan="2" style="text-align:center; font-style:italic; font-size:8pt; font-weight:bold;">
+                Agreed &amp; Signed By,
+            </td>
+        </tr>
+        <tr>
+            <td style="width:33%; text-align:center; font-size:8pt;">
+                HRD Manager
+            </td>
+            <td style="width:34%; text-align:center; font-size:8pt;">
+                Prospective Employee
+            </td>
+        </tr>
+        <tr>
+            <td class="sign-area" style="text-align:center; vertical-align:bottom; padding-bottom:4px;">
+                {{ setting.hrd_manager }}
+            </td>
+            <td class="sign-area" style="text-align:center; vertical-align:bottom; padding-bottom:4px;">
+                {{ ol.candidate.nama }}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:8pt;">Nama / Tgl.</td>
+            <td style="text-align:center;">{{ setting.hrd_manager }}</td>
+            <td style="text-align:center;">{{ ol.candidate.nama }}</td>
+        </tr>
+    </table>
+
+</div>
+</div>
+
+</body>
+</html>

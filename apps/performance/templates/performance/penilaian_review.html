@@ -1,0 +1,179 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Review Atasan — {{ penilaian.employee.nama }}{% endblock %}
+{% block breadcrumb %}Performance / Review Atasan{% endblock %}
+
+{% block extra_css %}
+<style>
+.star-btn { background:none;border:none;font-size:1.6rem;cursor:pointer;padding:0 2px;transition:transform .1s; }
+.star-btn:hover { transform:scale(1.2); }
+.review-card { background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px; }
+.kpi-summary { background:var(--surface);border-radius:8px;padding:10px 14px;font-size:.82rem; }
+.skor-bar { height:6px;border-radius:3px;background:var(--surface2);overflow:hidden; }
+.skor-fill { height:100%;border-radius:3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="fw-bold mb-0">Review Atasan</h5>
+    <small class="text-muted">Menilai: <strong>{{ penilaian.employee.nama }}</strong> — {{ penilaian.periode.nama }}</small>
+  </div>
+  <a href="{% url 'penilaian_detail' penilaian.pk %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+</div>
+
+{% if messages %}{% for msg in messages %}
+<div class="alert alert-dismissible mb-3 {% if 'berhasil' in msg.message|lower %}alert-success{% else %}alert-warning{% endif %}">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}{% endif %}
+
+<form method="post" id="reviewForm">
+{% csrf_token %}
+<div class="row g-3">
+  <!-- Kiri: Rekap KPI -->
+  <div class="col-12 col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0"><i class="fas fa-bullseye me-2 text-danger"></i>Rekap KPI Karyawan</h6></div>
+      <div class="card-body p-0">
+        {% for item in kpi_items %}
+        <div class="kpi-summary" style="border-bottom:1px solid var(--border);border-radius:0;">
+          <div class="d-flex justify-content-between">
+            <span>{{ item.nama_kpi }}</span>
+            <strong style="color:{% if item.pencapaian_persen and item.pencapaian_persen >= 80 %}#22c55e{% elif item.pencapaian_persen and item.pencapaian_persen >= 60 %}#f59e0b{% else %}#ef4444{% endif %};">
+              {{ item.pencapaian_persen|default:"—"|floatformat:1 }}{% if item.pencapaian_persen is not None %}%{% endif %}
+            </strong>
+          </div>
+          {% if item.pencapaian_persen is not None %}
+          <div class="skor-bar mt-1">
+            <div class="skor-fill" style="width:{{ item.pencapaian_persen|floatformat:0 }}%;
+              background:{% if item.pencapaian_persen >= 80 %}#22c55e{% elif item.pencapaian_persen >= 60 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+          </div>
+          {% endif %}
+        </div>
+        {% empty %}
+        <div class="text-muted text-center py-3">Belum ada KPI</div>
+        {% endfor %}
+        <div class="kpi-summary d-flex justify-content-between">
+          <span class="text-muted">Skor KPI</span>
+          <strong class="text-primary">{{ penilaian.skor_kpi }}%</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="position:sticky;top:80px;">
+      <div class="card-body">
+        <div id="skorPreview" class="text-center mb-3">
+          <div style="font-size:.78rem;color:var(--muted);">Estimasi Skor Akhir</div>
+          <div id="skorAkhirPreview" style="font-size:2rem;font-weight:800;color:#f59e0b;">—</div>
+        </div>
+        <div class="d-flex flex-column gap-2">
+          <button type="submit" name="action" value="save" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-save me-1"></i>Simpan Review
+          </button>
+          <button type="submit" name="action" value="approve" class="btn btn-success btn-sm"
+            onclick="return confirm('Setujui penilaian ini?')">
+            <i class="fas fa-check me-1"></i>Setujui Penilaian
+          </button>
+          <button type="submit" name="action" value="reject" class="btn btn-outline-danger btn-sm"
+            onclick="return confirm('Kembalikan ke karyawan?')">
+            <i class="fas fa-undo me-1"></i>Kembalikan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kanan: Review Aspek -->
+  <div class="col-12 col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-star me-2 text-warning"></i>Penilaian Kualitatif</h6>
+        <small class="text-muted">Total bobot: <strong id="totalBobotReview">0</strong>%</small>
+      </div>
+      <div class="card-body">
+        {% for item in review_items %}
+        <div class="review-card">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <div class="fw-semibold" style="font-size:.88rem;">{{ item.aspek }}</div>
+              <small class="text-muted">Bobot:
+                <input type="number" name="bobot_{{ item.pk }}" value="{{ item.bobot }}"
+                  min="1" max="100" step="0.01" class="bobot-review-input"
+                  style="width:50px;background:var(--surface);border:1px solid var(--border);
+                    border-radius:4px;color:var(--text);font-size:.78rem;padding:1px 4px;"
+                  onchange="updateBobotTotal()">
+                %
+              </small>
+            </div>
+            <div class="star-group" data-pk="{{ item.pk }}">
+              {% for i in "12345" %}
+              <button type="button" class="star-btn" data-val="{{ forloop.counter }}"
+                style="color:{% if item.skor and forloop.counter <= item.skor %}#f59e0b{% else %}#444{% endif %};"
+                onclick="setSkor({{ item.pk }}, {{ forloop.counter }}, this.closest('.star-group'))">★</button>
+              {% endfor %}
+              <input type="hidden" name="skor_{{ item.pk }}" id="skor_input_{{ item.pk }}"
+                value="{{ item.skor|default:'' }}">
+            </div>
+          </div>
+          <input type="text" name="catatan_{{ item.pk }}" value="{{ item.catatan }}"
+            placeholder="Catatan untuk aspek ini (opsional)"
+            class="form-control form-control-sm"
+            style="background:var(--surface);border-color:var(--border);color:var(--text);">
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h6 class="mb-0"><i class="fas fa-comment me-2"></i>Catatan Atasan</h6></div>
+      <div class="card-body">
+        <textarea name="catatan_atasan" class="form-control" rows="4"
+          placeholder="Berikan feedback, rekomendasi pengembangan, atau catatan penting..."
+          style="background:var(--surface);border-color:var(--border);color:var(--text);">{{ penilaian.catatan_atasan }}</textarea>
+      </div>
+    </div>
+  </div>
+</div>
+</form>
+
+<script>
+const KPI_SKOR = {{ penilaian.skor_kpi }};
+
+function setSkor(pk, val, group) {
+  document.getElementById('skor_input_' + pk).value = val;
+  group.querySelectorAll('.star-btn').forEach((btn, i) => {
+    btn.style.color = (i < val) ? '#f59e0b' : '#444';
+  });
+  updateSkorPreview();
+}
+
+function updateBobotTotal() {
+  const inputs = document.querySelectorAll('.bobot-review-input');
+  let total = 0;
+  inputs.forEach(i => total += parseFloat(i.value) || 0);
+  document.getElementById('totalBobotReview').textContent = total.toFixed(1);
+}
+
+function updateSkorPreview() {
+  const groups = document.querySelectorAll('.star-group');
+  const bobots = document.querySelectorAll('.bobot-review-input');
+  let totalBobot = 0, weighted = 0;
+  groups.forEach((g, i) => {
+    const pk    = g.dataset.pk;
+    const skor  = parseInt(document.getElementById('skor_input_' + pk).value) || 0;
+    const bobot = parseFloat(bobots[i]?.value) || 0;
+    if (skor > 0) { weighted += (skor / 5 * 100) * bobot / 100; totalBobot += bobot; }
+  });
+  const reviewSkor = totalBobot > 0 ? weighted / totalBobot * 100 : 0;
+  const akhir      = KPI_SKOR * 0.7 + reviewSkor * 0.3;
+  const el         = document.getElementById('skorAkhirPreview');
+  el.textContent   = akhir.toFixed(1) + '%';
+  el.style.color   = akhir >= 90 ? '#22c55e' : akhir >= 80 ? '#3b82f6' :
+                     akhir >= 70 ? '#f59e0b' : akhir >= 60 ? '#f97316' : '#ef4444';
+}
+
+updateBobotTotal();
+updateSkorPreview();
+</script>
+{% endblock %}

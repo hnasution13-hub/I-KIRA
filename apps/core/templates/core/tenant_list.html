@@ -1,0 +1,233 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Daftar Tenant{% endblock %}
+{% block breadcrumb %}Pengaturan / Daftar Tenant{% endblock %}
+
+{% block extra_css %}
+<style>
+.tenant-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+.tenant-table th {
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: .75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.tenant-table td {
+  padding: .8rem 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.tenant-table tbody tr:last-child td { border-bottom: none; }
+.tenant-table tbody tr:hover { background: var(--hover); }
+.tenant-slug {
+  font-family: 'Courier New', monospace;
+  font-size: .8rem;
+  color: var(--muted);
+  background: var(--surface);
+  border-radius: 4px;
+  padding: .15rem .5rem;
+}
+.badge-status {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 700;
+  padding: .2rem .65rem;
+  border-radius: 20px;
+  text-transform: capitalize;
+}
+.badge-aktif    { background: rgba(34,197,94,.15);  color: #16a34a; }
+.badge-trial    { background: rgba(245,158,11,.15); color: #d97706; }
+.badge-suspend  { background: rgba(239,68,68,.15);  color: #dc2626; }
+.badge-nonaktif { background: rgba(148,163,184,.15);color: var(--muted); }
+.stat-num {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.stat-sub {
+  font-size: .75rem;
+  color: var(--muted);
+  display: block;
+}
+.page-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+.page-topbar h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.summary-strip {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.sum-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .85rem 1.2rem;
+  flex: 1;
+  min-width: 140px;
+}
+.sum-card .sum-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.sum-card .sum-lbl {
+  font-size: .78rem;
+  color: var(--muted);
+  margin-top: .1rem;
+}
+.dev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: rgba(230,51,41,.1);
+  color: var(--red);
+  font-size: .75rem;
+  font-weight: 700;
+  padding: .3rem .8rem;
+  border-radius: 20px;
+  border: 1px solid rgba(230,51,41,.25);
+}
+.empty-row td {
+  text-align: center;
+  padding: 3rem;
+  color: var(--muted);
+  font-size: .9rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-topbar">
+  <div>
+    <h1><i class="fas fa-building" style="color:var(--red);margin-right:.5rem;"></i>Daftar Tenant</h1>
+    <p style="color:var(--muted);font-size:.85rem;margin:.25rem 0 0;">
+      Semua company/tenant yang terdaftar di sistem SmartDesk.
+    </p>
+  </div>
+  <span class="dev-badge">
+    <i class="fas fa-code"></i> Developer View — Tidak terlihat oleh tenant
+  </span>
+</div>
+
+<!-- Summary strip -->
+{% with total_aktif=0 %}
+<div class="summary-strip">
+  <div class="sum-card">
+    <div class="sum-val">{{ total }}</div>
+    <div class="sum-lbl">Total Tenant</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-val">{{ data|length }}</div>
+    <div class="sum-lbl">Terdaftar</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-val">
+      {% with cnt=0 %}
+        {% for row in data %}{% if row.company.status == 'aktif' %}{% with cnt=cnt|add:1 %}{% endwith %}{% endif %}{% endfor %}
+        {{ data|length }}
+      {% endwith %}
+    </div>
+    <div class="sum-lbl">Total Karyawan Aktif</div>
+  </div>
+</div>
+{% endwith %}
+
+<!-- Table -->
+<div class="card" style="padding:0;overflow:hidden;">
+  <table class="tenant-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Perusahaan</th>
+        <th>Slug</th>
+        <th>Status</th>
+        <th>Add-On</th>
+        <th style="text-align:right;">Karyawan Aktif</th>
+        <th style="text-align:right;">Total Karyawan</th>
+        <th style="text-align:right;">Records Absensi</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in data %}
+      <tr>
+        <td style="color:var(--muted);font-size:.8rem;">{{ forloop.counter }}</td>
+        <td>
+          <div style="font-weight:600;color:var(--text);">{{ row.company.nama }}</div>
+          {% if row.company.singkatan %}
+          <div style="font-size:.78rem;color:var(--muted);">{{ row.company.singkatan }}</div>
+          {% endif %}
+        </td>
+        <td><span class="tenant-slug">{{ row.company.slug }}</span></td>
+        <td>
+          <span class="badge-status badge-{{ row.company.status }}">{{ row.company.status }}</span>
+        </td>
+        <td style="font-size:.8rem;">
+          {% if row.company.addon_assets %}<span title="Assets" style="margin-right:.3rem;">📦</span>{% endif %}
+          {% if row.company.addon_recruitment %}<span title="Rekrutmen" style="margin-right:.3rem;">🎯</span>{% endif %}
+          {% if row.company.addon_psychotest %}<span title="Psikotes" style="margin-right:.3rem;">🧠</span>{% endif %}
+          {% if row.company.addon_advanced_psychotest %}<span title="OCEAN" style="margin-right:.3rem;">🔬</span>{% endif %}
+          {% if row.company.addon_od %}<span title="OD" style="margin-right:.3rem;">🏗️</span>{% endif %}
+          {% if not row.company.addon_assets and not row.company.addon_recruitment and not row.company.addon_psychotest and not row.company.addon_advanced_psychotest and not row.company.addon_od %}
+          <span style="color:var(--muted);font-size:.75rem;">—</span>
+          {% endif %}
+        </td>
+        <td style="text-align:right;">
+          <span class="stat-num">{{ row.emp_aktif }}</span>
+          <span class="stat-sub">aktif</span>
+        </td>
+        <td style="text-align:right;">
+          <span class="stat-num">{{ row.emp_total }}</span>
+          <span class="stat-sub">semua status</span>
+        </td>
+        <td style="text-align:right;">
+          <span class="stat-num">{{ row.n_absensi|default:"0" }}</span>
+          <span class="stat-sub">records</span>
+        </td>
+        <td>
+          {% if row.company.email %}
+          <a href="mailto:{{ row.company.email }}" title="{{ row.company.email }}"
+             style="color:var(--muted);font-size:.85rem;">
+            <i class="fas fa-envelope"></i>
+          </a>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr class="empty-row">
+        <td colspan="9">
+          <i class="fas fa-building" style="font-size:2rem;opacity:.3;display:block;margin-bottom:.5rem;"></i>
+          Belum ada tenant terdaftar.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<p style="font-size:.78rem;color:var(--muted);margin-top:1rem;">
+  <i class="fas fa-lock" style="margin-right:.35rem;"></i>
+  Halaman ini hanya terlihat oleh akun <strong>superuser</strong>.
+  Tenant tidak dapat mengakses atau mengetahui keberadaan tenant lain.
+</p>
+{% endblock %}

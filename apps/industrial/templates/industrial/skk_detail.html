@@ -1,0 +1,46 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Detail SKK{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'skk_list' %}">Surat Keterangan Kerja</a></li>
+      <li class="breadcrumb-item active">Detail</li>
+    </ol>
+  </nav>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0">📄 SKK — {{ skk.snap_nama }}</h4>
+    <div class="d-flex gap-2">
+      <a href="{% url 'skk_print' skk.pk %}" target="_blank" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-printer me-1"></i>Cetak
+      </a>
+      <a href="{% url 'skk_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light fw-semibold small">Detail SKK</div>
+      <div class="card-body small">
+        <table class="table table-sm table-borderless mb-0">
+          <tr><td class="text-muted">Nomor</td><td>{{ skk.nomor_surat|default:"-" }}</td></tr>
+          <tr><td class="text-muted">Tanggal</td><td>{{ skk.tanggal_surat|date:"d F Y" }}</td></tr>
+          <tr><td class="text-muted">Tujuan</td><td>{{ skk.tujuan_surat|default:"-" }}</td></tr>
+          <tr><td class="text-muted">Nama</td><td><strong>{{ skk.snap_nama }}</strong></td></tr>
+          <tr><td class="text-muted">NIK</td><td>{{ skk.snap_nik }}</td></tr>
+          <tr><td class="text-muted">Jabatan</td><td>{{ skk.snap_jabatan }}</td></tr>
+          <tr><td class="text-muted">Departemen</td><td>{{ skk.snap_departemen }}</td></tr>
+          <tr><td class="text-muted">Tgl Masuk</td><td>{{ skk.snap_tanggal_masuk|date:"d/m/Y" }}</td></tr>
+          {% if skk.snap_tanggal_keluar %}<tr><td class="text-muted">Tgl Keluar</td><td>{{ skk.snap_tanggal_keluar|date:"d/m/Y" }}</td></tr>{% endif %}
+          <tr><td class="text-muted">Masa Kerja</td><td><strong>{{ skk.masa_kerja_keterangan }}</strong></td></tr>
+          {% if skk.tampilkan_gaji and skk.snap_gaji_pokok %}<tr><td class="text-muted">Gaji Pokok</td><td>Rp {{ skk.snap_gaji_pokok|floatformat:"0g" }}</td></tr>{% endif %}
+          <tr><td class="text-muted">Penandatangan</td><td><strong>{{ skk.nama_penandatangan }}</strong><br><small class="text-muted">{{ skk.jabatan_penandatangan }}</small></td></tr>
+        </table>
+        {% if skk.keterangan_tambahan %}
+        <hr><div class="text-muted small mb-1">Keterangan Tambahan:</div>
+        <div class="small">{{ skk.keterangan_tambahan|linebreaksbr }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Daftar Mutasi Aset{% endblock %}
+{% block breadcrumb %}Asset Management / Mutasi Aset{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="text-white mb-1"><i class="fas fa-exchange-alt me-2 text-primary"></i>Mutasi Aset</h4>
+        <p class="text-secondary mb-0">Riwayat perpindahan, penugasan, dan perubahan status aset</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'movements:assignment_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-user-tag me-1"></i>Penugasan</a>
+        <a href="{% url 'movements:movement_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Tambah Mutasi</a>
+    </div>
+</div>
+<!-- Filter -->
+<div class="card bg-dark border-secondary mb-4"><div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3"><label class="form-label text-secondary small">Aset</label>
+            <input type="text" name="asset__asset_name" value="{{ request.GET.asset__asset_name }}" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Kode/nama aset...">
+        </div>
+        <div class="col-md-2"><label class="form-label text-secondary small">Tipe Mutasi</label>
+            <select name="movement_type" class="form-select form-select-sm bg-dark text-white border-secondary">
+                <option value="">-- Semua --</option>
+                <option value="PENUGASAN">Penugasan</option>
+                <option value="PENGEMBALIAN">Pengembalian</option>
+                <option value="SERVICE">Service</option>
+                <option value="MUTASI">Mutasi</option>
+                <option value="HILANG">Hilang</option>
+                <option value="DIJUAL">Dijual</option>
+            </select>
+        </div>
+        <div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-search me-1"></i>Filter</button></div>
+        <div class="col-md-2"><a href="{% url 'movements:movement_list' %}" class="btn btn-outline-secondary btn-sm w-100">Reset</a></div>
+    </form>
+</div></div>
+<!-- Table -->
+<div class="card bg-dark border-secondary"><div class="card-body p-0">
+    <div class="table-responsive">
+        <div class="table-responsive-wrap">
+<table class="table table-dark table-hover mb-0">
+            <thead><tr class="border-secondary">
+                <th class="text-secondary fw-normal ps-4">Tipe</th>
+                <th class="text-secondary fw-normal">Aset</th>
+                <th class="text-secondary fw-normal">Dari</th>
+                <th class="text-secondary fw-normal">Ke</th>
+                <th class="text-secondary fw-normal">Tanggal</th>
+                <th class="text-secondary fw-normal">Dok.</th>
+                <th class="text-secondary fw-normal">Aksi</th>
+            </tr></thead>
+            <tbody>
+            {% for mov in movements %}
+            <tr class="border-secondary">
+                <td class="ps-4">
+                    {% if mov.movement_type == 'PENUGASAN' %}<span class="badge bg-primary">Penugasan</span>
+                    {% elif mov.movement_type == 'PENGEMBALIAN' %}<span class="badge bg-success">Kembali</span>
+                    {% elif mov.movement_type == 'SERVICE' %}<span class="badge bg-warning text-dark">Service</span>
+                    {% elif mov.movement_type == 'MUTASI' %}<span class="badge bg-info text-dark">Mutasi</span>
+                    {% elif mov.movement_type == 'HILANG' %}<span class="badge bg-danger">Hilang</span>
+                    {% elif mov.movement_type == 'DIJUAL' %}<span class="badge bg-secondary">Dijual</span>
+                    {% else %}<span class="badge bg-secondary">{{ mov.movement_type }}</span>{% endif %}
+                </td>
+                <td><a href="{% url 'assets:asset_detail' mov.asset.pk %}" class="text-info text-decoration-none font-monospace small">{{ mov.asset_code }}</a></td>
+                <td class="text-secondary small">
+                    {% if mov.from_pic_name %}<i class="fas fa-user me-1"></i>{{ mov.from_pic_name }}<br>{% endif %}
+                    {% if mov.from_location_name %}<i class="fas fa-map-marker-alt me-1"></i>{{ mov.from_location_name }}{% endif %}
+                    {% if not mov.from_pic_name and not mov.from_location_name %}-{% endif %}
+                </td>
+                <td class="text-white small">
+                    {% if mov.to_pic_name %}<i class="fas fa-user me-1 text-primary"></i>{{ mov.to_pic_name }}<br>{% endif %}
+                    {% if mov.to_location_name %}<i class="fas fa-map-marker-alt me-1 text-primary"></i>{{ mov.to_location_name }}{% endif %}
+                    {% if not mov.to_pic_name and not mov.to_location_name %}-{% endif %}
+                </td>
+                <td class="text-secondary small">{{ mov.movement_date|date:"d M Y" }}</td>
+                <td class="text-secondary small">{{ mov.document_no|default:"-" }}</td>
+                <td><div class="d-flex gap-1">
+                    <a href="{% url 'movements:movement_detail' mov.pk %}" class="btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a>
+                    <a href="{% url 'movements:movement_update' mov.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                    <a href="{% url 'movements:movement_delete' mov.pk %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>
+                </div></td>
+            </tr>
+            {% empty %}
+            <tr class="dt-empty">
+                    <td colspan="7" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-arrows-turn-right"></i></div>
+                            <div class="empty-state-title">Belum ada data mutasi aset</div>
+                            <div class="empty-state-desc">Catat perpindahan aset antar lokasi atau pengguna.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'movements:movement_create' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Mutasi</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+</div>
+    </div>
+</div>
+{% if is_paginated %}<div class="card-footer border-secondary">{% include 'includes/pagination.html' %}</div>{% endif %}
+</div>
+{% endblock %}

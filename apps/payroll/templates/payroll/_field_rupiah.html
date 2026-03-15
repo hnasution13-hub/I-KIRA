@@ -1,0 +1,10 @@
+<div class="col-md-6">
+    <label class="form-label fw-semibold">{{ label }}</label>
+    <div class="input-group">
+        <span class="input-group-text">Rp</span>
+        <input type="text" inputmode="numeric" name="{{ name }}" class="form-control text-end rupiah-input"
+               value="{{ val|default:0 }}" autocomplete="off"
+               {% if trigger %}data-trigger="{{ trigger }}"{% endif %}>
+    </div>
+    {% if hint %}<small class="text-muted">{{ hint }}</small>{% endif %}
+</div>

@@ -1,0 +1,407 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Kalkulator Pesangon - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Industrial Relation / Kalkulator Pesangon{% endblock %}
+
+{% block content %}
+<h4 class="fw-bold mb-1"><i class="fas fa-calculator me-2 text-danger"></i>Kalkulator Pesangon</h4>
+<p class="text-muted mb-4">
+  Perhitungan berdasarkan <strong>PP No. 35/2021</strong> &amp; <strong>UU No. 11/2020 (Cipta Kerja)</strong>.
+  <span class="badge bg-danger ms-1">UPH 15% Tidak Berlaku</span>
+</p>
+
+<div class="row g-4">
+  <!-- ── FORM INPUT ────────────────────────────────────────────────── -->
+  <div class="col-12 col-lg-5">
+    <div class="card">
+      <div class="card-header bg-light"><h6 class="mb-0 fw-bold">Input Data PHK</h6></div>
+      <div class="card-body">
+        <form method="post" id="form-pesangon">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Karyawan</label>
+            <select name="employee" class="form-select" required onchange="this.form.submit()">
+              <option value="">-- Pilih Karyawan --</option>
+              {% for emp in employees %}
+              <option value="{{ emp.pk }}"
+                {% if employee and employee.pk == emp.pk %}selected{% endif %}>
+                {{ emp.nik }} — {{ emp.nama }}
+                {% if emp.status_karyawan == 'PKWT' %}(PKWT){% elif emp.status_karyawan == 'PKWTT' %}(PKWTT){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {% if employee %}
+          <div class="alert {% if employee.status_karyawan == 'PKWT' %}alert-warning{% else %}alert-info{% endif %} py-2 mb-3" style="font-size:.82rem;">
+            <strong>{{ employee.nama }}</strong>
+            {% if employee.status_karyawan == 'PKWT' %}
+              <span class="badge bg-warning text-dark ms-1">PKWT</span>
+              <span class="badge bg-secondary ms-1">Kompensasi Ps.61A</span>
+            {% else %}
+              <span class="badge bg-primary ms-1">{{ employee.status_karyawan }}</span>
+              <span class="badge bg-secondary ms-1">Pesangon PP 35/2021</span>
+            {% endif %}
+            <br>
+            Masuk: {{ employee.join_date|date:"d F Y" }} &nbsp;|&nbsp; {{ employee.masa_kerja_display }}
+            {% if employee.jabatan %}<br>Jabatan: {{ employee.jabatan }}{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Dasar Pasal
+              <span class="badge bg-primary ms-1" style="font-size:.7rem;">Wajib</span>
+            </label>
+            <select name="dasar_pasal" class="form-select" required id="select-pasal"
+                    onchange="updateAlasan(this)"
+                    {% if employee.status_karyawan == 'PKWT' %}disabled{% endif %}>
+              <option value="">-- Pilih Dasar Pasal --</option>
+
+              {% if employee.status_karyawan == 'PKWT' %}
+              <optgroup label="⚡ Kompensasi PKWT">
+                {% for kode, info in pasal_choices_grouped.pkwt %}
+                <option value="{{ kode }}" selected>{{ info }}</option>
+                {% endfor %}
+              </optgroup>
+              {% else %}
+              <optgroup label="📋 PHK — UP + UPMK">
+                {% for kode, info in pasal_choices_grouped.phk %}
+                <option value="{{ kode }}"
+                  {% if result and result.dasar_pasal == kode %}selected{% endif %}>
+                  {{ info }}
+                </option>
+                {% endfor %}
+              </optgroup>
+              <optgroup label="🏢 Uang Pisah (Kebijakan Perusahaan)">
+                {% for kode, info in pasal_choices_grouped.uang_pisah %}
+                <option value="{{ kode }}"
+                  {% if result and result.dasar_pasal == kode %}selected{% endif %}>
+                  {{ info }}
+                </option>
+                {% endfor %}
+              </optgroup>
+              {% endif %}
+            </select>
+            {% if employee.status_karyawan == 'PKWT' %}
+              {# Kirim value 61A karena select di-disabled tidak ikut POST #}
+              <input type="hidden" name="dasar_pasal" value="61A">
+              <div class="form-text text-warning">
+                <i class="fas fa-info-circle me-1"></i>Karyawan PKWT otomatis menggunakan Ps. 61A.
+              </div>
+            {% endif %}
+            <div class="form-text text-muted" id="pasal-hint"></div>
+          </div>
+
+          <input type="hidden" name="alasan_phk" id="input-alasan"
+                 value="{% if result %}{{ result.alasan_phk|default:'PHK Perusahaan' }}{% elif employee.status_karyawan == 'PKWT' %}Kontrak Habis{% else %}PHK Perusahaan{% endif %}">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Tanggal PHK / Berakhir Kontrak</label>
+            <input type="date" name="tanggal_phk" class="form-control" required
+                   value="{% if result.tanggal_phk %}{{ result.tanggal_phk }}{% else %}{{ request.POST.tanggal_phk }}{% endif %}">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Gaji Pokok</label>
+            <div class="input-group">
+              <span class="input-group-text">Rp</span>
+              <input type="number" name="gaji_pokok" class="form-control"
+                     value="{% if result.gaji_pokok %}{{ result.gaji_pokok }}{% elif employee.salary_benefit %}{{ employee.salary_benefit.gaji_pokok }}{% else %}{{ request.POST.gaji_pokok }}{% endif %}"
+                     min="0">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Tunjangan Tetap</label>
+            <div class="input-group">
+              <span class="input-group-text">Rp</span>
+              <input type="number" name="tunjangan_tetap" class="form-control"
+                     value="{% if result.tunjangan_tetap %}{{ result.tunjangan_tetap }}{% elif employee.salary_benefit %}{{ employee.salary_benefit.total_tunjangan_tetap }}{% else %}{{ request.POST.tunjangan_tetap }}{% endif %}"
+                     min="0">
+            </div>
+            <div class="form-text">Hanya tunjangan tetap sebagai dasar upah (PP 35/2021 Ps.40).</div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" name="calculate" class="btn btn-primary">
+              <i class="fas fa-calculator me-1"></i>Hitung
+            </button>
+            <button type="submit" name="save" class="btn btn-success">
+              <i class="fas fa-save me-1"></i>Hitung &amp; Simpan
+            </button>
+          </div>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HASIL PERHITUNGAN ─────────────────────────────────────────── -->
+  <div class="col-12 col-lg-7">
+    {% if result %}
+
+    {# ════════════════════════════════════════════════════════════════ #}
+    {# SECTION 1 — PERHITUNGAN PESANGON (UP + UPMK / Uang Pisah)      #}
+    {# Selalu tampil. PKWT: semua nilai 0 + greyed out                 #}
+    {# ════════════════════════════════════════════════════════════════ #}
+    {% with is_pkwt=result.status_karyawan|stringformat:"s" %}
+    {% if result.status_karyawan == 'PKWT' %}
+    <div class="card border-secondary mb-3 opacity-75">
+      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-receipt me-2"></i>Perhitungan Pesangon</h6>
+        <span class="badge bg-light text-secondary">Tidak Berlaku untuk PKWT</span>
+      </div>
+      <div class="card-body bg-light">
+        <div class="text-center text-muted py-3">
+          <i class="fas fa-ban fa-2x mb-2 text-secondary"></i>
+          <p class="mb-0">Karyawan berstatus <span class="badge bg-warning text-dark">PKWT</span>
+          tidak mendapatkan <strong>Pesangon / UPMK</strong>.<br>
+          Hak karyawan PKWT adalah <strong>Kompensasi PKWT</strong> (lihat di bawah).</p>
+        </div>
+        <table class="table table-bordered table-sm mb-0">
+          <tbody>
+            <tr class="text-muted"><td>Uang Pesangon (UP)</td><td class="text-end">—</td><td class="text-end">Rp 0</td></tr>
+            <tr class="text-muted"><td>UPMK</td><td class="text-end">—</td><td class="text-end">Rp 0</td></tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-secondary">
+              <td colspan="2"><strong>TOTAL PESANGON</strong></td>
+              <td class="text-end fw-bold text-secondary">Rp 0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card border-primary mb-3">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-receipt me-2"></i>Perhitungan Pesangon</h6>
+        {% if result.pakai_uang_pisah %}
+          <span class="badge bg-info text-dark">Uang Pisah — Keb. Perusahaan</span>
+        {% else %}
+          <span class="badge bg-light text-dark" style="font-size:.7rem; max-width:200px; white-space:normal; text-align:right;">{{ result.pasal_label|truncatechars:40 }}</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="row mb-3 g-2">
+          <div class="col-6">
+            <div class="bg-light rounded p-2 text-center">
+              <div class="text-muted small">Masa Kerja</div>
+              <div class="fw-bold">{{ result.masa_kerja_tahun }} thn {{ result.masa_kerja_bulan }} bln</div>
+              <small class="text-muted">{{ result.masa_kerja_display }}</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="bg-light rounded p-2 text-center">
+              <div class="text-muted small">Dasar Upah</div>
+              <div class="fw-bold">Rp {{ result.total_upah|floatformat:"0g" }}</div>
+              <small class="text-muted">Gaji + Tunj.Tetap</small>
+            </div>
+          </div>
+        </div>
+
+        <table class="table table-bordered table-sm mb-3">
+          <thead class="table-light">
+            <tr><th>Komponen</th><th>Keterangan</th><th class="text-end">Jumlah</th></tr>
+          </thead>
+          <tbody>
+            {% if result.pesangon > 0 %}
+            <tr>
+              <td><strong>Uang Pesangon (UP)</strong></td>
+              <td class="text-muted small">
+                {{ result.pengali_pesangon }}&times; &times; {{ result.faktor_up }}
+                &times; Rp {{ result.total_upah|floatformat:"0g" }}
+              </td>
+              <td class="text-end fw-bold text-primary">Rp {{ result.pesangon|floatformat:"0g" }}</td>
+            </tr>
+            {% else %}
+            <tr class="text-muted">
+              <td>Uang Pesangon (UP)</td>
+              <td class="small">Tidak dapat UP berdasarkan pasal ini</td>
+              <td class="text-end">Rp 0</td>
+            </tr>
+            {% endif %}
+
+            {% if result.upmk > 0 %}
+            <tr>
+              <td><strong>Uang Penghargaan Masa Kerja (UPMK)</strong></td>
+              <td class="text-muted small">Faktor: {{ result.faktor_upmk }}&times;</td>
+              <td class="text-end fw-bold text-info">Rp {{ result.upmk|floatformat:"0g" }}</td>
+            </tr>
+            {% else %}
+            <tr class="text-muted">
+              <td>UPMK</td>
+              <td class="small">
+                {% if result.masa_kerja_tahun < 3 %}Masa kerja &lt; 3 tahun{% else %}Tidak dapat UPMK berdasarkan pasal ini{% endif %}
+              </td>
+              <td class="text-end">Rp 0</td>
+            </tr>
+            {% endif %}
+
+            {% if result.pakai_uang_pisah and result.uang_pisah > 0 %}
+            <tr class="table-info">
+              <td>
+                <strong>Uang Pisah</strong>
+                <span class="badge bg-info text-dark ms-1" style="font-size:.7rem;">Kebijakan Perusahaan</span>
+              </td>
+              <td class="text-muted small">
+                Nominal berdasarkan kebijakan perusahaan<br>
+                <em>Bukan ketetapan UU — dapat disesuaikan</em>
+              </td>
+              <td class="text-end fw-bold text-info">Rp {{ result.uang_pisah|floatformat:"0g" }}</td>
+            </tr>
+            {% endif %}
+          </tbody>
+          <tfoot>
+            <tr class="table-primary">
+              <td colspan="2"><strong>TOTAL PESANGON</strong></td>
+              <td class="text-end fw-bold fs-5 text-primary">Rp {{ result.total|floatformat:"0g" }}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="alert alert-secondary py-2 mb-0" style="font-size:.8rem;">
+          <i class="fas fa-gavel me-1"></i>
+          <strong>Dasar Hukum:</strong> {{ result.pasal_label }}
+          {% if result.pakai_uang_pisah %}
+            <br><span class="badge bg-info text-dark">Kebijakan Perusahaan</span>
+            Uang Pisah adalah estimasi — dapat disesuaikan per kebijakan perusahaan.
+          {% endif %}
+          <br><span class="text-danger fw-semibold">UPH 15% tidak berlaku.</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {# ════════════════════════════════════════════════════════════════ #}
+    {# SECTION 2 — PERHITUNGAN KOMPENSASI PKWT (Ps.61A)               #}
+    {# Selalu tampil. PKWTT: nilai 0 + greyed out                      #}
+    {# ════════════════════════════════════════════════════════════════ #}
+    {% if result.status_karyawan != 'PKWT' %}
+    <div class="card border-secondary opacity-75">
+      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-file-contract me-2"></i>Perhitungan Kompensasi PKWT</h6>
+        <span class="badge bg-light text-secondary">Tidak Berlaku untuk {{ result.status_karyawan }}</span>
+      </div>
+      <div class="card-body bg-light">
+        <div class="text-center text-muted py-3">
+          <i class="fas fa-ban fa-2x mb-2 text-secondary"></i>
+          <p class="mb-0">Karyawan berstatus <span class="badge bg-primary">{{ result.status_karyawan }}</span>
+          tidak mendapatkan <strong>Kompensasi PKWT</strong>.<br>
+          Hak karyawan PKWTT adalah <strong>Pesangon</strong> (lihat di atas).</p>
+        </div>
+        <table class="table table-bordered table-sm mb-0">
+          <tbody>
+            <tr class="text-muted"><td>Kompensasi PKWT (Ps.61A)</td><td class="text-end">—</td><td class="text-end">Rp 0</td></tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-secondary">
+              <td colspan="2"><strong>TOTAL KOMPENSASI PKWT</strong></td>
+              <td class="text-end fw-bold text-secondary">Rp 0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card border-warning">
+      <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-file-contract me-2"></i>Perhitungan Kompensasi PKWT</h6>
+        <span class="badge bg-dark text-white">UU 11/2020 Ps. 61A</span>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3 g-2">
+          <div class="col-6">
+            <div class="bg-light rounded p-2 text-center">
+              <div class="text-muted small">Masa Kerja</div>
+              <div class="fw-bold">{{ result.masa_kerja_tahun }} thn {{ result.masa_kerja_bulan }} bln</div>
+              <small class="text-muted">{{ result.masa_kerja_display }}</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="bg-light rounded p-2 text-center">
+              <div class="text-muted small">Dasar Upah</div>
+              <div class="fw-bold">Rp {{ result.total_upah|floatformat:"0g" }}</div>
+              <small class="text-muted">Gaji + Tunj.Tetap</small>
+            </div>
+          </div>
+        </div>
+
+        <table class="table table-bordered table-sm mb-3">
+          <thead class="table-light">
+            <tr><th>Komponen</th><th>Keterangan</th><th class="text-end">Jumlah</th></tr>
+          </thead>
+          <tbody>
+            <tr class="table-warning">
+              <td><strong>Kompensasi PKWT</strong></td>
+              <td class="text-muted small">
+                ({{ result.masa_kerja_tahun }} thn {{ result.masa_kerja_bulan }} bln &divide; 12)
+                &times; Rp {{ result.total_upah|floatformat:"0g" }}<br>
+                <em>UU No.11/2020 Pasal 61A</em>
+              </td>
+              <td class="text-end fw-bold fs-6" style="color:#92400e;">
+                Rp {{ result.kompensasi_pkwt|floatformat:"0g" }}
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-warning">
+              <td colspan="2"><strong>TOTAL KOMPENSASI PKWT</strong></td>
+              <td class="text-end fw-bold fs-5" style="color:#92400e;">
+                Rp {{ result.kompensasi_pkwt|floatformat:"0g" }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="alert alert-warning py-2 mb-0" style="font-size:.8rem;">
+          <i class="fas fa-info-circle me-1"></i>
+          <strong>Rumus:</strong> (Masa Kerja Bulan &divide; 12) &times; Upah.
+          Berlaku untuk karyawan <span class="badge bg-warning text-dark">PKWT</span>
+          yang kontraknya berakhir atau tidak diperpanjang.
+          <br><span class="text-danger fw-semibold">UPH 15% tidak berlaku.</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}{# end PKWT/non-PKWT kompensasi section #}
+
+    {% else %}
+    <div class="card">
+      <div class="card-body text-center text-muted py-5">
+        <i class="fas fa-calculator fa-3x mb-3 text-secondary"></i>
+        <p class="mb-0">Pilih karyawan, tentukan dasar pasal, lalu klik <strong>Hitung</strong>.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+const pasalAlasanMap = {
+  '61A'       : 'Kontrak Habis',
+  'PP35_47'   : 'Pensiun',
+  'PP35_54_4' : 'Pensiun',
+  'PP35_54_5' : 'Pensiun',
+  'PP35_48'   : 'Meninggal',
+  'PP35_54_1' : 'Resign',
+  'PP35_52_2' : 'Resign',
+  'PP35_49'   : 'Resign',
+  'PP35_50'   : 'Pelanggaran Berat',
+  'PP35_52_1' : 'Pelanggaran Berat',
+};
+
+function updateAlasan(sel) {
+  const alasan = pasalAlasanMap[sel.value] || 'PHK Perusahaan';
+  document.getElementById('input-alasan').value = alasan;
+  const hint = document.getElementById('pasal-hint');
+  const opt  = sel.options[sel.selectedIndex];
+  if (hint) hint.textContent = opt && opt.value ? '📌 ' + opt.text : '';
+}
+
+window.addEventListener('DOMContentLoaded', function () {
+  const sel = document.getElementById('select-pasal');
+  if (sel && sel.value) updateAlasan(sel);
+});
+</script>
+{% endblock %}

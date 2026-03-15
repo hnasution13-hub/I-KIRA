@@ -1,0 +1,88 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Detail Payroll {{ payroll.periode }}{% endblock %}
+{% block breadcrumb %}Payroll / {{ payroll.periode }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-file-invoice me-2"></i>Payroll {{ payroll.periode }}</h4>
+    <div class="d-flex gap-2">
+        {% if payroll.status == 'DRAFT' %}
+        <form method="post" class="d-inline"><{% csrf_token %}<input type="hidden" name="action" value="approve">
+            <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check me-1"></i>Approve</button></form>
+        {% elif payroll.status == 'APPROVED' %}
+        <form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="action" value="mark_paid">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-money-bill me-1"></i>Tandai Dibayar</button></form>
+        {% endif %}
+        <a href="{% url 'export_payroll_rekap_excel' payroll.pk %}" class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel me-1"></i>Export Excel
+        </a>
+        <a href="{% url 'payroll_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
+    </div>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="stat-card"><div class="stat-value text-primary">{{ payroll.jumlah_karyawan }}</div><div class="stat-label">Karyawan</div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-value text-success" style="font-size:1.2rem;">Rp {{ payroll.total_gaji_kotor|floatformat:"0g" }}</div><div class="stat-label">Total Gaji Kotor</div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-value text-danger" style="font-size:1.2rem;">Rp {{ payroll.total_potongan|floatformat:"0g" }}</div><div class="stat-label">Total Potongan</div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-value text-primary" style="font-size:1.2rem;">Rp {{ payroll.total_gaji_bersih|floatformat:"0g" }}</div><div class="stat-label">Total Gaji Bersih</div></div></div>
+</div>
+<div class="card">
+    <div class="card-header d-flex justify-content-between"><h5 class="mb-0">Detail per Karyawan</h5>
+        <span class="badge {% if payroll.status == 'PAID' %}bg-success{% elif payroll.status == 'APPROVED' %}bg-primary{% else %}bg-warning text-dark{% endif %}">{{ payroll.get_status_display }}</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover datatable mb-0" id="tbl-payroll-detail">
+            <thead class="table-light">
+                <tr><th>Karyawan</th><th class="text-end">Gaji Pokok</th><th class="text-end">Tunjangan</th><th class="text-end">Lembur</th><th class="text-end">Potongan</th><th class="text-end fw-bold">Gaji Bersih</th><th>Aksi</th></tr>
+            </thead>
+            <tbody>
+                {% for d in details %}
+                <tr>
+                    <td><span class="fw-semibold">{{ d.employee.nama }}</span><br><small class="text-muted">{{ d.employee.nik }}</small></td>
+                    <td class="text-end">{{ d.gaji_pokok|floatformat:"0g" }}</td>
+                    <td class="text-end">{{ d.tunjangan_transport|add:d.tunjangan_makan|add:d.tunjangan_jabatan|floatformat:"0g" }}</td>
+                    <td class="text-end">{{ d.upah_lembur|floatformat:"0g" }}</td>
+                    <td class="text-end text-danger">{{ d.total_potongan|floatformat:"0g" }}</td>
+                    <td class="text-end fw-bold text-success">{{ d.gaji_bersih|floatformat:"0g" }}</td>
+                    <td><a href="{% url 'payslip' d.pk %}" class="btn btn-sm btn-outline-info" title="Slip Gaji"><i class="fas fa-file-alt"></i></a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-3">Tidak ada data</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SITE SUMMARY (muncul setelah approve) -->
+{% if site_summaries %}
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-header bg-transparent d-flex align-items-center justify-content-between">
+    <h6 class="fw-semibold mb-0"><i class="fas fa-map-marker-alt me-2" style="color:#818cf8;"></i>Ringkasan per Job Site</h6>
+    <a href="{% url 'payroll_site_summary' %}" class="btn btn-sm btn-outline-secondary">Laporan Multi-Site →</a>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-3">Job Site</th>
+          <th class="text-center">Karyawan</th>
+          <th class="text-end">Gaji Kotor</th>
+          <th class="text-end">Potongan</th>
+          <th class="text-end fw-semibold">Gaji Bersih</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ss in site_summaries %}
+        <tr>
+          <td class="ps-3 fw-medium">{{ ss.site_label }}</td>
+          <td class="text-center">{{ ss.jumlah_karyawan }}</td>
+          <td class="text-end">Rp {{ ss.total_gaji_kotor|floatformat:0 }}</td>
+          <td class="text-end text-danger">Rp {{ ss.total_potongan|floatformat:0 }}</td>
+          <td class="text-end fw-bold" style="color:#1e3a5f;">Rp {{ ss.total_gaji_bersih|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Perjanjian Kerja{% endblock %}
+{% block breadcrumb %}Industrial Relation / Perjanjian Kerja{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-file-contract me-2 text-primary"></i>Perjanjian Kerja</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'contract_expiring' %}" class="btn btn-warning btn-sm"><i class="fas fa-exclamation-triangle me-1"></i>Hampir Habis</a>
+        <a href="{% url 'contract_add' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Tambah Kontrak</a>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive-wrap">
+<table class="table table-hover datatable mb-0" id="tbl-kontrak">
+            <thead class="table-light">
+                <tr><th>No. Kontrak</th><th>Karyawan</th><th>Tipe</th><th>Mulai</th><th>Selesai</th><th>Sisa Hari</th><th>Status</th><th>Aksi</th></tr>
+            </thead>
+            <tbody>
+                {% for c in contracts %}
+                <tr>
+                    <td class="fw-semibold">{{ c.nomor_kontrak }}</td>
+                    <td><a href="{% url 'employee_detail' c.employee.pk %}" class="text-decoration-none">{{ c.employee.nama }}</a></td>
+                    <td><small>{{ c.tipe_kontrak }}</small></td>
+                    <td><small>{{ c.tanggal_mulai|date:"d/m/Y" }}</small></td>
+                    <td><small>{{ c.tanggal_selesai|date:"d/m/Y"|default:"PKWTT" }}</small></td>
+                    <td>
+                        {% if c.sisa_hari is not None %}
+                            {% if c.sisa_hari <= 30 %}<span class="badge bg-danger">{{ c.sisa_hari }} hari</span>
+                            {% elif c.sisa_hari <= 60 %}<span class="badge bg-warning text-dark">{{ c.sisa_hari }} hari</span>
+                            {% else %}<span class="text-muted">{{ c.sisa_hari }} hari</span>{% endif %}
+                        {% else %}-{% endif %}
+                    </td>
+                    <td><span class="badge {% if c.status == 'Aktif' %}bg-success{% elif c.status == 'Expired' %}bg-danger{% else %}bg-secondary{% endif %}">{{ c.status }}</span></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'contract_detail' c.pk %}" class="btn btn-outline-info"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'contract_edit' c.pk %}" class="btn btn-outline-primary"><i class="fas fa-edit"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="dt-empty">
+                    <td colspan="8" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-file-contract"></i></div>
+                            <div class="empty-state-title">Belum ada data kontrak</div>
+                            <div class="empty-state-desc">Tambah kontrak kerja untuk karyawan PKWT atau PKWTT.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'contract_add' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Kontrak</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+    </div>
+</div>
+{% endblock %}

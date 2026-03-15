@@ -1,0 +1,72 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Kalender Absensi{% endblock %}
+{% block breadcrumb %}Absensi / Kalender{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-calendar me-2 text-primary"></i>Kalender Absensi</h4>
+    <a href="{% url 'attendance_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-list me-1"></i>Tampilan List</a>
+</div>
+<div class="card mb-3"><div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <select name="employee" class="form-select form-select-sm">
+                <option value="">-- Pilih Karyawan --</option>
+                {% for emp in employees %}<option value="{{ emp.pk }}" {% if employee_id == emp.pk|stringformat:"s" %}selected{% endif %}>{{ emp.nama }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="bulan" class="form-select form-select-sm">
+                {% for m, nama in bulan_choices %}<option value="{{ m }}" {% if bulan == m %}selected{% endif %}>{{ nama }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="tahun" class="form-control form-control-sm" value="{{ tahun }}">
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-primary btn-sm">Tampilkan</button></div>
+    </form>
+</div></div>
+
+{% if calendar_data %}
+<div class="card"><div class="card-body">
+    <div class="table-responsive">
+        <table class="table table-bordered text-center calendar-table">
+            <thead><tr>
+                <th class="bg-danger text-white">Min</th>
+                <th>Sen</th><th>Sel</th><th>Rab</th><th>Kam</th><th>Jum</th>
+                <th class="bg-warning">Sab</th>
+            </tr></thead>
+            <tbody>
+                {% for week in calendar_data %}
+                <tr>{% for day in week %}
+                    <td style="height:60px;vertical-align:top;padding:4px;">
+                        {% if day.date %}
+                        <div class="fw-bold">{{ day.date.day }}</div>
+                        {% if day.status %}
+                        <span class="badge
+                            {% if day.status == 'Hadir' %}bg-success
+                            {% elif day.status == 'Cuti' %}bg-info
+                            {% elif day.status == 'Sakit' %}bg-warning text-dark
+                            {% elif day.status == 'Libur' %}bg-secondary
+                            {% else %}bg-danger{% endif %}" style="font-size:0.65rem;">
+                            {{ day.status }}</span>
+                        {% elif not day.is_weekend %}
+                        <span class="badge bg-light text-danger border" style="font-size:0.65rem;">Absen</span>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                {% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Legend -->
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <span class="badge bg-success">Hadir</span>
+        <span class="badge bg-info">Cuti</span>
+        <span class="badge bg-warning text-dark">Sakit</span>
+        <span class="badge bg-secondary">Libur</span>
+        <span class="badge bg-danger">Absen</span>
+    </div>
+</div></div>
+{% endif %}
+{% endblock %}

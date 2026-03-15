@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+<title>SKK — {{ skk.snap_nama }}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Times New Roman',serif; font-size:12pt; color:#000; background:#fff; }
+  .page { width:210mm; min-height:297mm; margin:0 auto; padding:25mm 25mm 20mm 30mm; }
+  .header { text-align:center; border-bottom:3px double #000; padding-bottom:8px; margin-bottom:20px; }
+  .header .company-name { font-size:16pt; font-weight:bold; text-transform:uppercase; }
+  .header .company-sub  { font-size:10pt; margin-top:3px; }
+  .title-box { text-align:center; margin:20px 0 20px; }
+  .title-box .surat-title { font-size:14pt; font-weight:bold; text-decoration:underline; text-transform:uppercase; }
+  .title-box .nomor { font-size:11pt; margin-top:4px; }
+  .body-text { font-size:11pt; line-height:1.9; margin-bottom:10px; text-align:justify; }
+  .body-text p { margin-bottom:10px; }
+  .id-table { width:100%; border-collapse:collapse; font-size:11pt; margin:10px 0; }
+  .id-table td { padding:3px 6px; vertical-align:top; }
+  .id-table td:first-child { width:150px; }
+  .id-table td:nth-child(2){ width:12px; text-align:center; }
+  .ttd-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:50px; }
+  .ttd-block { text-align:center; }
+  .ttd-block .ttd-title { margin-bottom:70px; font-size:11pt; }
+  .ttd-block .ttd-name  { font-weight:bold; border-top:1px solid #000; padding-top:4px; font-size:11pt; }
+  .ttd-block .ttd-jabatan { font-size:10pt; }
+  @media print { .no-print { display:none!important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="company-name">{{ skk.company.nama }}</div>
+    <div class="company-sub">{{ skk.company.alamat }}</div>
+  </div>
+
+  <div class="title-box">
+    <div class="surat-title">Surat Keterangan Kerja</div>
+    <div class="nomor">Nomor: {{ skk.nomor_surat|default:"___/SKK/HRD/___/____" }}</div>
+  </div>
+
+  <div class="body-text">
+    <p>Yang bertanda tangan di bawah ini:</p>
+  </div>
+
+  <table class="id-table">
+    <tr><td>Nama</td><td>:</td><td><strong>{{ skk.nama_penandatangan }}</strong></td></tr>
+    <tr><td>Jabatan</td><td>:</td><td>{{ skk.jabatan_penandatangan }}</td></tr>
+    <tr><td>Perusahaan</td><td>:</td><td>{{ skk.company.nama }}</td></tr>
+  </table>
+
+  <div class="body-text" style="margin-top:14px;">
+    <p>Dengan ini menerangkan bahwa:</p>
+  </div>
+
+  <table class="id-table">
+    <tr><td>Nama</td><td>:</td><td><strong>{{ skk.snap_nama }}</strong></td></tr>
+    <tr><td>NIK</td><td>:</td><td>{{ skk.snap_nik }}</td></tr>
+    <tr><td>Jabatan</td><td>:</td><td>{{ skk.snap_jabatan }}</td></tr>
+    <tr><td>Departemen</td><td>:</td><td>{{ skk.snap_departemen }}</td></tr>
+    <tr><td>Tgl. Masuk</td><td>:</td><td>{{ skk.snap_tanggal_masuk|date:"d F Y" }}</td></tr>
+    {% if skk.snap_tanggal_keluar %}
+    <tr><td>Tgl. Berakhir</td><td>:</td><td>{{ skk.snap_tanggal_keluar|date:"d F Y" }}</td></tr>
+    {% endif %}
+    <tr><td>Masa Kerja</td><td>:</td><td><strong>{{ skk.masa_kerja_keterangan }}</strong></td></tr>
+    {% if skk.tampilkan_gaji and skk.snap_gaji_pokok %}
+    <tr><td>Gaji Pokok</td><td>:</td><td>Rp {{ skk.snap_gaji_pokok|floatformat:"0g" }}</td></tr>
+    {% endif %}
+  </table>
+
+  <div class="body-text" style="margin-top:14px;">
+    <p>
+      Adalah benar {% if skk.snap_tanggal_keluar %}pernah{% else %}merupakan{% endif %} karyawan
+      {% if skk.snap_tanggal_keluar %}yang bekerja{% else %}yang saat ini bekerja{% endif %}
+      di <strong>{{ skk.company.nama }}</strong>{% if skk.snap_tanggal_keluar %}
+      terhitung mulai tanggal {{ skk.snap_tanggal_masuk|date:"d F Y" }}
+      sampai dengan tanggal {{ skk.snap_tanggal_keluar|date:"d F Y" }}{% endif %}.
+    </p>
+
+    {% if skk.tujuan_surat %}
+    <p>
+      Surat keterangan ini diberikan kepada yang bersangkutan untuk keperluan
+      <strong>{{ skk.tujuan_surat }}</strong>.
+    </p>
+    {% endif %}
+
+    {% if skk.keterangan_tambahan %}
+    <p>{{ skk.keterangan_tambahan|linebreaksbr }}</p>
+    {% endif %}
+
+    <p>
+      Demikian surat keterangan ini dibuat dengan sebenarnya untuk dapat dipergunakan
+      sebagaimana mestinya.
+    </p>
+  </div>
+
+  <div class="ttd-grid">
+    <div></div>
+    <div class="ttd-block">
+      <div class="ttd-title">{{ skk.company.nama }},<br>{{ skk.tanggal_surat|date:"d F Y" }}</div>
+      <div class="ttd-name">{{ skk.nama_penandatangan }}</div>
+      <div class="ttd-jabatan">{{ skk.jabatan_penandatangan }}</div>
+    </div>
+  </div>
+
+</div>
+<div class="no-print" style="text-align:center;padding:16px;">
+  <button onclick="window.print()" style="padding:8px 24px;background:#198754;color:#fff;border:none;border-radius:4px;cursor:pointer;">
+    🖨️ Cetak Surat
+  </button>
+  <a href="{% url 'skk_detail' skk.pk %}" style="margin-left:12px;color:#666;text-decoration:none;">← Kembali</a>
+</div>
+</body>
+</html>

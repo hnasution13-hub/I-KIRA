@@ -1,0 +1,43 @@
+{# ══════════════════════════════════════════════════════════════════════
+   HRIS SmartDesk — Reusable Empty State Component
+   ──────────────────────────────────────────────────────────────────────
+   Penggunaan:
+     {% include 'partials/empty_state.html' with
+         icon="users"
+         title="Belum ada karyawan"
+         desc="Tambah karyawan pertama untuk memulai."
+         action_url="employee_add"
+         action_label="Tambah Karyawan"
+         action_icon="user-plus"
+         secondary_url="employee_import"
+         secondary_label="Import Excel"
+         secondary_icon="file-import"
+     %}
+   Semua parameter kecuali icon, title, dan desc adalah opsional.
+═══════════════════════════════════════════════════════════════════════ #}
+
+<div class="empty-state" role="region" aria-label="Tidak ada data">
+    <div class="empty-state-icon" aria-hidden="true">
+        <i class="fas fa-{{ icon|default:'inbox' }}"></i>
+    </div>
+    <div class="empty-state-title">{{ title|default:"Belum ada data" }}</div>
+    {% if desc %}
+    <div class="empty-state-desc">{{ desc }}</div>
+    {% endif %}
+    {% if action_url or secondary_url %}
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        {% if action_url %}
+        <a href="{% url action_url %}" class="btn btn-red">
+            {% if action_icon %}<i class="fas fa-{{ action_icon }}" aria-hidden="true"></i>{% endif %}
+            {{ action_label|default:"Tambah" }}
+        </a>
+        {% endif %}
+        {% if secondary_url %}
+        <a href="{% url secondary_url %}" class="btn btn-outline">
+            {% if secondary_icon %}<i class="fas fa-{{ secondary_icon }}" aria-hidden="true"></i>{% endif %}
+            {{ secondary_label|default:"Lainnya" }}
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

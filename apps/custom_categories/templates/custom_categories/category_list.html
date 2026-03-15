@@ -1,0 +1,46 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Custom Kategori{% endblock %}
+{% block breadcrumb %}Asset Management / Kategori{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>Daftar Custom Kategori</h4>
+            <a href="{% url 'custom_categories:add' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah</a>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Tag Number</th>
+                        <th>Nama Asset</th>
+                        <th>Kategori</th>
+                        <th>Custom Field</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for custom in customs %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ custom.tag_number }}</td>
+                        <td>{{ custom.asset_name }}</td>
+                        <td>{{ custom.category.get_full_path }}</td>
+                        <td>{{ custom.custom_field|truncatechars:30 }}</td>
+                        <td>
+                            <a href="{% url 'custom_categories:edit' custom.pk %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'custom_categories:delete' custom.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus?')"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">Belum ada data</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% include 'includes/pagination.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}

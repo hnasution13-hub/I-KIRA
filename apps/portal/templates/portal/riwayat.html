@@ -1,0 +1,189 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Riwayat Absensi</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+
+
+:root{--red:#e63329;--red-dk:#b01f17;--bg:#0d0d0d;--bg2:#141414;--bg3:#1a1a1a;
+  --surface:#202020;--border:#2a2a2a;--border2:#333;--text:#f0f0f0;--muted:#888;
+  --green:#22c55e;--yellow:#fbbf24;--blue:#60a5fa;--white:#fff;}
+*{box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;padding-bottom:5.5rem;}
+.topbar{background:linear-gradient(135deg,#b01f17,var(--red));color:var(--white);
+  padding:.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;}
+.topbar-left{display:flex;align-items:center;gap:.75rem;}
+.topbar-logo{width:28px;height:28px;border-radius:7px;object-fit:contain;display:none;flex-shrink:0;}
+.topbar-logo-fb{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:var(--white);flex-shrink:0;}
+.topbar .emp-name{font-weight:700;font-size:.95rem;}
+.topbar .emp-nik{font-size:.75rem;opacity:.8;}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;background:var(--bg3);
+  border-top:1px solid var(--border);display:flex;padding:.5rem 0;
+  box-shadow:0 -4px 16px rgba(0,0,0,.4);z-index:100;}
+.bottomnav a{flex:1;text-align:center;text-decoration:none;color:var(--muted);
+  font-size:.68rem;padding:.3rem 0;transition:color .2s;}
+.bottomnav a.active{color:var(--red);font-weight:600;}
+.bottomnav a i{display:block;font-size:1.1rem;margin-bottom:.15rem;}
+.card-dark{background:var(--bg3);border:1px solid var(--border);border-radius:14px;
+  overflow:hidden;margin:0 1rem 1rem;}
+.card-title-dark{font-size:.72rem;font-weight:700;text-transform:uppercase;
+  color:var(--red);letter-spacing:.5px;padding:.85rem 1rem .6rem;
+  border-bottom:1px solid var(--border);}
+.field-row{padding:.7rem 1rem;border-bottom:1px solid var(--border);}
+.field-row:last-child{border-bottom:none;}
+.field-label{font-size:.72rem;color:var(--muted);margin-bottom:.2rem;}
+.field-value{font-size:.9rem;font-weight:500;color:var(--text);}
+.field-readonly{color:var(--muted);font-size:.85rem;}
+.section-title{font-weight:700;font-size:.78rem;text-transform:uppercase;
+  color:var(--muted);letter-spacing:.5px;padding:0 1rem;margin:1.2rem 0 .5rem;}
+.network-banner{background:#e67e22;color:var(--white);text-align:center;padding:.4rem;
+  font-size:.82rem;font-weight:600;display:none;position:sticky;top:56px;z-index:40;}
+.offline-badge{background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);
+  color:#ff6b6b;text-align:center;padding:.5rem 1rem;font-size:.82rem;
+  border-radius:10px;margin:.5rem 1rem;display:none;}
+.alert-msg{padding:.7rem 1rem;margin:0 1rem .5rem;border-radius:10px;font-size:.85rem;}
+.alert-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:var(--green);}
+.alert-danger{background:rgba(230,51,41,.1);border:1px solid rgba(230,51,41,.2);color:#ff6b6b;}
+.alert-info{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);color:var(--blue);}
+.badge-hadir{background:rgba(34,197,94,.15);color:var(--green);font-size:.72rem;padding:.25rem .6rem;border-radius:20px;font-weight:600;}
+.badge-absen{background:rgba(230,51,41,.15);color:#ff6b6b;font-size:.72rem;padding:.25rem .6rem;border-radius:20px;font-weight:600;}
+.badge-izin{background:rgba(251,191,36,.15);color:var(--yellow);font-size:.72rem;padding:.25rem .6rem;border-radius:20px;font-weight:600;}
+.badge-libur{background:rgba(136,136,136,.15);color:var(--muted);font-size:.72rem;padding:.25rem .6rem;border-radius:20px;font-weight:600;}
+.badge-status{font-size:.72rem;padding:.25rem .6rem;border-radius:20px;font-weight:600;}
+
+.topbar .back{color:var(--white);text-decoration:none;opacity:.85;font-size:1.1rem;flex-shrink:0;}
+.topbar .back:hover{opacity:1;}
+.topbar .title{font-weight:700;font-size:1rem;flex:1;text-align:center;}
+.form-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;margin:1rem;padding:1.2rem;}
+.form-control,.form-select{background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:8px;}
+.form-control:focus,.form-select:focus{border-color:var(--red);box-shadow:0 0 0 2px rgba(230,51,41,.15);background:var(--surface);color:var(--text);}
+.form-label{font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+.btn-submit{width:100%;padding:.85rem;border:none;border-radius:10px;background:var(--red);color:var(--white);font-weight:700;font-size:1rem;cursor:pointer;transition:opacity .2s;}
+.btn-submit:hover{opacity:.88;}
+/* Summary bar */
+.summary-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+  background:var(--bg3);border:1px solid var(--border);border-radius:14px;
+  margin:1rem;overflow:hidden;}
+.sum-item{padding:.85rem .5rem;text-align:center;border-right:1px solid var(--border);}
+.sum-item:last-child{border-right:none;}
+.sum-num{font-size:1.6rem;font-weight:700;line-height:1;}
+.sum-lbl{font-size:.68rem;color:var(--muted);margin-top:.2rem;}
+/* Record rows */
+.record-row{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  margin:0 1rem .5rem;padding:.8rem 1rem;display:flex;align-items:center;gap:.8rem;}
+.riwayat-item{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  margin:0 1rem .5rem;padding:.8rem 1rem;display:flex;align-items:center;gap:.8rem;}
+.slip-header{background:linear-gradient(135deg,var(--red-dk),var(--red));color:var(--white);padding:1.2rem 1rem;margin:1rem;border-radius:14px;text-align:center;}
+.slip-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;margin:0 1rem 1rem;overflow:hidden;}
+.slip-row{padding:.65rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:.88rem;}
+.slip-row:last-child{border-bottom:none;}
+.slip-row.total{background:rgba(230,51,41,.06);font-weight:700;}
+.slip-section{font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--red);letter-spacing:.5px;padding:.7rem 1rem .3rem;}
+.jadwal-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;margin:0 1rem .5rem;padding:.9rem 1rem;}
+.jadwal-tanggal{font-size:.78rem;color:var(--muted);margin-bottom:.2rem;}
+.jadwal-shift{font-weight:700;font-size:.95rem;}
+.jadwal-jam{font-size:.82rem;color:var(--muted);}
+.today-highlight{border-color:var(--red);background:rgba(230,51,41,.06);}
+.cuti-item{background:var(--bg3);border:1px solid var(--border);border-radius:12px;margin:0 1rem .6rem;padding:.9rem 1rem;}
+.cuti-judul{font-weight:700;font-size:.92rem;margin-bottom:.3rem;}
+.cuti-meta{font-size:.78rem;color:var(--muted);}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="{% url 'portal_dashboard' %}" class="back"><i class="fas fa-arrow-left fa-lg"></i></a>
+  <div class="title">Riwayat Absensi</div>
+  <div style="width:24px;"></div>
+</div>
+
+<!-- Filter bulan/tahun -->
+<form method="get" class="d-flex gap-2 px-3 pt-3 pb-1">
+  <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+    {% for num, nama in bulan_choices %}
+    <option value="{{ num }}" {% if num == month %}selected{% endif %}>{{ nama }}</option>
+    {% endfor %}
+  </select>
+  <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+    {% for y in tahun_choices %}
+    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<!-- Summary -->
+<div class="summary-bar">
+  <div class="sum-item"><div class="sum-num text-success">{{ total_hadir }}</div><div class="sum-lbl">Hadir</div></div>
+  <div class="sum-item"><div class="sum-num text-warning">{{ total_izin }}</div><div class="sum-lbl">Izin/Sakit</div></div>
+  <div class="sum-item"><div class="sum-num text-danger">{{ total_absen }}</div><div class="sum-lbl">Absen</div></div>
+  <div class="sum-item"><div class="sum-num text-secondary">{{ records.count }}</div><div class="sum-lbl">Total</div></div>
+</div>
+
+{% for r in records %}
+<div class="record-row">
+  <div style="min-width:52px;text-align:center;">
+    <div style="font-size:1.2rem;font-weight:700;">{{ r.tanggal|date:"d" }}</div>
+    <div style="font-size:.72rem;color:var(--muted);">{{ r.tanggal|date:"D" }}</div>
+  </div>
+  <div style="flex:1;">
+    <div style="font-size:.9rem;font-weight:600;">
+      {% if r.check_in %}{{ r.check_in|time:"H:i" }}{% else %}—{% endif %}
+      &nbsp;→&nbsp;
+      {% if r.check_out %}{{ r.check_out|time:"H:i" }}{% else %}—{% endif %}
+    </div>
+    <div style="font-size:.75rem;color:var(--muted);">
+      {% if r.keterlambatan > 0 %}<span style="color:#ff6b6b;">Telat {{ r.keterlambatan }} mnt</span>{% endif %}
+      {% if r.lembur_jam > 0 %} · <span style="color:var(--blue);">Lembur {{ r.lembur_jam }} jam</span>{% endif %}
+      {% if r.keterangan %} · {{ r.keterangan }}{% endif %}
+    </div>
+  </div>
+  <span class="badge-status
+    {% if r.status == 'Hadir' %}badge-hadir
+    {% elif r.status == 'Tidak Hadir' %}badge-absen
+    {% elif r.status == 'Libur' %}badge-libur
+    {% else %}badge-izin{% endif %}">{{ r.status }}</span>
+</div>
+{% empty %}
+<div class="text-center text-muted py-5"><i class="fas fa-calendar-times fa-2x mb-2 d-block"></i>Tidak ada data</div>
+{% endfor %}
+
+<nav class="bottomnav">
+  <a href="{% url 'portal_dashboard' %}">
+    <i class="fas fa-home"></i>Beranda
+  </a>
+  <a href="{% url 'portal_riwayat' %}" class="active">
+    <i class="fas fa-history"></i>Riwayat
+  </a>
+  <a href="{% url 'portal_slip_gaji' %}">
+    <i class="fas fa-file-invoice-dollar"></i>Slip Gaji
+  </a>
+  <a href="{% url 'portal_cuti' %}">
+    <i class="fas fa-calendar-minus"></i>Cuti
+  </a>
+  <a href="{% url 'portal_jadwal' %}" >
+    <i class="fas fa-calendar-alt"></i>Jadwal
+  </a>
+  <a href="{% url 'portal_profile' %}" >
+    <i class="fas fa-user"></i>Profile
+  </a>
+</nav>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Logo loader
+(function(){
+  var img=document.getElementById('topbarLogo'),fb=document.getElementById('topbarLogoFb');
+  if(!img)return;
+  img.src='/static/images/Logo.png';
+  img.onload=function(){img.style.display='block';if(fb)fb.style.display='none';};
+  img.onerror=function(){img.style.display='none';if(fb)fb.style.display='flex';};
+})();</script>
+</body>
+</html>

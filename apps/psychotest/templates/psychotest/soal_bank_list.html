@@ -1,0 +1,100 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Bank Soal Psikotes - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Recruitment / Psikotes / Bank Soal{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-database me-2" style="color:#7b1fa2;"></i>Bank Soal Psikotes</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'soal_bank_add' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>Tambah Soal
+        </a>
+        <a href="{% url 'psychotest_session_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Sesi Psikotes
+        </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <select name="kategori" class="form-select form-select-sm">
+                    <option value="">Semua Kategori</option>
+                    {% for val, label in kategori_choices %}
+                    <option value="{{ val }}" {% if kategori == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter me-1"></i>Filter</button>
+                <a href="{% url 'soal_bank_list' %}" class="btn btn-outline-secondary btn-sm ms-1">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover datatable mb-0" id="tbl-soal">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Pertanyaan</th>
+                    <th>Kategori</th>
+                    <th>Tipe</th>
+                    <th>Jawaban Benar</th>
+                    <th>Status</th>
+                    <th style="width:90px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for soal in soal_list %}
+                <tr>
+                    <td class="text-muted">{{ soal.urutan }}</td>
+                    <td style="max-width:350px;">
+                        <div class="text-truncate" title="{{ soal.pertanyaan }}">{{ soal.pertanyaan }}</div>
+                        {% if soal.tipe == 'pilihan_ganda' and soal.opsi_a %}
+                        <small class="text-muted">A: {{ soal.opsi_a|truncatechars:40 }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if soal.kategori == 'logika' %}bg-primary{% elif soal.kategori == 'verbal' %}bg-success{% elif soal.kategori == 'numerik' %}bg-warning text-dark{% else %}bg-purple{% endif %}"
+                            style="{% if soal.kategori == 'disc' %}background:#7b1fa2;{% endif %}">
+                            {{ soal.get_kategori_display }}
+                        </span>
+                    </td>
+                    <td><small>{{ soal.get_tipe_display }}</small></td>
+                    <td class="fw-bold">{{ soal.jawaban_benar|default:"-" }}</td>
+                    <td>
+                        {% if soal.aktif %}
+                            <span class="badge bg-success">Aktif</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Nonaktif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'soal_bank_edit' soal.pk %}" class="btn btn-outline-primary" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'soal_bank_delete' soal.pk %}" class="btn btn-outline-danger" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="dt-empty">
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <i class="fas fa-database fa-2x mb-2 d-block opacity-25"></i>
+                        Belum ada soal. Klik "Tambah Soal" untuk mulai.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline — HRIS Portal</title>
+  <style>
+    :root {
+      --bg:#0d0d0d; --bg2:#141414; --bg3:#1a1a1a;
+      --surface:#202020; --border:#2a2a2a; --text:#f0f0f0; --muted:#888;
+      --red:#e63329; --red-dk:#b01f17; --green:#22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2.5rem 2rem;
+      text-align: center; max-width: 380px; width: 100%;
+      box-shadow: 0 4px 24px rgba(0,0,0,.4);
+    }
+    .icon { font-size: 4rem; margin-bottom: 1rem; }
+    h2 { color: var(--text); margin-bottom: .5rem; }
+    p  { color: var(--muted); font-size: .95rem; line-height: 1.6; margin-bottom: 1.5rem; }
+    .btn {
+      display: block; width: 100%; padding: .9rem;
+      background: var(--red); color: #fff; border: none;
+      border-radius: 12px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; text-decoration: none; margin-bottom: .75rem;
+    }
+    .btn-secondary {
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .pending-info {
+      margin-top: 1.5rem; padding: .75rem 1rem;
+      background: rgba(234,179,8,.1); border: 1px solid rgba(234,179,8,.3);
+      border-radius: 10px; font-size: .85rem; color: #fbbf24; display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📡</div>
+    <h2>Tidak Ada Koneksi</h2>
+    <p>Anda sedang offline. Check-in/out tetap bisa dilakukan dan akan otomatis tersinkron saat koneksi kembali.</p>
+
+    <button class="btn" onclick="location.href='/karyawan/'">
+      Kembali ke Portal
+    </button>
+    <button class="btn btn-secondary" onclick="location.reload()">
+      Coba Lagi
+    </button>
+
+    <div class="pending-info" id="pending-info">
+      ⏳ <span id="pending-count">0</span> data antrian menunggu sinkron
+    </div>
+  </div>
+
+  <script>
+    // Tampilkan jumlah antrian offline
+    async function checkPending() {
+      try {
+        const req = indexedDB.open('hris-offline', 1);
+        req.onsuccess = e => {
+          const db  = e.target.result;
+          if (!db.objectStoreNames.contains('checkin_queue')) return;
+          const tx  = db.transaction('checkin_queue', 'readonly');
+          const cnt = tx.objectStore('checkin_queue').count();
+          cnt.onsuccess = ev => {
+            const n = ev.target.result;
+            if (n > 0) {
+              document.getElementById('pending-count').textContent = n;
+              document.getElementById('pending-info').style.display = 'block';
+            }
+          };
+        };
+      } catch(e) {}
+    }
+    checkPending();
+
+    // Auto-redirect saat online
+    window.addEventListener('online', () => {
+      setTimeout(() => location.href = '/karyawan/', 800);
+    });
+  </script>
+</body>
+</html>

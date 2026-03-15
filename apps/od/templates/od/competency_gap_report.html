@@ -1,0 +1,89 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Competency Gap Report{% endblock %}
+{% block breadcrumb %}OD — Competency Gap Report{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-2" style="color:#f59e0b;"></i>Competency Gap Report</h4>
+    <small class="text-muted">Karyawan dengan gap kompetensi terbesar — prioritas development</small>
+  </div>
+  <a href="{% url 'od:competency_matrix' %}?periode={{ periode }}" class="btn btn-sm btn-outline-secondary">← Matrix</a>
+</div>
+
+<!-- FILTER -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="d-flex gap-2 align-items-center">
+      <select name="dept" class="form-select form-select-sm" style="width:200px;" onchange="this.form.submit()">
+        <option value="">Semua Departemen</option>
+        {% for d in depts %}
+        <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.nama }}</option>
+        {% endfor %}
+      </select>
+      <input type="number" name="periode" class="form-control form-control-sm" style="width:100px;"
+             value="{{ periode }}" min="2020" max="2030" onchange="this.form.submit()">
+    </form>
+  </div>
+</div>
+
+{% if report %}
+{% for row in report %}
+{% if row.gaps %}
+<div class="card border-0 shadow-sm mb-3 {% if row.gap_count > 3 %}border-start border-danger border-3{% endif %}" style="border-left-width:4px !important;">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <div>
+        <span class="fw-bold">{{ row.employee.nama }}</span>
+        <span class="text-muted small ms-2">{{ row.employee.jabatan.nama|default:"—" }}</span>
+        <span class="text-muted small ms-2">| {{ row.employee.department.nama|default:"—" }}</span>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <span class="badge {% if row.gap_count >= 3 %}bg-danger{% elif row.gap_count == 2 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+          {{ row.gap_count }} gap
+        </span>
+        <span class="badge bg-light text-dark border">{{ row.pct_assessed }}% dinilai</span>
+        <a href="{% url 'od:employee_competency_assess' row.employee.pk %}?periode={{ periode }}"
+           class="btn btn-sm btn-outline-primary">
+          <i class="fas fa-pencil me-1"></i> Nilai
+        </a>
+      </div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      {% for g in row.gaps %}
+      <div class="rounded p-2" style="background:#fff5f5;border:1px solid #fca5a5;min-width:140px;">
+        <div class="small fw-bold" style="color:#dc2626;">{{ g.competency.kode }}</div>
+        <div class="small text-muted">{{ g.competency.nama|truncatechars:30 }}</div>
+        <div class="mt-1">
+          <span class="badge bg-danger">Aktual: L{{ g.aktual|default:"?" }}</span>
+          <span class="badge bg-primary ms-1">Butuh: L{{ g.required }}</span>
+        </div>
+        <div class="small mt-1" style="color:#dc2626; font-weight:600;">
+          Gap: {{ g.gap }}
+          {% if g.wajib %}<span class="badge bg-danger ms-1" style="font-size:9px;">WAJIB</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% if not has_gap %}
+<div class="card border-0 shadow-sm">
+  <div class="card-body text-center text-muted py-5">
+    <i class="fas fa-check-circle fa-2x text-success mb-2 d-block"></i>
+    Tidak ada gap kompetensi untuk filter yang dipilih.
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card border-0 shadow-sm">
+  <div class="card-body text-center text-muted py-5">
+    Belum ada data penilaian kompetensi untuk periode {{ periode }}.
+    Mulai dari <a href="{% url 'od:competency_matrix' %}">Competency Matrix</a>.
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Profil Perusahaan{% endblock %}
+{% block breadcrumb %}Pengaturan / Profil Perusahaan{% endblock %}
+
+{% block extra_css %}
+<style>
+.serial-box {
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: var(--surface);
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: .6rem 1rem;
+    color: var(--red);
+    cursor: pointer;
+    user-select: all;
+    transition: background .15s;
+}
+.serial-box:hover { background: var(--hover); }
+.addon-card {
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 1.4rem;
+    background: var(--bg2);
+    transition: border-color .2s;
+}
+.addon-card.active-addon { border-color: var(--red); }
+.badge-addon-on  { background: rgba(230,51,41,.15); color: var(--red); font-size: .78rem; padding: .25rem .7rem; border-radius: 20px; font-weight: 700; }
+.badge-addon-off { background: var(--surface); color: var(--muted); font-size: .78rem; padding: .25rem .7rem; border-radius: 20px; }
+.activate-form { display: none; margin-top: .8rem; }
+.copy-toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: #333; color: #fff; padding: .5rem 1.2rem;
+    border-radius: 8px; font-size: .85rem; z-index: 9999;
+    opacity: 0; transition: opacity .3s;
+    pointer-events: none;
+}
+.copy-toast.show { opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="copy-toast" class="copy-toast">Serial key disalin ✓</div>
+
+<div class="row g-4">
+
+  <!-- ── Form Profil Perusahaan ─────────────────────────────────────────── -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="fas fa-building text-danger"></i>
+        <h5 class="mb-0">Profil Perusahaan</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_company">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">Nama Perusahaan <span class="text-danger">*</span></label>
+              <input type="text" name="nama_perusahaan" class="form-control"
+                     value="{{ company.nama_perusahaan }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Singkatan / Kode</label>
+              <input type="text" name="singkatan" class="form-control" maxlength="12"
+                     value="{{ company.singkatan }}" placeholder="SMARTDESK">
+              <small class="text-muted">Digunakan di serial key</small>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Tanggal Daftar HRIS <span class="text-danger">*</span></label>
+              <input type="date" name="tanggal_daftar" class="form-control"
+                     value="{{ company.tanggal_daftar|date:'Y-m-d' }}" required>
+              <small class="text-muted">Digunakan sebagai seed serial key — jangan diubah sembarangan</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">NPWP</label>
+              <input type="text" name="npwp" class="form-control" value="{{ company.npwp }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">No. Telepon</label>
+              <input type="text" name="no_telp" class="form-control" value="{{ company.no_telp }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email</label>
+              <input type="email" name="email" class="form-control" value="{{ company.email }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Website</label>
+              <input type="url" name="website" class="form-control" value="{{ company.website }}" placeholder="https://...">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Alamat</label>
+              <textarea name="alamat" class="form-control" rows="2">{{ company.alamat }}</textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Logo Perusahaan</label>
+              <input type="file" name="logo" class="form-control" accept="image/*">
+              {% if company.logo %}
+              <small class="text-muted">Logo saat ini: <a href="{{ company.logo.url }}" target="_blank">Lihat</a></small>
+              {% endif %}
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-danger">
+                <i class="fas fa-save me-1"></i>Simpan Profil
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Serial Key & Addon Activation ─────────────────────────────────── -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="fas fa-key text-danger"></i>
+        <h5 class="mb-0">Serial Key & Aktivasi Add-On</h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-warning py-2 small mb-3">
+          <i class="fas fa-info-circle me-1"></i>
+          Serial key di-generate dari <strong>Nama/Singkatan Perusahaan</strong> + <strong>Tanggal Daftar</strong>.
+          Salin key, lalu gunakan untuk mengaktifkan add-on yang diinginkan.
+          Jika profil berubah, key akan berubah — simpan key di tempat aman.
+        </div>
+
+        <div class="d-flex flex-column gap-3">
+          {% for addon in addons %}
+          <div class="addon-card {% if addon.aktif %}active-addon{% endif %}">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <div>
+                <span class="fw-bold">{{ addon.get_addon_display }}</span>
+                {% if addon.aktif %}
+                  <span class="badge-addon-on ms-2"><i class="fas fa-check-circle me-1"></i>Aktif</span>
+                {% else %}
+                  <span class="badge-addon-off ms-2">Nonaktif</span>
+                {% endif %}
+              </div>
+              {% if addon.aktif %}
+              <form method="post" style="display:inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="deactivate_addon">
+                <input type="hidden" name="addon_id" value="{{ addon.pk }}">
+                <button type="submit" class="btn btn-sm btn-outline-secondary"
+                        onclick="return confirm('Nonaktifkan {{ addon.get_addon_display }}?')">
+                  <i class="fas fa-power-off"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+
+            <!-- Serial Key Display -->
+            <div class="mb-2">
+              <small class="text-muted d-block mb-1">Serial Key:</small>
+              <div class="serial-box" onclick="copySerial(this, '{{ serial_keys|default_if_none:'' }}')"
+                   data-key="{{ serial_keys.assets }}{% if addon.addon == 'assets' %}{{ serial_keys.assets }}{% elif addon.addon == 'recruitment' %}{{ serial_keys.recruitment }}{% elif addon.addon == 'psychotest' %}{{ serial_keys.psychotest }}{% elif addon.addon == 'advanced_psychotest' %}{{ serial_keys.advanced_psychotest }}{% elif addon.addon == 'od' %}{{ serial_keys.od }}{% endif %}"
+                   title="Klik untuk salin">
+                {% if addon.addon == 'assets' %}{{ serial_keys.assets }}
+                {% elif addon.addon == 'recruitment' %}{{ serial_keys.recruitment }}
+                {% elif addon.addon == 'psychotest' %}{{ serial_keys.psychotest }}
+                {% elif addon.addon == 'advanced_psychotest' %}{{ serial_keys.advanced_psychotest }}
+                {% elif addon.addon == 'od' %}{{ serial_keys.od }}
+                {% endif %}
+              </div>
+              <small class="text-muted"><i class="fas fa-copy me-1"></i>Klik key untuk menyalin</small>
+            </div>
+
+            {% if not addon.aktif %}
+            <!-- Tombol Aktifkan -->
+            <button type="button" class="btn btn-sm btn-outline-danger"
+                    onclick="toggleActivateForm({{ addon.pk }})">
+              <i class="fas fa-unlock me-1"></i>Masukkan Key & Aktifkan
+            </button>
+            <div class="activate-form" id="activate-form-{{ addon.pk }}">
+              <form method="post" class="d-flex gap-2 mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="activate_addon">
+                <input type="hidden" name="addon_id" value="{{ addon.pk }}">
+                <input type="text" name="serial_key" class="form-control form-control-sm"
+                       placeholder="NAMA-YYYYMMDD-ADDON-XXXX" style="font-family:monospace;letter-spacing:1px">
+                <button type="submit" class="btn btn-sm btn-danger">
+                  <i class="fas fa-key me-1"></i>Aktifkan
+                </button>
+              </form>
+            </div>
+            {% else %}
+            {% if addon.aktif_sejak %}
+            <small class="text-muted"><i class="fas fa-calendar me-1"></i>Aktif sejak {{ addon.aktif_sejak|date:"d/m/Y" }}
+              {% if addon.diaktifkan_oleh %} — oleh {{ addon.diaktifkan_oleh }}{% endif %}
+            </small>
+            {% endif %}
+            {% endif %}
+          </div>
+          {% empty %}
+          <p class="text-muted text-center py-3">Tidak ada add-on terdaftar.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copySerial(el, key) {
+    const text = el.textContent.trim();
+    navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('copy-toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+}
+
+function toggleActivateForm(addonId) {
+    const form = document.getElementById('activate-form-' + addonId);
+    if (form.style.display === 'none' || !form.style.display) {
+        form.style.display = 'block';
+        form.querySelector('input[name="serial_key"]').focus();
+    } else {
+        form.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

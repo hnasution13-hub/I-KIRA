@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Psikotes — {{ session.candidate.nama }}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container py-5" style="max-width:600px">
+  <div class="card shadow">
+    <div class="card-body p-4 text-center">
+      <h3 class="fw-bold mb-1">Tes Psikologi Online</h3>
+      <p class="text-muted mb-3">Halo, <strong>{{ session.candidate.nama }}</strong>!</p>
+      <div class="alert alert-info text-start small">
+        <strong>Petunjuk:</strong>
+        <ul class="mb-0 mt-1">
+          <li>Tes ini terdiri dari beberapa bagian: {% for p in session.paket %}<strong>{{ p|capfirst }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}</li>
+          <li>Jawab dengan jujur dan sesuai kemampuan Anda</li>
+          <li>Pastikan koneksi internet stabil</li>
+          <li>Link tes akan kadaluarsa pada <strong>{{ session.expired_at|date:"d M Y H:i" }}</strong></li>
+        </ul>
+      </div>
+      <a href="{% url 'tes_mulai' session.token %}" class="btn btn-primary btn-lg px-5 mt-2">
+        Mulai Tes <i class="fas fa-arrow-right ms-2"></i>
+      </a>
+    </div>
+  </div>
+</div>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</body></html>

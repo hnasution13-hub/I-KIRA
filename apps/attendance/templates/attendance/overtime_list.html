@@ -1,0 +1,234 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Daftar Lembur - HRIS SmartDesk
+{# ── Modal Approve Lembur ─────────────────────────────────────────────────── #}
+<div class="modal fade" id="modalOTApprove" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title">Approve Lembur</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form method="post" id="formOTApprove" action="">{% csrf_token %}
+        <div class="modal-body">
+          <p class="small mb-2">Setujui lembur <strong id="otApproveNama"></strong> tanggal <strong id="otApproveTgl"></strong>?</p>
+          <input type="text" name="catatan" class="form-control form-control-sm" placeholder="Catatan (opsional)">
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-success btn-sm">Ya, Setujui</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ── Modal Reject Lembur ───────────────────────────────────────────────────── #}
+<div class="modal fade" id="modalOTReject" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title">Tolak Lembur</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form method="post" id="formOTReject" action="">{% csrf_token %}
+        <div class="modal-body">
+          <p class="small mb-2">Tolak lembur <strong id="otRejectNama"></strong> tanggal <strong id="otRejectTgl"></strong>?</p>
+          <input type="text" name="catatan" class="form-control form-control-sm" placeholder="Alasan" required>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-danger btn-sm">Ya, Tolak</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('modalOTApprove').addEventListener('show.bs.modal', e => {
+    const btn = e.relatedTarget;
+    document.getElementById('otApproveNama').textContent = btn.dataset.nama;
+    document.getElementById('otApproveTgl').textContent  = btn.dataset.tgl;
+    document.getElementById('formOTApprove').action = `/attendance/overtime/${btn.dataset.pk}/approve/`;
+});
+document.getElementById('modalOTReject').addEventListener('show.bs.modal', e => {
+    const btn = e.relatedTarget;
+    document.getElementById('otRejectNama').textContent = btn.dataset.nama;
+    document.getElementById('otRejectTgl').textContent  = btn.dataset.tgl;
+    document.getElementById('formOTReject').action = `/attendance/overtime/${btn.dataset.pk}/reject/`;
+});
+</script>
+{% endblock %}
+{% block breadcrumb %}Absensi / Daftar Lembur{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-business-time me-2 text-warning"></i>Daftar Lembur</h4>
+    <div class="d-flex gap-2">
+      <form method="post" action="{% url 'overtime_recalculate' %}"
+            onsubmit="return confirm('Recalculate ulang upah lembur semua data? Ini akan update semua record yang upahnya belum benar.')">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-warning btn-sm">
+          <i class="fas fa-sync-alt me-1"></i>Recalculate Upah
+        </button>
+      </form>
+      <a href="{% url 'overtime_add' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>Tambah Lembur
+      </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <select name="employee" class="form-select form-select-sm">
+                    <option value="">Semua Karyawan</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}" {% if request.GET.employee == emp.id|stringformat:"s" %}selected{% endif %}>
+                        {{ emp.nama }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="bulan" class="form-select form-select-sm">
+                    {% for m in bulan_choices %}
+                    <option value="{{ m.0 }}" {% if request.GET.bulan == m.0|stringformat:"s" %}selected{% endif %}>
+                        {{ m.1 }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="tahun" class="form-select form-select-sm">
+                    {% for y in tahun_choices %}
+                    <option value="{{ y }}" {% if request.GET.tahun == y|stringformat:"s" %}selected{% endif %}>
+                        {{ y }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-filter me-1"></i>Filter
+                </button>
+                <a href="{% url 'overtime_list' %}" class="btn btn-outline-secondary btn-sm ms-1">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value text-warning">{{ total_records }}</div>
+            <div class="stat-label">Total Record</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value text-primary">{{ total_jam_lembur|floatformat:1 }} jam</div>
+            <div class="stat-label">Total Jam Lembur</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value text-success">Rp {{ total_upah_lembur|floatformat:"0g" }}</div>
+            <div class="stat-label">Total Upah Lembur</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive-wrap">
+<table class="table table-hover datatable mb-0" id="tbl-overtime">
+            <thead class="table-light">
+                <tr>
+                    <th class="col-hide-mobile">Tanggal</th>
+                    <th>Karyawan</th>
+                    <th>Departemen</th>
+                    <th class="text-center">Jam Lembur</th>
+                    <th class="text-end">Upah Lembur</th>
+                    <th>Keterangan</th>
+                    <th style="width:80px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for att in overtimes %}
+                <tr>
+                    <td><small>{{ att.tanggal|date:"d/m/Y" }}</small></td>
+                    <td>
+                        <a href="{% url 'employee_detail' att.employee.pk %}" class="fw-semibold text-decoration-none text-dark">
+                            {{ att.employee.nama }}
+                        </a>
+                        <br><small class="text-muted">{{ att.employee.nik }}</small>
+                    </td>
+                    <td><small>{{ att.employee.department|default:"-" }}</small></td>
+                    <td class="text-center">
+                        <span class="badge bg-warning text-dark">{{ att.lembur_jam }} jam</span>
+                    </td>
+                    <td class="text-end fw-semibold text-success">
+                        Rp {{ att.lembur_upah|floatformat:"0g" }}
+                    </td>
+                    <td>
+                        <small class="text-muted">
+                            {% if '[APPROVED]' in att.keterangan %}<span class="text-success fw-semibold"><i class="fas fa-check-circle me-1"></i>Approved</span>
+                            {% elif '[REJECTED]' in att.keterangan %}<span class="text-danger fw-semibold"><i class="fas fa-times-circle me-1"></i>Rejected</span>
+                            {% else %}{{ att.keterangan|default:"-" }}{% endif %}
+                        </small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'overtime_edit' att.pk %}" class="btn btn-outline-primary" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if not '[APPROVED]' in att.keterangan and not '[REJECTED]' in att.keterangan %}
+                            <button type="button" class="btn btn-outline-success" title="Approve"
+                                    data-bs-toggle="modal" data-bs-target="#modalOTApprove"
+                                    data-pk="{{ att.pk }}" data-nama="{{ att.employee.nama }}" data-tgl="{{ att.tanggal|date:'d/m/Y' }}">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" title="Tolak"
+                                    data-bs-toggle="modal" data-bs-target="#modalOTReject"
+                                    data-pk="{{ att.pk }}" data-nama="{{ att.employee.nama }}" data-tgl="{{ att.tanggal|date:'d/m/Y' }}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="dt-empty">
+                    <tr class="dt-empty">
+                    <td colspan="7" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-hourglass-half"></i></div>
+                            <div class="empty-state-title">Belum ada data lembur</div>
+                            <div class="empty-state-desc">Belum ada pengajuan lembur yang tercatat.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'overtime_add' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Lembur</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                        <i class="fas fa-business-time fa-2x mb-2 d-block"></i>
+                        Belum ada data lembur
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if overtimes %}
+            <tfoot class="table-light fw-bold">
+                <tr>
+                    <td colspan="3" class="text-end">Total:</td>
+                    <td class="text-center">{{ total_jam_lembur }} jam</td>
+                    <td class="text-end text-success">Rp {{ total_upah_lembur|floatformat:"0g" }}</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+</div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,225 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Data Gaji — {{ employee.nama }}{% endblock %}
+{% block breadcrumb %}Karyawan / <a href="{% url 'employee_detail' employee.pk %}">{{ employee.nama }}</a> / Gaji{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-wallet me-2 text-success"></i>Data Gaji & Tunjangan — {{ employee.nama }}
+        <span class="badge bg-secondary ms-2 fs-6">{{ employee.nik }}</span>
+    </h4>
+    <a href="{% url 'employee_detail' employee.pk %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<div class="alert alert-warning d-flex align-items-center">
+    <i class="fas fa-lock me-2"></i>
+    <span>Halaman ini hanya dapat diakses oleh <strong>Supervisor, Manager, HR Manager, dan Admin</strong>.</span>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="row g-4">
+        <!-- Gaji Pokok -->
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white fw-semibold">
+                    <i class="fas fa-money-bill-wave me-1"></i>Gaji Pokok
+                </div>
+                <div class="card-body"><div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Gaji Pokok (Rp)</label>
+                        <input type="number" name="gaji_pokok" class="form-control form-control-lg currency-input"
+                               value="{{ salary.gaji_pokok|default:0 }}" min="0">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="bg-light rounded p-3 w-100">
+                            <small class="text-muted">Upah Harian</small>
+                            <div class="fw-bold fs-5" id="upah_harian">—</div>
+                            <small class="text-muted">Upah per Jam</small>
+                            <div class="fw-bold" id="upah_jam">—</div>
+                        </div>
+                    </div>
+                </div></div>
+            </div>
+        </div>
+
+        <!-- Tunjangan Tetap -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header fw-semibold text-primary">
+                    <i class="fas fa-plus-circle me-1"></i>Tunjangan Tetap
+                </div>
+                <div class="card-body"><div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Tunjangan Jabatan (Rp)</label>
+                        <input type="number" name="tunjangan_jabatan" class="form-control currency-input"
+                               value="{{ salary.tunjangan_jabatan|default:0 }}" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Tunjangan Komunikasi (Rp)</label>
+                        <input type="number" name="tunjangan_komunikasi" class="form-control currency-input"
+                               value="{{ salary.tunjangan_komunikasi|default:0 }}" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Tunjangan Site (Rp)</label>
+                        <input type="number" name="tunjangan_site" class="form-control currency-input"
+                               value="{{ salary.tunjangan_site|default:0 }}" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Tunjangan Kehadiran (Rp)</label>
+                        <input type="number" name="tunjangan_kehadiran" class="form-control currency-input"
+                               value="{{ salary.tunjangan_kehadiran|default:0 }}" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Tunjangan Makan (Rp)</label>
+                        <input type="number" name="tunjangan_makan" class="form-control currency-input"
+                               value="{{ salary.tunjangan_makan|default:0 }}" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Tunjangan Transportasi (Rp)</label>
+                        <input type="number" name="tunjangan_transport" class="form-control currency-input"
+                               value="{{ salary.tunjangan_transport|default:0 }}" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Tunjangan Tempat Tinggal (Rp)</label>
+                        <input type="number" name="tunjangan_tempat_tinggal" class="form-control currency-input"
+                               value="{{ salary.tunjangan_tempat_tinggal|default:0 }}" min="0">
+                    </div>
+                </div></div>
+            </div>
+        </div>
+
+        <!-- Tunjangan Alat -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header fw-semibold text-primary">
+                    <i class="fas fa-tools me-1"></i>Tunjangan Alat
+                </div>
+                <div class="card-body"><div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Tipe Tunjangan Alat</label>
+                        <select name="tunjangan_alat_tipe" id="id_alat_tipe" class="form-select">
+                            <option value="" {% if not salary.tunjangan_alat_tipe %}selected{% endif %}>-- Tidak Ada --</option>
+                            <option value="hour_meter" {% if salary.tunjangan_alat_tipe == 'hour_meter' %}selected{% endif %}>Hour Meter (HM)</option>
+                            <option value="kilometer"  {% if salary.tunjangan_alat_tipe == 'kilometer'  %}selected{% endif %}>Kilometer (KM)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Rate per Satuan (Rp)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" name="tunjangan_alat_rate" id="id_alat_rate" class="form-control currency-input"
+                                   value="{{ salary.tunjangan_alat_rate|default:0 }}" min="0"
+                                   {% if not salary.tunjangan_alat_tipe %}disabled{% endif %}>
+                            <span class="input-group-text" id="alat_satuan">—</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-info mb-0 py-2">
+                            <small><i class="fas fa-info-circle me-1"></i>
+                            <strong>HM</strong> = dibayar per jam operasi alat berat<br>
+                            <strong>KM</strong> = dibayar per kilometer perjalanan</small>
+                        </div>
+                    </div>
+                </div></div>
+            </div>
+        </div>
+
+        <!-- Benefit Tahunan -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header fw-semibold text-primary">
+                    <i class="fas fa-gift me-1"></i>Benefit Tahunan
+                </div>
+                <div class="card-body"><div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Bonus Tahunan (Rp)</label>
+                        <input type="number" name="bonus_tahunan" class="form-control currency-input"
+                               value="{{ salary.bonus_tahunan|default:0 }}" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">THR (Rp)</label>
+                        <input type="number" name="thr" class="form-control currency-input"
+                               value="{{ salary.thr|default:0 }}" min="0">
+                    </div>
+                </div></div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Gaji Pokok</small>
+                            <span class="fw-bold fs-5 text-success" id="sum_pokok">Rp 0</span>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-center justify-content-center fs-4 text-muted">+</div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Total Tunjangan</small>
+                            <span class="fw-bold fs-5 text-primary" id="sum_tunjangan">Rp 0</span>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-center justify-content-center fs-4 text-muted">=</div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Total Take Home Pay</small>
+                            <span class="fw-bold fs-4 text-dark" id="sum_thp">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-success px-4"><i class="fas fa-save me-1"></i>Simpan Data Gaji</button>
+        <a href="{% url 'employee_detail' employee.pk %}" class="btn btn-outline-secondary px-4">Batal</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const fmt = n => 'Rp ' + parseInt(n||0).toLocaleString('id-ID');
+
+function recalc() {
+    const pokok = parseInt(document.querySelector('[name="gaji_pokok"]').value || 0);
+    const tunjanganFields = [
+        'tunjangan_jabatan','tunjangan_komunikasi','tunjangan_site','tunjangan_kehadiran',
+        'tunjangan_makan','tunjangan_transport','tunjangan_tempat_tinggal'
+    ];
+    let totalTunj = tunjanganFields.reduce((s, n) => s + parseInt(document.querySelector(`[name="${n}"]`).value || 0), 0);
+    const thp = pokok + totalTunj;
+
+    document.getElementById('upah_harian').textContent  = fmt(pokok / 25);
+    document.getElementById('upah_jam').textContent     = fmt(pokok / 25 / 8);
+    document.getElementById('sum_pokok').textContent    = fmt(pokok);
+    document.getElementById('sum_tunjangan').textContent = fmt(totalTunj);
+    document.getElementById('sum_thp').textContent      = fmt(thp);
+}
+
+document.querySelectorAll('.currency-input').forEach(el => el.addEventListener('input', recalc));
+recalc();
+
+// Tunjangan Alat lock
+document.getElementById('id_alat_tipe').addEventListener('change', function() {
+    const rate = document.getElementById('id_alat_rate');
+    const satuan = document.getElementById('alat_satuan');
+    if (this.value) {
+        rate.disabled = false;
+        satuan.textContent = this.value === 'hour_meter' ? '/ HM' : '/ KM';
+    } else {
+        rate.disabled = true; rate.value = 0;
+        satuan.textContent = '—';
+    }
+    recalc();
+});
+// Init satuan label
+(function(){
+    const tipe = document.getElementById('id_alat_tipe').value;
+    if (tipe) document.getElementById('alat_satuan').textContent = tipe === 'hour_meter' ? '/ HM' : '/ KM';
+})();
+</script>
+{% endblock %}

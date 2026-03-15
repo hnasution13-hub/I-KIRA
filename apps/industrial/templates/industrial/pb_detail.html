@@ -1,0 +1,133 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Detail PB — {{ pb.snap_nama }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'pb_list' %}">Perjanjian Bersama</a></li>
+      <li class="breadcrumb-item active">{{ pb.snap_nama }}</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <span class="fs-4">🤝</span>
+      <div>
+        <h4 class="mb-0 fw-bold">{{ pb.snap_nama }}</h4>
+        <small class="text-muted">{{ pb.nomor_pb|default:"Tanpa Nomor" }} &bull; {{ pb.tanggal_pb|date:"d F Y" }}</small>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'pb_edit' pb.pk %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-pencil me-1"></i>Edit
+      </a>
+      <a href="{% url 'pb_print' pb.pk %}" target="_blank" class="btn btn-sm btn-success">
+        <i class="bi bi-printer me-1"></i>Print Dokumen PB
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold small">Data Karyawan</div>
+        <div class="card-body small">
+          {% with e=pb.employee %}
+          <table class="table table-sm table-borderless mb-0">
+            <tr><td class="text-muted" width="40%">Nama</td><td class="fw-semibold">{{ pb.snap_nama }}</td></tr>
+            <tr><td class="text-muted">NIK</td><td>{{ pb.snap_nik }}</td></tr>
+            <tr><td class="text-muted">Jabatan</td><td>{{ pb.snap_jabatan }}</td></tr>
+            <tr><td class="text-muted">Departemen</td><td>{{ pb.snap_departemen }}</td></tr>
+            <tr><td class="text-muted">Tgl Masuk</td><td>{{ pb.snap_tanggal_masuk|date:"d/m/Y" }}</td></tr>
+            <tr><td class="text-muted">Status</td>
+              <td><span class="badge {% if pb.snap_status_karyawan == 'PKWT' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">{{ pb.snap_status_karyawan }}</span></td>
+            </tr>
+            <tr><td class="text-muted">Alamat</td><td>{{ pb.snap_alamat|default:"—" }}</td></tr>
+          </table>
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-primary text-white fw-semibold small">Rincian Pembayaran</div>
+        <div class="card-body small">
+          <table class="table table-sm table-borderless mb-0">
+            {% if pb.snap_status_karyawan == 'PKWTT' %}
+            <tr>
+              <td class="text-muted">Uang Pesangon (UP)</td>
+              <td class="text-end">Rp {{ pb.severance.pesangon|floatformat:"0g" }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">UPMK</td>
+              <td class="text-end">Rp {{ pb.upmk|floatformat:"0g" }}</td>
+            </tr>
+            {% if pb.severance.uang_pisah %}
+            <tr>
+              <td class="text-muted">Uang Pisah</td>
+              <td class="text-end">Rp {{ pb.severance.uang_pisah|floatformat:"0g" }}</td>
+            </tr>
+            {% endif %}
+            {% else %}
+            <tr>
+              <td class="text-muted">Kompensasi PKWT (Ps.61A)</td>
+              <td class="text-end">Rp {{ pb.total_pesangon|floatformat:"0g" }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="text-muted">Sisa Cuti Tahunan ({{ pb.sisa_cuti_tahunan }} hari)</td>
+              <td class="text-end">Rp {{ pb.nilai_cuti_tahunan|floatformat:"0g" }}</td>
+            </tr>
+            {% if pb.pakai_cuti_roster %}
+            <tr>
+              <td class="text-muted">Sisa Cuti Roster ({{ pb.sisa_cuti_roster }} hari)</td>
+              <td class="text-end">Rp {{ pb.nilai_cuti_roster|floatformat:"0g" }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="text-muted">Sisa Gaji Prorate ({{ pb.sisa_hari_kerja }} hari)</td>
+              <td class="text-end">Rp {{ pb.nilai_sisa_gaji|floatformat:"0g" }}</td>
+            </tr>
+            {% if pb.pakai_uang_transport %}
+            <tr>
+              <td class="text-muted">Uang Transportasi (POH)</td>
+              <td class="text-end">Rp {{ pb.nilai_uang_transport|floatformat:"0g" }}</td>
+            </tr>
+            {% endif %}
+            <tr class="fw-bold border-top">
+              <td class="text-primary fs-6">Grand Total</td>
+              <td class="text-end text-primary fs-6">Rp {{ pb.grand_total|floatformat:"0g" }}</td>
+            </tr>
+            {% if pb.terbilang %}
+            <tr>
+              <td colspan="2" class="text-muted fst-italic small">{{ pb.terbilang }}</td>
+            </tr>
+            {% endif %}
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {% if pb.jadwal_pembayaran or pb.catatan %}
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light fw-semibold small">Jadwal & Catatan</div>
+        <div class="card-body small">
+          {% if pb.jadwal_pembayaran %}
+          <div class="mb-2"><strong>Jadwal Pembayaran:</strong><br>{{ pb.jadwal_pembayaran|linebreaksbr }}</div>
+          {% endif %}
+          {% if pb.catatan %}
+          <div><strong>Catatan:</strong><br>{{ pb.catatan|linebreaksbr }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

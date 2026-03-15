@@ -1,0 +1,600 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit{% else %}Tambah{% endif %} Data Upah{% endblock %}
+{% block breadcrumb %}Payroll / Upah & Benefit / {% if instance %}Edit{% else %}Tambah{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-money-bill-wave me-2 text-success"></i>
+            {% if instance %}Edit{% else %}Tambah{% endif %} Data Upah & Benefit
+        </h4>
+        {% if instance %}
+        <div class="mt-1 d-flex gap-3 align-items-center flex-wrap">
+            <span class="fw-bold text-dark">{{ instance.employee.nama }}</span>
+            <span class="text-muted small"><i class="fas fa-id-card me-1"></i>{{ instance.employee.nik }}</span>
+            <span class="text-muted small"><i class="fas fa-briefcase me-1"></i>{{ instance.employee.jabatan|default:"-" }}</span>
+            <span class="text-muted small"><i class="fas fa-building me-1"></i>{{ instance.employee.department|default:"-" }}</span>
+            <span class="text-muted small"><i class="fas fa-clock me-1"></i>{{ instance.employee.masa_kerja_display }}</span>
+        </div>
+        {% endif %}
+    </div>
+    <a href="{% url 'salary_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<!-- Nav Tabs -->
+<ul class="nav nav-tabs mb-0" id="salaryTabs" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-standar" type="button">
+            <i class="fas fa-file-invoice-dollar me-1"></i>Standar
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-custom" type="button" id="btn-tab-custom">
+            <i class="fas fa-cog me-1"></i>Payroll Custom
+            {% if instance.custom_aktif %}<span class="badge bg-warning text-dark ms-1">Aktif</span>{% endif %}
+        </button>
+    </li>
+</ul>
+
+<form method="post">
+{% csrf_token %}
+<div class="tab-content">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         TAB STANDAR
+    ════════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane fade show active" id="tab-standar">
+    <div class="card border-top-0 rounded-0 rounded-bottom">
+    <div class="card-body">
+
+        {% if not instance %}
+        <!-- Pilih Karyawan -->
+        <div class="mb-4">
+            <label class="form-label fw-semibold">Karyawan *</label>
+            <select name="employee_id" class="form-select" required id="sel-karyawan">
+                <option value="">-- Pilih Karyawan --</option>
+                {% for emp in employees %}
+                <option value="{{ emp.pk }}">{{ emp.nik }} — {{ emp.nama }}{% if emp.jabatan %} · {{ emp.jabatan }}{% endif %}{% if emp.department %} · {{ emp.department }}{% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <!-- ══ DASAR UPAH ════════════════════════════════════════════════════ -->
+        <div class="section-header d-flex align-items-center gap-2 mb-3 mt-2">
+            <div class="section-line"></div>
+            <span class="fw-bold text-uppercase text-secondary small">Dasar Upah</span>
+            <div class="section-line flex-grow-1"></div>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Jenis Pengupahan *</label>
+                <select name="jenis_pengupahan" class="form-select" id="sel-jenis-upah" onchange="updateJenisUpah()">
+                    <option value="bulanan"  {% if instance.jenis_pengupahan == 'bulanan'  or not instance %}selected{% endif %}>Bulanan</option>
+                    <option value="mingguan" {% if instance.jenis_pengupahan == 'mingguan' %}selected{% endif %}>Mingguan</option>
+                    <option value="harian"   {% if instance.jenis_pengupahan == 'harian'   %}selected{% endif %}>Harian</option>
+                </select>
+            </div>
+            <div class="col-md-3" id="wrap-hari-kerja">
+                <label class="form-label fw-semibold">Hari Kerja per Minggu</label>
+                <select name="hari_kerja_per_minggu" class="form-select">
+                    <option value="5" {% if instance.hari_kerja_per_minggu != 6 %}selected{% endif %}>5 Hari (Senin–Jumat)</option>
+                    <option value="6" {% if instance.hari_kerja_per_minggu == 6 %}selected{% endif %}>6 Hari (Senin–Sabtu)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Status Gaji *</label>
+                <select name="status_gaji" class="form-select" id="sel-status-gaji" onchange="toggleStatusGaji()">
+                    <option value="reguler" {% if instance.status_gaji != 'all_in' %}selected{% endif %}>Reguler</option>
+                    <option value="all_in"  {% if instance.status_gaji == 'all_in' %}selected{% endif %}>All-In</option>
+                </select>
+                <small class="text-muted">All-In: lembur tidak dihitung</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Gaji Pokok *</label>
+                <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input type="text" inputmode="numeric" name="gaji_pokok" id="inp-gaji-pokok"
+                           class="form-control text-end rupiah-input" autocomplete="off"
+                           value="{{ instance.gaji_pokok|default:0 }}" required
+                           data-trigger="estimasi">
+                </div>
+                <small class="text-muted" id="info-upah-harian"></small>
+            </div>
+        </div>
+
+        <!-- ══ TUNJANGAN TETAP ════════════════════════════════════════════════ -->
+        <div class="section-header d-flex align-items-center gap-2 mb-3">
+            <div class="section-line"></div>
+            <span class="fw-bold text-uppercase text-secondary small">Tunjangan Tetap</span>
+            <div class="section-line flex-grow-1"></div>
+        </div>
+        <div class="row g-3 mb-4">
+            {% include "payroll/_field_rupiah.html" with name="tunjangan_jabatan"        label="Tunjangan Jabatan"        val=instance.tunjangan_jabatan        trigger="estimasi" %}
+            {% include "payroll/_field_rupiah.html" with name="tunjangan_tempat_tinggal" label="Tunjangan Tempat Tinggal"  val=instance.tunjangan_tempat_tinggal trigger="estimasi" %}
+            {% include "payroll/_field_rupiah.html" with name="tunjangan_keahlian"       label="Tunjangan Keahlian"       val=instance.tunjangan_keahlian       trigger="estimasi" %}
+            {% include "payroll/_field_rupiah.html" with name="tunjangan_komunikasi"     label="Tunjangan Komunikasi"     val=instance.tunjangan_komunikasi     trigger="estimasi" %}
+            {% include "payroll/_field_rupiah.html" with name="tunjangan_kesehatan"      label="Tunjangan Kesehatan"      val=instance.tunjangan_kesehatan      trigger="estimasi" %}
+        </div>
+
+        <!-- ══ TUNJANGAN TIDAK TETAP ══════════════════════════════════════════ -->
+        <div class="section-header d-flex align-items-center gap-2 mb-3">
+            <div class="section-line"></div>
+            <span class="fw-bold text-uppercase text-secondary small">Tunjangan Tidak Tetap</span>
+            <div class="section-line flex-grow-1"></div>
+        </div>
+        <div class="row g-3 mb-4">
+            {% include "payroll/_field_rupiah.html" with name="tunjangan_transport" label="Tunjangan Transport" val=instance.tunjangan_transport %}
+            {% include "payroll/_field_rupiah.html" with name="tunjangan_makan"     label="Tunjangan Makan"     val=instance.tunjangan_makan %}
+            {% include "payroll/_field_rupiah.html" with name="tunjangan_site"      label="Tunjangan Site"      val=instance.tunjangan_site %}
+            {% include "payroll/_field_rupiah.html" with name="tunjangan_kehadiran" label="Tunjangan Kehadiran" val=instance.tunjangan_kehadiran %}
+            <!-- Tunjangan Alat HM/KM -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Tunjangan Alat</label>
+                <div class="row g-2">
+                    <div class="col-5">
+                        <select name="tunjangan_alat_tipe" class="form-select form-select-sm">
+                            <option value=""           {% if not instance.tunjangan_alat_tipe %}selected{% endif %}>Tidak Ada</option>
+                            <option value="hour_meter" {% if instance.tunjangan_alat_tipe == 'hour_meter' %}selected{% endif %}>HM (Hour Meter)</option>
+                            <option value="kilometer"  {% if instance.tunjangan_alat_tipe == 'kilometer'  %}selected{% endif %}>KM (Kilometer)</option>
+                        </select>
+                    </div>
+                    <div class="col-7">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Rp/sat</span>
+                            <input type="number" name="tunjangan_alat_rate" class="form-control text-end"
+                                   min="0" value="{{ instance.tunjangan_alat_rate|default:0 }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Lembur — tarif referensi + override -->
+            <div class="col-md-6" id="wrap-lembur">
+                <label class="form-label fw-semibold">Tarif Upah Lembur per Jam</label>
+                <div class="input-group mb-2">
+                    <span class="input-group-text">Rp</span>
+                    <input type="number" name="lembur_tarif_per_jam" id="inp-lembur-tarif"
+                           class="form-control text-end" min="0"
+                           value="{{ instance.lembur_tarif_per_jam|default:0 }}"
+                           oninput="updateLembur()">
+                </div>
+                <small class="text-muted">0 = otomatis (Gaji Pokok ÷ 173, PP 36/2021)</small>
+                <div class="card bg-light border-0 mt-2 p-2" id="info-lembur" style="font-size:0.82rem;">
+                    <div class="d-flex justify-content-between"><span class="text-muted">Upah/jam (÷173)</span><span class="fw-semibold" id="lbl-upah-jam">—</span></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">Lembur jam ke-1 (×1,5)</span><span class="fw-semibold text-primary" id="lbl-l1">—</span></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">Lembur jam ke-2 dst (×2)</span><span class="fw-semibold text-primary" id="lbl-l2">—</span></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">Lembur hari libur (×2)</span><span class="fw-semibold text-warning" id="lbl-ll">—</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ POTONGAN ════════════════════════════════════════════════════════ -->
+        <div class="section-header d-flex align-items-center gap-2 mb-3">
+            <div class="section-line"></div>
+            <span class="fw-bold text-uppercase text-secondary small">Potongan</span>
+            <div class="section-line flex-grow-1"></div>
+        </div>
+        <div class="row g-3 mb-4">
+            <!-- BPJS Ketenagakerjaan -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">BPJS Ketenagakerjaan</label>
+                <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input type="text" inputmode="numeric" name="bpjs_ketenagakerjaan_override" id="inp-bpjs-tk"
+                           class="form-control text-end" autocomplete="off"
+                           value="{{ instance.bpjs_ketenagakerjaan_override|default:'' }}"
+                           oninput="updateEstimasi()">
+                </div>
+                <small class="text-muted">Otomatis: 3% gaji pokok &middot; kosong = hitung otomatis</small>
+            </div>
+            <!-- BPJS Kesehatan -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">BPJS Kesehatan</label>
+                <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input type="text" inputmode="numeric" name="bpjs_kesehatan_override" id="inp-bpjs-kes"
+                           class="form-control text-end" autocomplete="off"
+                           value="{{ instance.bpjs_kesehatan_override|default:'' }}"
+                           oninput="updateEstimasi()">
+                </div>
+                <small class="text-muted">Otomatis: 1% gaji (maks Rp12jt) &middot; kosong = hitung otomatis</small>
+            </div>
+            <!-- PPh21 -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">PPh21</label>
+                <div class="form-check form-switch mt-1 mb-2">
+                    <input class="form-check-input" type="checkbox" name="pph21_ditanggung_perusahaan"
+                           id="chk-pph21" value="1"
+                           {% if instance.pph21_ditanggung_perusahaan %}checked{% endif %}
+                           onchange="togglePPh21()">
+                    <label class="form-check-label" for="chk-pph21">Ditanggung Perusahaan</label>
+                </div>
+                <div id="wrap-pph21-info" class="alert alert-light border py-2 mb-0" style="font-size:0.82rem;">
+                    <i class="fas fa-info-circle text-primary me-1"></i>
+                    Dihitung otomatis berdasarkan PTKP karyawan saat generate payroll.
+                    {% if instance and instance.employee %}
+                    · Estimasi: <strong class="text-primary" id="lbl-pph21-est">—</strong>
+                    {% endif %}
+                </div>
+                <div id="wrap-pph21-perusahaan" class="alert alert-success border py-2 mb-0" style="font-size:0.82rem; display:none;">
+                    <i class="fas fa-check-circle me-1"></i>
+                    PPh21 ditanggung perusahaan — potongan karyawan = <strong>Rp 0</strong>.
+                </div>
+            </div>
+            <!-- Potongan Absensi -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Potongan Absensi <small class="text-muted">(per hari)</small></label>
+                <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input type="text" inputmode="numeric" name="potongan_absensi" id="inp-pot-absen"
+                           class="form-control text-end" autocomplete="off"
+                           value="{{ instance.potongan_absensi|default:'' }}">
+                </div>
+                <small class="text-muted">kosong = default upah harian &middot; isi jika kebijakan berbeda</small>
+            </div>
+            <!-- Potongan Lainnya -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Potongan Lainnya</label>
+                <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input type="text" inputmode="numeric" name="potongan_lainnya"
+                           class="form-control text-end" autocomplete="off"
+                           value="{{ instance.potongan_lainnya|default:'' }}">
+                </div>
+                <small class="text-muted">Potongan tetap per bulan (cicilan, dll.)</small>
+            </div>
+        </div>
+
+        <!-- ══ TUNJANGAN LAIN ════════════════════════════════════════════════ -->\n        <div class="section-header d-flex align-items-center gap-2 mb-3">
+            <div class="section-line"></div>
+            <span class="fw-bold text-uppercase text-secondary small">Tunjangan Lain</span>
+            <div class="section-line flex-grow-1"></div>
+        </div>
+        <div class="row g-3 mb-4">
+            <!-- THR -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">THR <small class="text-muted">(override manual)</small></label>
+                <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input type="text" inputmode="numeric" name="thr" id="inp-thr"
+                           class="form-control text-end" autocomplete="off"
+                           value="{{ instance.thr|default:'' }}">
+                </div>
+                <small class="text-muted">kosong = hitung otomatis dari masa kerja (PP 36/2021)</small>
+            </div>
+            <!-- Bonus Tahunan -->
+            {% include "payroll/_field_rupiah.html" with name="bonus_tahunan" label="Bonus Tahunan" val=instance.bonus_tahunan hint="Bonus di luar THR, dibayarkan per kebijakan perusahaan" %}
+        </div>
+
+    </div><!-- card-body -->
+    </div><!-- card -->
+    </div><!-- tab-pane standar -->
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         TAB PAYROLL CUSTOM
+    ════════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane fade" id="tab-custom">
+    <div class="card border-top-0 rounded-0 rounded-bottom">
+    <div class="card-body">
+
+        <!-- Notif Warning -->
+        <div class="alert alert-warning d-flex gap-3 align-items-start mb-4">
+            <i class="fas fa-exclamation-triangle fa-lg mt-1 text-warning"></i>
+            <div>
+                <strong>Perhatian — Konfigurasi Payroll Custom</strong><br>
+                Nilai di halaman ini akan <strong>menggantikan ketentuan default pemerintah (PP No. 36/2021)</strong>
+                untuk karyawan ini. Pastikan sudah sesuai kebijakan perusahaan dan tidak melanggar
+                ketentuan ketenagakerjaan yang berlaku.<br>
+                <span class="text-muted small">Biarkan kosong (0) untuk tetap menggunakan nilai default pemerintah pada komponen tersebut.</span>
+            </div>
+        </div>
+
+        <!-- Toggle Custom -->
+        <div class="form-check form-switch mb-4">
+            <input class="form-check-input" type="checkbox" name="custom_aktif" id="chk-custom-aktif"
+                   value="1" {% if instance.custom_aktif %}checked{% endif %} onchange="toggleCustom()">
+            <label class="form-check-label fw-bold" for="chk-custom-aktif">
+                Aktifkan Konfigurasi Custom untuk Karyawan Ini
+            </label>
+        </div>
+
+        <div id="wrap-custom-fields" {% if not instance.custom_aktif %}style="opacity:0.4;pointer-events:none;"{% endif %}>
+
+            <!-- Lembur Custom -->
+            <div id="wrap-custom-lembur">
+            <div class="section-header d-flex align-items-center gap-2 mb-3">
+                <div class="section-line"></div>
+                <span class="fw-bold text-uppercase text-secondary small">Tarif Lembur</span>
+                <div class="section-line flex-grow-1"></div>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Multiplier Jam ke-1</label>
+                    <div class="input-group">
+                        <input type="number" name="custom_lembur_jam1_multiplier" class="form-control text-end"
+                               step="0.25" min="0" value="{{ instance.custom_lembur_jam1_multiplier|default:0 }}">
+                        <span class="input-group-text">×</span>
+                    </div>
+                    <small class="text-muted">Default PP 36/2021: <strong>1,5×</strong></small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Multiplier Jam ke-2 dst</label>
+                    <div class="input-group">
+                        <input type="number" name="custom_lembur_jam2_multiplier" class="form-control text-end"
+                               step="0.25" min="0" value="{{ instance.custom_lembur_jam2_multiplier|default:0 }}">
+                        <span class="input-group-text">×</span>
+                    </div>
+                    <small class="text-muted">Default PP 36/2021: <strong>2×</strong></small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Multiplier Hari Libur</label>
+                    <div class="input-group">
+                        <input type="number" name="custom_lembur_libur_multiplier" class="form-control text-end"
+                               step="0.25" min="0" value="{{ instance.custom_lembur_libur_multiplier|default:0 }}">
+                        <span class="input-group-text">×</span>
+                    </div>
+                    <small class="text-muted">Default PP 36/2021: <strong>2×</strong></small>
+                </div>
+            </div>
+            </div><!-- wrap-custom-lembur -->
+
+            <!-- BPJS Custom -->
+            <div class="section-header d-flex align-items-center gap-2 mb-3">
+                <div class="section-line"></div>
+                <span class="fw-bold text-uppercase text-secondary small">Persentase BPJS</span>
+                <div class="section-line flex-grow-1"></div>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">% BPJS Kesehatan Karyawan</label>
+                    <div class="input-group">
+                        <input type="number" name="custom_bpjs_kes_pct" class="form-control text-end"
+                               step="0.25" min="0" max="100" value="{{ instance.custom_bpjs_kes_pct|default:0 }}">
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <small class="text-muted">Default: <strong>1%</strong> (maks gaji 12jt)</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">% BPJS TK Karyawan</label>
+                    <div class="input-group">
+                        <input type="number" name="custom_bpjs_tk_pct" class="form-control text-end"
+                               step="0.25" min="0" max="100" value="{{ instance.custom_bpjs_tk_pct|default:0 }}">
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <small class="text-muted">Default: <strong>3%</strong> (JHT 2% + JP 1%)</small>
+                </div>
+            </div>
+
+            <!-- Denda & Potongan Custom -->
+            <div class="section-header d-flex align-items-center gap-2 mb-3">
+                <div class="section-line"></div>
+                <span class="fw-bold text-uppercase text-secondary small">Denda & Potongan</span>
+                <div class="section-line flex-grow-1"></div>
+            </div>
+            <div class="row g-3 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Denda Keterlambatan per Jam</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="number" name="custom_denda_telat_per_jam" class="form-control text-end"
+                               min="0" value="{{ instance.custom_denda_telat_per_jam|default:0 }}">
+                    </div>
+                    <small class="text-muted">Default: <strong>Rp 50.000/jam</strong></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Potongan Absen per Hari (Custom)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="number" name="custom_potongan_absen_per_hari" class="form-control text-end"
+                               min="0" value="{{ instance.custom_potongan_absen_per_hari|default:0 }}">
+                    </div>
+                    <small class="text-muted">Default: <strong>upah harian</strong></small>
+                </div>
+            </div>
+
+        </div><!-- wrap-custom-fields -->
+    </div><!-- card-body -->
+    </div><!-- card -->
+    </div><!-- tab-pane custom -->
+
+</div><!-- tab-content -->
+
+<!-- Tombol Simpan -->
+<div class="d-flex gap-2 mt-4 pb-4">
+    <button type="submit" class="btn btn-success px-5">
+        <i class="fas fa-save me-1"></i>Simpan
+    </button>
+    <a href="{% url 'salary_list' %}" class="btn btn-outline-secondary">Batal</a>
+</div>
+
+</form>
+
+<style>
+.section-line { height: 1px; background: #dee2e6; min-width: 20px; }
+.nav-tabs .nav-link { color: #495057; }
+.nav-tabs .nav-link.active { font-weight: 600; color: #198754; border-color: #dee2e6 #dee2e6 #fff; }
+</style>
+
+<script>
+// ── Rupiah formatter untuk .rupiah-input ─────────────────────────────────────
+function formatRibuanInput(el) {
+    let raw = el.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+    if (raw === '') { el.value = ''; return; }
+    el.value = parseInt(raw).toLocaleString('id-ID');
+}
+
+// Rupiah input init — dipanggil dalam satu DOMContentLoaded di bawah
+function initRupiahInputs() {
+    document.querySelectorAll('.rupiah-input').forEach(el => {
+        const raw = el.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+        if (raw !== '') el.value = parseInt(raw).toLocaleString('id-ID');
+
+        el.addEventListener('input', function () {
+            formatRibuanInput(el);
+            if (el.dataset.trigger === 'estimasi') updateEstimasi();
+        });
+        el.addEventListener('focus', () => el.select());
+    });
+
+    document.querySelector('form').addEventListener('submit', function () {
+        document.querySelectorAll('.rupiah-input').forEach(el => {
+            el.value = el.value.replace(/\./g, '') || '0';
+        });
+    });
+}
+function fmt(n) {
+    return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+function setPlaceholder(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.placeholder = Math.round(val).toLocaleString('id-ID');
+}
+
+// PTKP table untuk estimasi PPh21 di form
+const PTKP = {
+    'TK/0':54000000,'TK/1':58500000,'TK/2':63000000,'TK/3':67500000,
+    'K/0':58500000,'K/1':63000000,'K/2':67500000,'K/3':72000000,
+    'K/I/0':63000000,'K/I/1':67500000,'K/I/2':72000000,'K/I/3':76500000,
+};
+const PTKP_KARYAWAN = "{{ instance.employee.ptkp|default:'TK/0' }}";
+
+function estimasiPPh21(gajiPokok, tunjTetap) {
+    const bruto = (gajiPokok + tunjTetap) * 12;
+    const biayaJabatan = Math.min(bruto * 0.05, 6000000);
+    const ptkp = PTKP[PTKP_KARYAWAN] || 54000000;
+    const pkp = Math.max(0, bruto - biayaJabatan - ptkp);
+    let pph = 0;
+    if (pkp <= 60000000)       pph = pkp * 0.05;
+    else if (pkp <= 250000000) pph = 3000000 + (pkp - 60000000) * 0.15;
+    else if (pkp <= 500000000) pph = 31500000 + (pkp - 250000000) * 0.25;
+    else                       pph = 94000000 + (pkp - 500000000) * 0.30;
+    return Math.round(pph / 12);
+}
+
+function estimasiTHR(gajiPokok, tunjTetap) {
+    // Ambil dari server-side jika ada, fallback hitung dari bulan_kerja
+    const bulanKerja = {{ instance.employee.masa_kerja_bulan|default:0 }};
+    const upahAcuan = gajiPokok + tunjTetap;
+    if (bulanKerja >= 12) return upahAcuan;
+    return Math.round((bulanKerja / 12) * upahAcuan);
+}
+
+function getGajiPokok() {
+    const el = document.getElementById('inp-gaji-pokok');
+    return parseInt((el?.value || '0').replace(/\./g, '')) || 0;
+}
+
+function getTunjTetap() {
+    const fields = ['tunjangan_jabatan','tunjangan_tempat_tinggal','tunjangan_keahlian',
+                    'tunjangan_komunikasi','tunjangan_kesehatan'];
+    return fields.reduce((sum, name) => {
+        const el = document.querySelector(`input[name="${name}"]`);
+        return sum + (parseInt((el?.value || '0').replace(/\./g, '')) || 0);
+    }, 0);
+}
+
+function updateEstimasi() {
+    const gaji = getGajiPokok();
+    const tunjTetap = getTunjTetap();
+
+    // BPJS TK placeholder (3%)
+    setPlaceholder('inp-bpjs-tk', gaji * 0.03);
+
+    // BPJS Kes placeholder (1%, maks 12jt)
+    setPlaceholder('inp-bpjs-kes', Math.min(gaji, 12000000) * 0.01);
+
+    // THR placeholder
+    setPlaceholder('inp-thr', estimasiTHR(gaji, tunjTetap));
+
+    // PPh21 estimasi di label
+    const pph21El = document.getElementById('lbl-pph21-est');
+    if (pph21El) pph21El.textContent = fmt(estimasiPPh21(gaji, tunjTetap));
+
+    updateLembur();
+    updateUpahHarian();
+    updatePotonganAbsen();
+}
+
+function updateUpahHarian() {
+    const gaji  = getGajiPokok();
+    const jenis = document.getElementById('sel-jenis-upah').value;
+    const hkEl  = document.querySelector('select[name="hari_kerja_per_minggu"]');
+    const hk    = hkEl ? parseInt(hkEl.value) : 5;
+    const infoEl = document.getElementById('info-upah-harian');
+    if (!gaji || !infoEl) return 0;
+
+    let upahHarian = 0, label = '';
+    if (jenis === 'harian') {
+        upahHarian = gaji; label = 'Gaji per hari';
+    } else if (jenis === 'mingguan') {
+        upahHarian = gaji / hk; label = 'Setara Rp/hari';
+    } else {
+        const div = hk === 6 ? 25 : 21;
+        upahHarian = gaji / div;
+        label = `Upah harian (÷${div})`;
+    }
+    infoEl.textContent = label + ': ' + fmt(upahHarian) + ' · per jam: ' + fmt(upahHarian / 8);
+    return upahHarian;
+}
+
+function updatePotonganAbsen() {
+    const upahHarian = updateUpahHarian() || 0;
+    setPlaceholder('inp-pot-absen', upahHarian);
+}
+
+function updateLembur() {
+    const gaji   = getGajiPokok();
+    const tarif  = parseInt((document.getElementById('inp-lembur-tarif')?.value || '0').replace(/\./g, '')) || 0;
+    const perJam = tarif > 0 ? tarif : Math.round(gaji / 173);
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('lbl-upah-jam', fmt(perJam));
+    set('lbl-l1',  fmt(perJam * 1.5) + '/jam');
+    set('lbl-l2',  fmt(perJam * 2)   + '/jam');
+    set('lbl-ll',  fmt(perJam * 2)   + '/jam');
+}
+
+function updateJenisUpah() {
+    const jenis = document.getElementById('sel-jenis-upah').value;
+    const wrapHk = document.getElementById('wrap-hari-kerja');
+    wrapHk.style.display = (jenis === 'bulanan') ? 'none' : '';
+    updateEstimasi();
+}
+
+function toggleStatusGaji() {
+    const isAllIn = document.getElementById('sel-status-gaji').value === 'all_in';
+    const wrapLembur = document.getElementById('wrap-lembur');
+    if (wrapLembur) wrapLembur.style.display = isAllIn ? 'none' : '';
+    const wrapCustomLembur = document.getElementById('wrap-custom-lembur');
+    if (wrapCustomLembur) wrapCustomLembur.style.display = isAllIn ? 'none' : '';
+}
+
+function togglePPh21() {
+    const checked = document.getElementById('chk-pph21').checked;
+    document.getElementById('wrap-pph21-info').style.display      = checked ? 'none' : '';
+    document.getElementById('wrap-pph21-perusahaan').style.display = checked ? '' : 'none';
+}
+
+function toggleCustom() {
+    const checked = document.getElementById('chk-custom-aktif').checked;
+    const wrap = document.getElementById('wrap-custom-fields');
+    wrap.style.opacity = checked ? '1' : '0.4';
+    wrap.style.pointerEvents = checked ? '' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initRupiahInputs();
+    updateEstimasi();
+    updateLembur();
+    updateJenisUpah();
+    togglePPh21();
+    toggleStatusGaji();
+    {% if instance.custom_aktif %}
+    document.getElementById('btn-tab-custom').click();
+    {% endif %}
+});
+</script>
+{% endblock %}

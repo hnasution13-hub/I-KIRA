@@ -1,0 +1,49 @@
+{% extends 'base_dashboard.html' %}{% block title %}Form Interview{% endblock %}
+{% block content %}<div class="container-fluid px-4 py-3"><div class="row justify-content-center"><div class="col-lg-7">
+  <div class="d-flex gap-3 align-items-center mb-3">
+    <a href="{% url 'candidate_detail' candidate.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
+    <h4 class="mb-0 fw-bold">{% if instance %}Edit{% else %}Tambah{% endif %} Interview — {{ candidate.nama }}</h4>
+  </div>
+  <div class="card shadow-sm"><div class="card-body p-4">
+    <form method="post">{% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label">Tipe Interview</label>
+          <select name="tipe" class="form-select">
+            {% for v,l in tipe_choices %}<option value="{{ v }}" {% if instance.tipe == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+          </select></div>
+        <div class="col-md-6"><label class="form-label">Interviewer</label>
+          <input type="text" name="interviewer" class="form-control" value="{{ instance.interviewer|default:'' }}" required></div>
+        <div class="col-md-6"><label class="form-label">Tanggal</label>
+          <input type="date" name="tanggal" class="form-control" value="{{ instance.tanggal|date:'Y-m-d'|default:'' }}" required></div>
+        <div class="col-md-3"><label class="form-label">Jam</label>
+          <input type="time" name="jam" class="form-control" value="{{ instance.jam|time:'H:i'|default:'' }}"></div>
+        <div class="col-md-3"><label class="form-label">Lokasi / Link</label>
+          <input type="text" name="lokasi" class="form-control" value="{{ instance.lokasi|default:'' }}"></div>
+      </div>
+      <hr class="my-3"><h6 class="fw-semibold mb-3">Penilaian (0-100, kosongkan jika belum)</h6>
+      <div class="row g-3">
+        <div class="col-md-3"><label class="form-label small">Technical</label>
+          <input type="number" name="nilai_technical" class="form-control" value="{{ instance.nilai_technical|default:'' }}" min="0" max="100"></div>
+        <div class="col-md-3"><label class="form-label small">Attitude</label>
+          <input type="number" name="nilai_attitude" class="form-control" value="{{ instance.nilai_attitude|default:'' }}" min="0" max="100"></div>
+        <div class="col-md-3"><label class="form-label small">Communication</label>
+          <input type="number" name="nilai_communication" class="form-control" value="{{ instance.nilai_communication|default:'' }}" min="0" max="100"></div>
+        <div class="col-md-3"><label class="form-label small">Culture Fit</label>
+          <input type="number" name="nilai_culture_fit" class="form-control" value="{{ instance.nilai_culture_fit|default:'' }}" min="0" max="100"></div>
+        <div class="col-md-6"><label class="form-label small">Rekomendasi</label>
+          <select name="rekomendasi" class="form-select">
+            <option value="">-- Belum ada --</option>
+            <option value="lanjut" {% if instance.rekomendasi == 'lanjut' %}selected{% endif %}>Lanjutkan</option>
+            <option value="pertimbangkan" {% if instance.rekomendasi == 'pertimbangkan' %}selected{% endif %}>Pertimbangkan</option>
+            <option value="tolak" {% if instance.rekomendasi == 'tolak' %}selected{% endif %}>Tolak</option>
+          </select></div>
+        <div class="col-12"><label class="form-label small">Catatan</label>
+          <textarea name="catatan" class="form-control" rows="3">{{ instance.catatan|default:'' }}</textarea></div>
+      </div>
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <a href="{% url 'candidate_detail' candidate.pk %}" class="btn btn-outline-secondary">Batal</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Simpan</button>
+      </div>
+    </form>
+  </div></div>
+</div></div></div>{% endblock %}

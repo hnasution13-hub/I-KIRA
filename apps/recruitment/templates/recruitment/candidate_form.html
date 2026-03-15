@@ -1,0 +1,62 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit{% else %}Tambah{% endif %} Kandidat{% endblock %}
+{% block breadcrumb %}Rekrutmen / Kandidat{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-user-tie me-2 text-primary"></i>{% if instance %}Edit{% else %}Tambah{% endif %} Kandidat</h4>
+    <a href="{% url 'candidate_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
+</div>
+<div class="card" style="max-width:700px;"><div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label fw-semibold">Nama Lengkap *</label>
+                <input type="text" name="nama" class="form-control" value="{{ instance.nama|default:'' }}" required></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Email *</label>
+                <input type="email" name="email" class="form-control" value="{{ instance.email|default:'' }}" required></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">No. HP</label>
+                <input type="text" name="no_hp" class="form-control" value="{{ instance.no_hp|default:'' }}"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Jabatan Dilamar *</label>
+                <input type="text" name="jabatan_dilamar" class="form-control" value="{{ instance.jabatan_dilamar|default:'' }}" required></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Sumber Rekrutmen</label>
+                <input type="text" name="sumber" class="form-control" value="{{ instance.sumber|default:'' }}" placeholder="JobStreet, LinkedIn, Referral..."></div>
+            <div class="col-md-3"><label class="form-label fw-semibold">Pendidikan</label>
+                <select name="pendidikan" class="form-select">
+                    <option value="">--</option>
+                    <option value="SD" {% if instance.pendidikan == 'SD' %}selected{% endif %}>SD</option>
+                    <option value="SMP" {% if instance.pendidikan == 'SMP' %}selected{% endif %}>SMP</option>
+                    <option value="SMA/SMK" {% if instance.pendidikan == 'SMA/SMK' %}selected{% endif %}>SMA/SMK</option>
+                    <option value="D3" {% if instance.pendidikan == 'D3' %}selected{% endif %}>D3</option>
+                    <option value="S1" {% if instance.pendidikan == 'S1' %}selected{% endif %}>S1</option>
+                    <option value="S2" {% if instance.pendidikan == 'S2' %}selected{% endif %}>S2</option>
+                    <option value="S3" {% if instance.pendidikan == 'S3' %}selected{% endif %}>S3</option>
+                </select></div>
+            <div class="col-md-3"><label class="form-label fw-semibold">Pengalaman (tahun)</label>
+                <input type="number" name="pengalaman_tahun" class="form-control" min="0" value="{{ instance.pengalaman_tahun|default:0 }}"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Ekspektasi Gaji</label>
+                <input type="number" name="ekspektasi_gaji" class="form-control" min="0" value="{{ instance.ekspektasi_gaji|default:'' }}"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Status</label>
+                <select name="status" class="form-select">
+                    <option value="Screening" {% if instance.status == 'Screening' or not instance %}selected{% endif %}>Screening CV</option>
+                    <option value="Psikotes" {% if instance.status == 'Psikotes' %}selected{% endif %}>Psikotes</option>
+                    <option value="Interview HR" {% if instance.status == 'Interview HR' %}selected{% endif %}>Interview HR</option>
+                    <option value="Interview User" {% if instance.status == 'Interview User' %}selected{% endif %}>Interview User</option>
+                    <option value="Medical Check" {% if instance.status == 'Medical Check' %}selected{% endif %}>Medical Check Up</option>
+                    <option value="Offering" {% if instance.status == 'Offering' %}selected{% endif %}>Offering Letter</option>
+                    <option value="Hired" {% if instance.status == 'Hired' %}selected{% endif %}>Diterima</option>
+                    <option value="Rejected" {% if instance.status == 'Rejected' %}selected{% endif %}>Ditolak</option>
+                    <option value="Withdrawn" {% if instance.status == 'Withdrawn' %}selected{% endif %}>Mundur</option>
+                </select></div>
+            <div class="col-12"><label class="form-label fw-semibold">Upload CV</label>
+                <input type="file" name="cv_file" class="form-control">
+                {% if instance.cv_file %}<small class="text-muted">File: {{ instance.cv_file.name }}</small>{% endif %}</div>
+            <div class="col-12"><label class="form-label fw-semibold">Catatan</label>
+                <textarea name="catatan" class="form-control" rows="3">{{ instance.catatan|default:'' }}</textarea></div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>Simpan</button>
+                <a href="{% url 'candidate_list' %}" class="btn btn-outline-secondary ms-2">Batal</a>
+            </div>
+        </div>
+    </form>
+</div></div>
+{% endblock %}

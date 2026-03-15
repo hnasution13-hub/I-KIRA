@@ -1,0 +1,258 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+<title>Laporan Kandidat — {{ candidate.nama }}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; font-size: 13px; background: #fff; color: #222; }
+  .brand-header { background: #2c3e50; color: white; padding: 18px 30px; }
+  .brand-header h3 { margin: 0; font-size: 18px; }
+  .brand-header small { opacity: .7; }
+  .section-title { background: #f4f6f9; border-left: 4px solid #c40000;
+                   padding: 6px 12px; font-weight: 700; margin: 18px 0 10px; font-size: 13px; }
+  .score-big { font-size: 52px; font-weight: 900; line-height: 1; }
+  .badge-grade { font-size: 18px; padding: 4px 16px; border-radius: 20px; }
+  .skill-badge { display: inline-block; padding: 2px 10px; border-radius: 12px;
+                 font-size: 11px; margin: 2px; font-weight: 600; }
+  .skill-ok  { background: #d1f7e0; color: #155724; }
+  .skill-gap { background: #fde8e8; color: #7b1111; }
+  .skill-ext { background: #d0eeff; color: #0a4a7b; }
+  .progress { height: 10px; border-radius: 6px; }
+  table.info-tbl td { padding: 4px 8px; }
+  table.info-tbl td:first-child { color: #666; width: 140px; }
+  .rekomen-box { border-radius: 10px; padding: 14px 20px; margin-bottom: 12px; }
+  .rekomen-Lanjutkan    { background: #d1f7e0; border: 2px solid #198754; }
+  .rekomen-Pertimbangkan{ background: #fff3cd; border: 2px solid #ffc107; }
+  .rekomen-Tolak        { background: #fde8e8; border: 2px solid #dc3545; }
+  ul.analysis-list { padding-left: 18px; margin: 0; }
+  ul.analysis-list li { margin-bottom: 4px; }
+  @media print {
+    .no-print { display: none !important; }
+    body { margin: 0; }
+    .page-break { page-break-before: always; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="brand-header">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h3><i class="me-2">📋</i>Laporan Kandidat</h3>
+      <small>Dicetak: {{ print_date|date:"d F Y" }} &nbsp;|&nbsp; HRIS SmartDesk</small>
+    </div>
+    <button onclick="window.print()" class="btn btn-light btn-sm no-print">
+      🖨️ Print / Save PDF
+    </button>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-3">
+
+  <!-- IDENTITAS -->
+  <div class="section-title">DATA KANDIDAT</div>
+  <div class="row g-3">
+    <div class="col-md-7">
+      <table class="info-tbl w-100">
+        <tr><td>Nama Lengkap</td><td class="fw-bold fs-6">{{ candidate.nama }}</td></tr>
+        <tr><td>Email</td><td>{{ candidate.email|default:"-" }}</td></tr>
+        <tr><td>No. HP</td><td>{{ candidate.no_hp|default:"-" }}</td></tr>
+        <tr><td>Posisi Dilamar</td><td class="fw-semibold">{{ candidate.jabatan_dilamar }}</td></tr>
+        <tr><td>Pendidikan</td><td>{{ candidate.pendidikan|default:"-" }}</td></tr>
+        <tr><td>Pengalaman</td><td>{{ candidate.pengalaman_tahun }} tahun</td></tr>
+        {% if candidate.ekspektasi_gaji %}
+        <tr><td>Ekspektasi Gaji</td><td>Rp {{ candidate.ekspektasi_gaji|floatformat:"0g" }}</td></tr>
+        {% endif %}
+        <tr><td>Sumber</td><td>{{ candidate.sumber|default:"-" }}</td></tr>
+        <tr><td>Tgl Melamar</td><td>{{ candidate.tanggal_melamar|date:"d F Y" }}</td></tr>
+        <tr><td>Status</td><td><strong>{{ candidate.status }}</strong></td></tr>
+        {% if candidate.mprf %}
+        <tr><td>MPRF</td><td>{{ candidate.mprf.nomor_mprf }} — {{ candidate.mprf.nama_jabatan }}</td></tr>
+        {% endif %}
+      </table>
+    </div>
+    <div class="col-md-5 text-center">
+      {% if candidate.total_score is not None %}
+        <div class="rekomen-box rekomen-{{ candidate.total_rekomendasi }}">
+          <div class="score-big
+            {% if candidate.total_score >= 80 %}text-success
+            {% elif candidate.total_score >= 50 %}text-warning
+            {% else %}text-danger{% endif %}">
+            {{ candidate.total_score }}
+          </div>
+          <div class="text-muted small">Skor Total / 100</div>
+          <div class="mt-2">
+            <span class="badge-grade
+              {% if candidate.total_score >= 80 %}bg-success text-white
+              {% elif candidate.total_score >= 50 %}bg-warning text-dark
+              {% else %}bg-danger text-white{% endif %}">
+              Grade {{ candidate.total_grade }}
+            </span>
+          </div>
+          <div class="fw-bold mt-2 fs-6
+            {% if candidate.total_score >= 80 %}text-success
+            {% elif candidate.total_score >= 50 %}text-warning
+            {% else %}text-danger{% endif %}">
+            {{ candidate.total_rekomendasi|upper }}
+          </div>
+        </div>
+        <!-- Modul aktif -->
+        {% for mod in candidate.active_modules %}
+        <div class="d-flex justify-content-between border rounded px-3 py-2 mb-1 small">
+          <span>{{ mod.nama }}</span>
+          <span class="fw-bold">{{ mod.score }}/100 ({{ mod.grade }})</span>
+        </div>
+        {% endfor %}
+        <small class="text-muted fst-italic">Skor rata-rata dari {{ candidate.active_modules|length }} modul penilaian</small>
+      {% else %}
+        <div class="text-muted py-4">Belum ada skor penilaian</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if candidate.ats_score is not None %}
+
+  <!-- ANALISIS ATS -->
+  <div class="section-title">HASIL ANALISIS ATS CV</div>
+  <div class="row g-3 mb-3">
+    <div class="col-md-8">
+      <p class="small text-muted mb-2">Breakdown skor per kategori (posisi: <strong>{{ kriteria.jabatan }}</strong>):</p>
+      {% for key, val in detail_score.items %}
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small mb-1">
+          <span>
+            {% if key == 'skill_wajib' %}Skill Wajib
+            {% elif key == 'skill_diinginkan' %}Skill Tambahan
+            {% elif key == 'pendidikan' %}Pendidikan
+            {% else %}Pengalaman{% endif %}
+            <span class="text-muted">(bobot {{ val.bobot }}%)</span>
+          </span>
+          <span class="fw-bold
+            {% if val.score >= 80 %}text-success{% elif val.score >= 50 %}text-warning{% else %}text-danger{% endif %}">
+            {{ val.score }}/100
+          </span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar
+            {% if val.score >= 80 %}bg-success{% elif val.score >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+            style="width:{{ val.score }}%"></div>
+        </div>
+        {% if val.note %}<small class="text-muted">{{ val.note }}</small>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="col-md-4">
+      <p class="small text-muted mb-1 fw-semibold">Kriteria yang Digunakan:</p>
+      <table class="info-tbl w-100 small">
+        <tr><td>Pendidikan Min.</td><td>{{ kriteria.pendidikan_min|default:"-" }}</td></tr>
+        <tr><td>Pengalaman Min.</td><td>{{ kriteria.pengalaman_min|default:"0" }} tahun</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- SKILL -->
+  <div class="section-title">ANALISIS SKILL</div>
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <p class="fw-semibold small mb-1" style="color:#155724;">✅ Skill Dimiliki ({{ skill_match|length }})</p>
+      {% for s in skill_match %}<span class="skill-badge skill-ok">{{ s }}</span>{% empty %}<span class="text-muted small">-</span>{% endfor %}
+    </div>
+    <div class="col-md-4">
+      <p class="fw-semibold small mb-1" style="color:#7b1111;">❌ Skill Kurang / Gap ({{ skill_gap|length }})</p>
+      {% for s in skill_gap %}<span class="skill-badge skill-gap">{{ s }}</span>{% empty %}<span class="text-muted small">Tidak ada gap</span>{% endfor %}
+    </div>
+    {% if skill_extra %}
+    <div class="col-md-4">
+      <p class="fw-semibold small mb-1" style="color:#0a4a7b;">⭐ Skill Bonus ({{ skill_extra|length }})</p>
+      {% for s in skill_extra %}<span class="skill-badge skill-ext">{{ s }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- KELEBIHAN & KEKURANGAN -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <div class="section-title">KELEBIHAN KANDIDAT</div>
+      <ul class="analysis-list">
+        {% for item in ats_detail.kelebihan %}
+          <li>{{ item }}</li>
+        {% empty %}
+          <li class="text-muted">-</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <div class="section-title">KEKURANGAN / GAP</div>
+      <ul class="analysis-list">
+        {% for item in ats_detail.kekurangan %}
+          <li>{{ item }}</li>
+        {% empty %}
+          <li class="text-muted">Tidak ada kekurangan signifikan</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- KESIMPULAN -->
+  <div class="section-title">KESIMPULAN & REKOMENDASI</div>
+  <div class="rekomen-box rekomen-{{ candidate.total_rekomendasi }} mb-3">
+    <div class="row align-items-center">
+      <div class="col-md-2 text-center">
+        <div class="fw-bold fs-3
+          {% if candidate.total_score >= 80 %}text-success
+          {% elif candidate.total_score >= 50 %}text-warning
+          {% else %}text-danger{% endif %}">
+          {{ candidate.total_score }}/100
+        </div>
+        <div class="small">Grade {{ candidate.total_grade }}</div>
+      </div>
+      <div class="col-md-10">
+        <strong class="fs-6">Rekomendasi: {{ candidate.total_rekomendasi|upper }}</strong><br>
+        <span class="small">
+          {% if candidate.total_rekomendasi == 'Lanjutkan' %}
+            Kandidat memenuhi kualifikasi yang dibutuhkan. Disarankan untuk melanjutkan ke tahap seleksi berikutnya.
+          {% elif candidate.total_rekomendasi == 'Pertimbangkan' %}
+            Kandidat memenuhi sebagian kualifikasi. Perlu pertimbangan lebih lanjut dan interview mendalam untuk memverifikasi kemampuan.
+          {% else %}
+            Kandidat tidak memenuhi kualifikasi minimum yang dibutuhkan untuk posisi ini.
+          {% endif %}
+        </span>
+        {% if skill_gap %}
+          <br><span class="small text-muted">Gap skill utama: {{ skill_gap|join:", " }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+
+  {% if candidate.catatan %}
+  <div class="section-title">CATATAN RECRUITER</div>
+  <p class="small">{{ candidate.catatan|linebreaks }}</p>
+  {% endif %}
+
+  <!-- Footer -->
+  <hr class="mt-4">
+  <div class="d-flex justify-content-between small text-muted">
+    <span>Dicetak dari HRIS SmartDesk</span>
+    <span>{{ print_date|date:"d F Y" }}</span>
+    <span>Dokumen ini bersifat rahasia</span>
+  </div>
+
+</div>
+
+<script>
+window.onload = function() {
+  // Auto-print jika ada parameter ?print=1
+  if (new URLSearchParams(window.location.search).get('print') === '1') {
+    window.print();
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,780 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{{ candidate.nama }} — Pipeline Rekrutmen{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  {# ── HEADER ─────────────────────────────────────────────────────────────── #}
+  <div class="row mb-3">
+    <div class="col">
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <a href="{% url 'candidate_list' %}" class="btn btn-sm btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i>Kembali
+        </a>
+        <div>
+          <h4 class="mb-0 fw-bold">{{ candidate.nama }}</h4>
+          <small class="text-muted">{{ candidate.jabatan_dilamar }}
+            {% if candidate.mprf %} &middot; MPRF: {{ candidate.mprf.nomor_mprf }}{% endif %}
+          </small>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+          <a href="{% url 'candidate_print' candidate.pk %}" class="btn btn-sm btn-outline-secondary" target="_blank">
+            <i class="fas fa-print me-1"></i>Print
+          </a>
+          <a href="{% url 'candidate_edit' candidate.pk %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-edit me-1"></i>Edit
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    {# ── SIDEBAR: INFO + SKOR ─────────────────────────────────────────────── #}
+    <div class="col-lg-3">
+
+      {# Skor Total #}
+      <div class="card shadow-sm mb-3">
+        <div class="card-body text-center py-4">
+          {% if candidate.total_score is not None %}
+            <div class="position-relative d-inline-block mb-2">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#e9ecef" stroke-width="12"/>
+                <circle cx="60" cy="60" r="50" fill="none"
+                  stroke="{% if candidate.total_score >= 80 %}#28a745{% elif candidate.total_score >= 65 %}#ffc107{% elif candidate.total_score >= 50 %}#fd7e14{% else %}#dc3545{% endif %}"
+                  stroke-width="12"
+                  stroke-dasharray="{{ candidate.total_score }} 100"
+                  stroke-dashoffset="25"
+                  stroke-linecap="round"
+                  transform="rotate(-90 60 60)"/>
+                <text x="60" y="68" text-anchor="middle" font-size="26" font-weight="bold"
+                  fill="{% if candidate.total_score >= 80 %}#28a745{% elif candidate.total_score >= 65 %}#ffc107{% else %}#dc3545{% endif %}">
+                  {{ candidate.total_score }}
+                </text>
+              </svg>
+            </div>
+            <div class="h5 mb-1">Grade
+              <span class="badge fs-6 {% if candidate.total_grade == 'A' %}bg-success{% elif candidate.total_grade == 'B' %}bg-info{% elif candidate.total_grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                {{ candidate.total_grade }}
+              </span>
+            </div>
+            <small class="badge bg-{{ candidate.rekomendasi_color }}">{{ candidate.total_rekomendasi }}</small>
+            {% if candidate.active_modules %}
+            <hr class="my-2">
+            <div class="text-start">
+              {% for mod in candidate.active_modules %}
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <small><i class="fas {{ mod.icon }} me-1 text-muted"></i>{{ mod.nama }}</small>
+                <span class="badge bg-secondary">{{ mod.score }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          {% else %}
+            <div class="text-muted py-3">
+              <i class="fas fa-chart-pie fa-3x mb-2 d-block opacity-25"></i>Belum ada skor
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Info #}
+      <div class="card shadow-sm">
+        <div class="card-header py-2 fw-semibold small"><i class="fas fa-user me-2 text-muted"></i>Info Kandidat</div>
+        <div class="card-body p-3 small">
+          <div class="mb-1"><span class="text-muted">Status:</span>
+            <span class="badge bg-primary ms-1">{{ candidate.get_status_display }}</span></div>
+          <div class="mb-1"><span class="text-muted">Email:</span> {{ candidate.email|default:'-' }}</div>
+          <div class="mb-1"><span class="text-muted">No. HP:</span> {{ candidate.no_hp|default:'-' }}</div>
+          <div class="mb-1"><span class="text-muted">Pendidikan:</span> {{ candidate.pendidikan|default:'-' }}</div>
+          <div class="mb-1"><span class="text-muted">Pengalaman:</span> {{ candidate.pengalaman_tahun }} tahun</div>
+          {% if candidate.ekspektasi_gaji %}
+          <div class="mb-1"><span class="text-muted">Eks. Gaji:</span> Rp {{ candidate.ekspektasi_gaji|floatformat:0 }}</div>
+          {% endif %}
+          {% if candidate.cv_file %}
+          <div class="mt-2">
+            <a href="{{ candidate.cv_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary w-100">
+              <i class="fas fa-file-pdf me-1"></i>Lihat CV
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    {# ── KONTEN KANAN: PIPELINE ───────────────────────────────────────────── #}
+    <div class="col-lg-9">
+
+      {# PIPELINE STEPPER #}
+      <div class="card shadow-sm mb-3">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center overflow-auto pb-1" id="pipeline-steps">
+            {% for step_num, step_label in pipeline_steps %}
+            <div class="text-center flex-shrink-0 me-1" style="min-width:75px;cursor:pointer"
+                 onclick="showTab({{ step_num }})">
+              <div class="mx-auto mb-1 d-flex align-items-center justify-content-center fw-bold step-circle-{{ step_num }}"
+                   id="step-circle-{{ step_num }}"
+                   style="width:36px;height:36px;border-radius:50%;font-size:0.85rem;
+                   background:{% if step_num == 1 %}#0d6efd;color:white{% else %}#e9ecef;color:#6c757d{% endif %}">
+                {{ step_num }}
+              </div>
+              <div style="font-size:0.65rem;line-height:1.2;color:#6c757d">{{ step_label }}</div>
+            </div>
+            {% if not forloop.last %}
+            <div class="flex-shrink-0" style="width:16px;height:2px;background:#dee2e6;margin-bottom:16px"></div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      {# ── TAB 1: ATS ─────────────────────────────────────────────────────── #}
+      <div id="tab-content-1">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold"><i class="fas fa-file-alt me-2 text-primary"></i>Tahap 1 — ATS CV Screening</span>
+            {% if not candidate.ats_score %}
+            <a href="{% url 'ats_scan' %}" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Scan CV</a>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            {% if candidate.ats_score is not None %}
+            <div class="row g-3">
+              <div class="col-md-3 text-center">
+                <div class="display-4 fw-bold {% if candidate.ats_score >= 80 %}text-success{% elif candidate.ats_score >= 65 %}text-warning{% else %}text-danger{% endif %}">
+                  {{ candidate.ats_score }}
+                </div>
+                <div class="text-muted small">Skor ATS</div>
+                <span class="badge mt-1 {% if candidate.ats_grade == 'A' %}bg-success{% elif candidate.ats_grade == 'B' %}bg-info{% elif candidate.ats_grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                  Grade {{ candidate.ats_grade }}
+                </span>
+                <div class="mt-2"><span class="badge bg-{{ candidate.rekomendasi_color }}">{{ candidate.ats_rekomendasi }}</span></div>
+              </div>
+              <div class="col-md-9">
+                {% if skill_match %}
+                <p class="mb-1 small fw-semibold text-success">✅ Skill Match:</p>
+                <div class="mb-2">{% for s in skill_match %}<span class="badge bg-success-subtle text-success border border-success me-1 mb-1">{{ s }}</span>{% endfor %}</div>
+                {% endif %}
+                {% if skill_gap %}
+                <p class="mb-1 small fw-semibold text-danger">❌ Skill Gap:</p>
+                <div class="mb-2">{% for s in skill_gap %}<span class="badge bg-danger-subtle text-danger border border-danger me-1 mb-1">{{ s }}</span>{% endfor %}</div>
+                {% endif %}
+                {% if ats_detail.kelebihan %}
+                <p class="mb-1 small fw-semibold">👍 Kelebihan:</p>
+                <ul class="small mb-0 ps-3">{% for k in ats_detail.kelebihan %}<li>{{ k }}</li>{% endfor %}</ul>
+                {% endif %}
+              </div>
+            </div>
+            {% if detail_score %}
+            <hr><p class="small fw-semibold mb-2">Breakdown Skor:</p>
+            <div class="row g-2">
+              {% for kat, val in detail_score.items %}
+              <div class="col-6 col-md-3">
+                <div class="bg-light rounded p-2 text-center small">
+                  <div class="fw-bold text-primary">{{ val.score }}/{{ val.bobot }}</div>
+                  <div class="text-muted" style="font-size:0.7rem">{{ kat|capfirst }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-file-search fa-3x mb-2 d-block opacity-25"></i>
+              <p>Belum ada hasil ATS.</p>
+              <a href="{% url 'ats_scan' %}" class="btn btn-primary btn-sm"><i class="fas fa-search me-1"></i>Scan CV</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ── TAB 2: PSIKOTES ────────────────────────────────────────────────── #}
+      <div id="tab-content-2" class="d-none">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold"><i class="fas fa-brain me-2" style="color:#6f42c1"></i>Tahap 2 — Psikotes</span>
+            <a href="{% url 'psychotest_session_create' candidate.pk %}" class="btn btn-sm btn-primary">
+              <i class="fas fa-plus me-1"></i>Buat Sesi
+            </a>
+          </div>
+          <div class="card-body">
+            {% if psy_result %}
+            <div class="row g-3">
+              <div class="col-md-6">
+                <h6 class="text-muted">Skor Kognitif</h6>
+                <div class="row g-2 text-center mb-3">
+                  {% if psy_result.skor_logika is not None %}
+                  <div class="col-4"><div class="rounded bg-primary bg-opacity-10 p-2">
+                    <div class="fw-bold fs-5 text-primary">{{ psy_result.skor_logika }}</div><small class="text-muted">Logika</small>
+                  </div></div>{% endif %}
+                  {% if psy_result.skor_verbal is not None %}
+                  <div class="col-4"><div class="rounded bg-success bg-opacity-10 p-2">
+                    <div class="fw-bold fs-5 text-success">{{ psy_result.skor_verbal }}</div><small class="text-muted">Verbal</small>
+                  </div></div>{% endif %}
+                  {% if psy_result.skor_numerik is not None %}
+                  <div class="col-4"><div class="rounded bg-warning bg-opacity-10 p-2">
+                    <div class="fw-bold fs-5 text-warning">{{ psy_result.skor_numerik }}</div><small class="text-muted">Numerik</small>
+                  </div></div>{% endif %}
+                </div>
+                <div class="text-center">
+                  <span class="badge bg-primary fs-6">Total: {{ psy_result.skor_total }}/100</span>
+                  <span class="badge ms-2 {% if psy_result.grade == 'A' %}bg-success{% elif psy_result.grade == 'B' %}bg-info{% elif psy_result.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                    Grade {{ psy_result.grade }}
+                  </span>
+                </div>
+              </div>
+              {% if psy_result.disc_profil %}
+              <div class="col-md-6">
+                <h6 class="text-muted">Profil DISC</h6>
+                <canvas id="discChart" height="160"></canvas>
+                <div class="text-center mt-1">
+                  <span class="badge bg-dark">{{ psy_result.disc_profil }}</span>
+                  {% if disc_info %}<p class="small text-muted mb-0 mt-1">{{ disc_info.nama }}</p>{% endif %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            {% if disc_info %}
+            <hr>
+            <div class="alert alert-light border small mb-0">
+              <strong>{{ disc_info.nama }}:</strong> {{ disc_info.deskripsi }}
+              <br><span class="text-muted">Cocok untuk: {{ disc_info.cocok_untuk }}</span>
+            </div>
+            {% endif %}
+            {% if psy_session %}
+            <hr>
+            <small class="text-muted">Link tes: </small>
+            <code class="bg-light px-2 py-1 rounded small">{{ psy_link }}</code>
+            <button class="btn btn-sm btn-outline-secondary ms-2 py-0" onclick="navigator.clipboard.writeText('{{ psy_link }}');this.textContent='✅'">
+              <i class="fas fa-copy"></i>
+            </button>
+            {% endif %}
+            {% elif psy_session %}
+            <div class="text-center py-3">
+              <i class="fas fa-hourglass-half fa-2x text-warning mb-2 d-block"></i>
+              <p class="mb-1">Menunggu kandidat mengerjakan tes.</p>
+              <p class="small text-muted">Status: <strong>{{ psy_session.get_status_display }}</strong> · Expired: {{ psy_session.expired_at|date:"d M Y H:i" }}</p>
+              <div class="input-group input-group-sm mx-auto" style="max-width:480px">
+                <input type="text" class="form-control" value="{{ psy_link }}" id="psy-link-inp" readonly>
+                <button class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('psy-link-inp').value);this.textContent='✅'">
+                  <i class="fas fa-copy"></i>
+                </button>
+                {% if candidate.no_hp %}
+                <a href="https://wa.me/62{{ candidate.no_hp|slice:'1:' }}?text=Halo+{{ candidate.nama|urlencode }}%2C+silakan+kerjakan+psikotes+di%3A+{{ psy_link|urlencode }}"
+                   class="btn btn-success" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-brain fa-3x mb-2 d-block opacity-25"></i>
+              <p>Belum ada sesi psikotes.</p>
+              <a href="{% url 'psychotest_session_create' candidate.pk %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>Buat Sesi Psikotes
+              </a>
+            </div>
+            {% endif %}
+
+            <!-- Advanced Psychometric Test Add-On -->
+            <hr class="my-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="fw-semibold" style="font-size:.9rem;">
+                <i class="fas fa-flask me-1" style="color:#7b1fa2;"></i>Advanced Psychometric Test
+              </span>
+              {% if addon_advanced_psychotest %}
+              <a href="{% url 'adv_session_create' candidate.pk %}" class="btn btn-sm btn-outline-secondary" style="border-color:#7b1fa2;color:#7b1fa2;">
+                <i class="fas fa-plus me-1"></i>Buat Sesi Advanced
+              </a>
+              {% else %}
+              <a href="#" class="btn btn-sm btn-outline-secondary disabled" style="opacity:.6;">
+                <i class="fas fa-lock me-1"></i>Lisensi Diperlukan
+              </a>
+              {% endif %}
+            </div>
+
+            {% if addon_advanced_psychotest %}
+            {% with adv_sessions=candidate.adv_sessions.all %}
+            {% if adv_sessions %}
+
+              {% for advsess in adv_sessions %}
+              {% if advsess.status == 'completed' %}
+
+              {# ── Sesi selesai: tampilkan grafik hasil ── #}
+              <div class="border rounded-3 p-3 mb-3" style="background:#faf4ff;">
+
+                {# Header sesi #}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    <span class="fw-semibold" style="font-size:.88rem;color:#7b1fa2;">
+                      <i class="fas fa-check-circle me-1"></i>Sesi Selesai
+                    </span>
+                    <span class="text-muted ms-2" style="font-size:.78rem;">{{ advsess.completed_at|date:"d/m/Y H:i"|default:"" }}</span>
+                  </div>
+                  <a href="{% url 'adv_session_detail' advsess.pk %}" class="btn btn-sm btn-outline-secondary" style="font-size:.78rem;">
+                    <i class="fas fa-expand me-1"></i>Detail Lengkap
+                  </a>
+                </div>
+
+                {# Badge paket tes #}
+                <div class="d-flex flex-wrap gap-1 mb-3">
+                  {% for tipe in advsess.paket %}
+                  <span class="badge rounded-pill px-3" style="background:#7b1fa2;font-size:.75rem;">{{ tipe }}</span>
+                  {% endfor %}
+                </div>
+
+                {# Donut skor per tes #}
+                <div class="d-flex flex-wrap gap-3 justify-content-center mb-3">
+                  {% for res in advsess.results.all %}
+                  <div class="text-center">
+                    <div style="position:relative;width:80px;height:80px;margin:0 auto;">
+                      <canvas id="cd_{{ advsess.pk }}_{{ res.test_type }}" width="80" height="80"></canvas>
+                      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.1;">
+                        {% if res.skor_total is not None %}
+                        <div class="fw-bold" style="font-size:1rem;color:{% if res.grade == 'A' %}#388e3c{% elif res.grade == 'B' %}#1976d2{% elif res.grade == 'C' %}#f57c00{% else %}#c62828{% endif %};">{{ res.skor_total }}%</div>
+                        <div style="font-size:.6rem;color:#888;">{{ res.grade }}</div>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div style="font-size:.72rem;font-weight:600;margin-top:4px;">
+                      {% if res.test_type == 'raven' %}Raven
+                      {% elif res.test_type == 'cogspeed' %}CogSpeed
+                      {% elif res.test_type == 'bigfive' %}Big Five
+                      {% elif res.test_type == 'sjt' %}SJT
+                      {% elif res.test_type == 'cfit' %}CFIT{% endif %}
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+
+                {# Radar Big Five jika ada #}
+                {% for res in advsess.results.all %}
+                {% if res.test_type == 'bigfive' and res.ocean_o is not None %}
+                <div class="row g-2 align-items-center mt-1">
+                  <div class="col-5">
+                    <canvas id="cr_{{ advsess.pk }}" height="180"></canvas>
+                  </div>
+                  <div class="col-7" style="font-size:.78rem;">
+                    {% with o=res.ocean_o c=res.ocean_c e=res.ocean_e a=res.ocean_a n=res.ocean_n %}
+                    <div class="mb-1"><div class="d-flex justify-content-between"><span>🔵 Openness</span><strong>{{ o }}%</strong></div>
+                      <div class="progress" style="height:6px;"><div class="progress-bar" style="width:{{ o }}%;background:#1976d2;"></div></div></div>
+                    <div class="mb-1"><div class="d-flex justify-content-between"><span>🟢 Conscientiousness</span><strong>{{ c }}%</strong></div>
+                      <div class="progress" style="height:6px;"><div class="progress-bar" style="width:{{ c }}%;background:#388e3c;"></div></div></div>
+                    <div class="mb-1"><div class="d-flex justify-content-between"><span>🟠 Extraversion</span><strong>{{ e }}%</strong></div>
+                      <div class="progress" style="height:6px;"><div class="progress-bar" style="width:{{ e }}%;background:#f57c00;"></div></div></div>
+                    <div class="mb-1"><div class="d-flex justify-content-between"><span>🟣 Agreeableness</span><strong>{{ a }}%</strong></div>
+                      <div class="progress" style="height:6px;"><div class="progress-bar" style="width:{{ a }}%;background:#7b1fa2;"></div></div></div>
+                    <div class="mb-1"><div class="d-flex justify-content-between"><span>🔴 Neuroticism</span><strong>{{ n }}%</strong></div>
+                      <div class="progress" style="height:6px;"><div class="progress-bar" style="width:{{ n }}%;background:#c62828;"></div></div></div>
+                    {% endwith %}
+                  </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+
+              </div>{# end card sesi selesai #}
+
+              {% else %}
+
+              {# ── Sesi belum selesai: tampilkan status saja ── #}
+              <div class="border rounded p-2 mb-2 d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-semibold" style="font-size:.83rem;">
+                    {% for tipe in advsess.paket %}{{ tipe }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                  </div>
+                  {% if advsess.status == 'started' %}<span class="badge bg-warning text-dark" style="font-size:.7rem;">Sedang Dikerjakan</span>
+                  {% elif advsess.status == 'expired' %}<span class="badge bg-danger" style="font-size:.7rem;">Expired</span>
+                  {% else %}<span class="badge bg-secondary" style="font-size:.7rem;">Pending</span>{% endif %}
+                </div>
+                <a href="{% url 'adv_session_detail' advsess.pk %}" class="btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a>
+              </div>
+
+              {% endif %}
+              {% endfor %}
+
+            {% else %}
+            <div class="text-muted text-center py-3" style="font-size:.85rem;">
+              <i class="fas fa-flask opacity-25 d-block mb-1" style="font-size:1.5rem;"></i>
+              Belum ada sesi advanced test.
+            </div>
+            {% endif %}
+            {% endwith %}
+            {% endif %}
+
+            {# Chart.js inline untuk Advanced Psychotest di candidate_detail #}
+            {% if addon_advanced_psychotest %}
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+            <script>
+            (function(){
+              const GC = {A:'#388e3c',B:'#1976d2',C:'#f57c00',D:'#c62828'};
+              function donut(id, skor, grade){
+                const el = document.getElementById(id);
+                if(!el) return;
+                new Chart(el,{type:'doughnut',data:{datasets:[{data:[skor,100-skor],backgroundColor:[GC[grade]||'#9e9e9e','#f0f0f0'],borderWidth:0}]},options:{cutout:'70%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:700}}});
+              }
+              function radar(id, vals){
+                const el = document.getElementById(id);
+                if(!el) return;
+                new Chart(el,{type:'radar',data:{labels:['Open','Consc','Extra','Agree','Neuro'],datasets:[{data:vals,backgroundColor:'rgba(123,31,162,.15)',borderColor:'#7b1fa2',borderWidth:2,pointBackgroundColor:'#7b1fa2',pointRadius:4}]},options:{scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:9}},pointLabels:{font:{size:9,weight:'600'},color:['#1976d2','#388e3c','#f57c00','#7b1fa2','#c62828']}}},plugins:{legend:{display:false}},animation:{duration:700}}});
+              }
+              {% for advsess in candidate.adv_sessions.all %}
+              {% if advsess.status == 'completed' %}
+                {% for res in advsess.results.all %}
+                {% if res.skor_total is not None %}
+                donut('cd_{{ advsess.pk }}_{{ res.test_type }}', {{ res.skor_total }}, '{{ res.grade }}');
+                {% endif %}
+                {% if res.test_type == 'bigfive' and res.ocean_o is not None %}
+                radar('cr_{{ advsess.pk }}', [{{ res.ocean_o }},{{ res.ocean_c }},{{ res.ocean_e }},{{ res.ocean_a }},{{ res.ocean_n }}]);
+                {% endif %}
+                {% endfor %}
+              {% endif %}
+              {% endfor %}
+            })();
+            </script>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ── TAB 3: MCU ──────────────────────────────────────────────────────── #}
+      <div id="tab-content-3" class="d-none">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold"><i class="fas fa-heartbeat me-2 text-danger"></i>Tahap 3 — Medical Check Up</span>
+            <a href="{% url 'mcu_form' candidate.pk %}" class="btn btn-sm btn-primary"><i class="fas fa-edit me-1"></i>Input MCU</a>
+          </div>
+          <div class="card-body">
+            {% if mcu %}
+            <div class="row g-3">
+              <div class="col-md-4 text-center">
+                <div class="rounded p-4 {% if mcu.status == 'fit' %}bg-success bg-opacity-10 border border-success{% elif mcu.status == 'fit_note' %}bg-warning bg-opacity-10 border border-warning{% elif mcu.status == 'unfit' %}bg-danger bg-opacity-10 border border-danger{% else %}bg-light border{% endif %}">
+                  <i class="fas fa-heartbeat fa-3x mb-2 {% if mcu.status == 'fit' %}text-success{% elif mcu.status == 'fit_note' %}text-warning{% elif mcu.status == 'unfit' %}text-danger{% else %}text-muted{% endif %}"></i>
+                  <div class="fw-bold fs-5">{{ mcu.get_status_display }}</div>
+                </div>
+              </div>
+              <div class="col-md-8 small">
+                <table class="table table-sm table-borderless">
+                  <tr><td class="text-muted">Tanggal MCU</td><td>{{ mcu.tanggal_mcu|date:"d M Y"|default:'-' }}</td></tr>
+                  <tr><td class="text-muted">Faskes</td><td>{{ mcu.faskes|default:'-' }}</td></tr>
+                  <tr><td class="text-muted">Diverifikasi</td><td>{{ mcu.approved_by|default:'-' }}</td></tr>
+                  {% if mcu.catatan %}<tr><td class="text-muted">Catatan</td><td>{{ mcu.catatan }}</td></tr>{% endif %}
+                  {% if mcu.file_hasil %}<tr><td></td><td>
+                    <a href="{{ mcu.file_hasil.url }}" target="_blank" class="btn btn-sm btn-outline-primary py-0">
+                      <i class="fas fa-file-medical me-1"></i>Lihat File
+                    </a>
+                  </td></tr>{% endif %}
+                </table>
+                {% if mcu.status == 'unfit' %}
+                <div class="alert alert-danger py-2 small mb-0">
+                  <i class="fas fa-exclamation-triangle me-1"></i>Unfit — kandidat otomatis Rejected.
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-clinic-medical fa-3x mb-2 d-block opacity-25"></i>
+              <p>Belum ada data MCU.</p>
+              <a href="{% url 'mcu_form' candidate.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Input MCU</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ── TAB 4: INTERVIEW ────────────────────────────────────────────────── #}
+      <div id="tab-content-4" class="d-none">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold"><i class="fas fa-comments me-2 text-info"></i>Tahap 4 — Interview</span>
+            <a href="{% url 'interview_add' candidate.pk %}" class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i>Tambah Sesi</a>
+          </div>
+          <div class="card-body">
+            {% if interviews %}
+            {% if candidate.interview_score is not None %}
+            <div class="alert alert-info py-2 small mb-3">
+              Rata-rata skor interview: <strong>{{ candidate.interview_score }}/100</strong>
+            </div>
+            {% endif %}
+            {% for iv in interviews %}
+            <div class="border rounded p-3 mb-2">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <span class="badge bg-secondary me-1">{{ iv.get_tipe_display }}</span>
+                  <strong>{{ iv.interviewer }}</strong>
+                  <span class="text-muted small ms-2">{{ iv.tanggal|date:"d M Y" }}{% if iv.jam %} {{ iv.jam|time:"H:i" }}{% endif %}</span>
+                  {% if iv.lokasi %}<span class="text-muted small ms-2"><i class="fas fa-map-marker-alt me-1"></i>{{ iv.lokasi }}</span>{% endif %}
+                </div>
+                <a href="{% url 'interview_edit' candidate.pk iv.pk %}" class="btn btn-xs btn-outline-secondary btn-sm py-0 px-2">Edit</a>
+              </div>
+              {% if iv.skor_rata is not None %}
+              <div class="row g-1 mb-2">
+                <div class="col-3 text-center"><div class="bg-light rounded p-1 small">
+                  <div class="fw-bold text-primary">{{ iv.nilai_technical|default:'-' }}</div>
+                  <div class="text-muted" style="font-size:0.65rem">Technical</div>
+                </div></div>
+                <div class="col-3 text-center"><div class="bg-light rounded p-1 small">
+                  <div class="fw-bold text-success">{{ iv.nilai_attitude|default:'-' }}</div>
+                  <div class="text-muted" style="font-size:0.65rem">Attitude</div>
+                </div></div>
+                <div class="col-3 text-center"><div class="bg-light rounded p-1 small">
+                  <div class="fw-bold text-info">{{ iv.nilai_communication|default:'-' }}</div>
+                  <div class="text-muted" style="font-size:0.65rem">Communication</div>
+                </div></div>
+                <div class="col-3 text-center"><div class="bg-light rounded p-1 small">
+                  <div class="fw-bold text-warning">{{ iv.nilai_culture_fit|default:'-' }}</div>
+                  <div class="text-muted" style="font-size:0.65rem">Culture Fit</div>
+                </div></div>
+              </div>
+              <small>Rata-rata: <strong>{{ iv.skor_rata }}/100</strong></small>
+              {% if iv.rekomendasi %}
+              <span class="badge ms-2 {% if iv.rekomendasi == 'lanjut' %}bg-success{% elif iv.rekomendasi == 'pertimbangkan' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                {{ iv.get_rekomendasi_display }}
+              </span>
+              {% endif %}
+              {% endif %}
+              {% if iv.catatan %}<p class="text-muted small mt-2 mb-0"><i class="fas fa-comment me-1"></i>{{ iv.catatan }}</p>{% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-comments fa-3x mb-2 d-block opacity-25"></i>
+              <p>Belum ada sesi interview.</p>
+              <a href="{% url 'interview_add' candidate.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Jadwalkan Interview</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ── TAB 5: REKOMENDASI ──────────────────────────────────────────────── #}
+      <div id="tab-content-5" class="d-none">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold"><i class="fas fa-check-circle me-2 text-success"></i>Tahap 5 — Rekomendasi HR</span>
+            <a href="{% url 'rekomendasi_form' candidate.pk %}" class="btn btn-sm btn-primary"><i class="fas fa-gavel me-1"></i>Buat Keputusan</a>
+          </div>
+          <div class="card-body">
+            {% if rekomendasi_obj %}
+            <div class="text-center py-3">
+              <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center
+                {% if rekomendasi_obj.keputusan == 'lanjut_offering' %}bg-success{% elif rekomendasi_obj.keputusan == 'tolak' %}bg-danger{% else %}bg-warning{% endif %}"
+                style="width:80px;height:80px">
+                <i class="fas {% if rekomendasi_obj.keputusan == 'lanjut_offering' %}fa-thumbs-up{% elif rekomendasi_obj.keputusan == 'tolak' %}fa-thumbs-down{% else %}fa-pause{% endif %} fa-2x text-white"></i>
+              </div>
+              <h5>{{ rekomendasi_obj.get_keputusan_display }}</h5>
+              <p class="text-muted small">Oleh: <strong>{{ rekomendasi_obj.approved_by|default:'-' }}</strong>
+                {% if rekomendasi_obj.approved_at %} &middot; {{ rekomendasi_obj.approved_at|date:"d M Y H:i" }}{% endif %}
+              </p>
+              {% if rekomendasi_obj.alasan %}
+              <div class="alert alert-light border text-start small mx-auto" style="max-width:400px">
+                <strong>Catatan:</strong> {{ rekomendasi_obj.alasan }}
+              </div>
+              {% endif %}
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-balance-scale fa-3x mb-2 d-block opacity-25"></i>
+              <p>Belum ada keputusan HR.</p>
+              <a href="{% url 'rekomendasi_form' candidate.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-gavel me-1"></i>Buat Keputusan</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ── TAB 6: OFFERING ─────────────────────────────────────────────────── #}
+      <div id="tab-content-6" class="d-none">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold"><i class="fas fa-file-contract me-2 text-warning"></i>Tahap 6 — Offering Letter</span>
+            <a href="{% url 'offering_add' %}" class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i>Buat Offering</a>
+          </div>
+          <div class="card-body">
+            {% if offering_letters %}
+            {% for ol in offering_letters %}
+            <div class="border rounded p-3 mb-2 d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ ol.nomor }}</strong>
+                <span class="badge ms-2 {% if ol.status == 'Accepted' %}bg-success{% elif ol.status == 'Rejected' %}bg-danger{% elif ol.status == 'Sent' %}bg-info{% else %}bg-secondary{% endif %}">{{ ol.status }}</span>
+                <div class="small text-muted mt-1">{{ ol.jabatan }} &middot; Rp {{ ol.gaji_pokok|floatformat:0 }} &middot; Mulai: {{ ol.tanggal_mulai_kerja|date:"d M Y" }}</div>
+              </div>
+              <a href="{% url 'offering_edit' ol.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-file-signature fa-3x mb-2 d-block opacity-25"></i>
+              <p>Belum ada Offering Letter.</p>
+              <a href="{% url 'offering_add' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Buat Offering Letter</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ── TAB 7: ONBOARDING ───────────────────────────────────────────────── #}
+      <div id="tab-content-7" class="d-none">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold"><i class="fas fa-door-open me-2 text-success"></i>Tahap 7 — Onboarding</span>
+            <a href="{% url 'onboarding_form' candidate.pk %}" class="btn btn-sm btn-primary"><i class="fas fa-edit me-1"></i>Update</a>
+          </div>
+          <div class="card-body">
+            {% if onboarding %}
+            <div class="row g-3">
+              <div class="col-md-6">
+                <h6 class="fw-semibold mb-2">Dokumen <span class="badge bg-primary ms-1">{{ onboarding.doc_progress.done }}/{{ onboarding.doc_progress.total }}</span></h6>
+                <div class="progress mb-3" style="height:6px"><div class="progress-bar bg-primary" style="width:{{ onboarding.doc_progress.pct }}%"></div></div>
+                <ul class="list-unstyled small mb-0">
+                  <li>{% if onboarding.doc_ktp %}✅{% else %}⬜{% endif %} KTP</li>
+                  <li>{% if onboarding.doc_ijazah %}✅{% else %}⬜{% endif %} Ijazah</li>
+                  <li>{% if onboarding.doc_skck %}✅{% else %}⬜{% endif %} SKCK</li>
+                  <li>{% if onboarding.doc_foto %}✅{% else %}⬜{% endif %} Foto 4x6</li>
+                  <li>{% if onboarding.doc_npwp %}✅{% else %}⬜{% endif %} NPWP</li>
+                  <li>{% if onboarding.doc_bpjs %}✅{% else %}⬜{% endif %} BPJS</li>
+                  <li>{% if onboarding.doc_rekening %}✅{% else %}⬜{% endif %} Rekening</li>
+                  <li>{% if onboarding.doc_kontrak %}✅{% else %}⬜{% endif %} Kontrak</li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <h6 class="fw-semibold mb-2">Orientasi <span class="badge bg-success ms-1">{{ onboarding.ori_progress.done }}/{{ onboarding.ori_progress.total }}</span></h6>
+                <div class="progress mb-3" style="height:6px"><div class="progress-bar bg-success" style="width:{{ onboarding.ori_progress.pct }}%"></div></div>
+                <ul class="list-unstyled small mb-0">
+                  <li>{% if onboarding.ori_perkenalan %}✅{% else %}⬜{% endif %} Perkenalan Tim</li>
+                  <li>{% if onboarding.ori_sop %}✅{% else %}⬜{% endif %} Penjelasan SOP</li>
+                  <li>{% if onboarding.ori_fasilitas %}✅{% else %}⬜{% endif %} Pengenalan Fasilitas</li>
+                  <li>{% if onboarding.ori_sistem %}✅{% else %}⬜{% endif %} Akses Sistem / Email</li>
+                </ul>
+                {% if onboarding.tanggal_mulai %}
+                <p class="small text-muted mt-2 mb-0">Mulai: <strong>{{ onboarding.tanggal_mulai|date:"d M Y" }}</strong> &middot; Probasi: {{ onboarding.masa_probasi }} bulan</p>
+                {% endif %}
+              </div>
+            </div>
+            {% if onboarding.selesai %}
+            <div class="alert alert-success py-2 mt-3 mb-0 small">
+              <i class="fas fa-check-circle me-1"></i>Onboarding selesai!
+              {% if onboarding.employee_created %}Employee record sudah dibuat.{% endif %}
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-door-open fa-3x mb-2 d-block opacity-25"></i>
+              <p>Belum ada data onboarding.</p>
+              <a href="{% url 'onboarding_form' candidate.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Mulai Onboarding</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ── TAB 8: CLOSE ────────────────────────────────────────────────────── #}
+      <div id="tab-content-8" class="d-none">
+        <div class="card shadow-sm">
+          <div class="card-header py-2">
+            <span class="fw-semibold"><i class="fas fa-flag-checkered me-2"></i>Tahap 8 — Status Final</span>
+          </div>
+          <div class="card-body text-center py-4">
+            <div class="mb-3">
+              <span class="badge fs-5 py-3 px-4
+                {% if candidate.status == 'Hired' %}bg-success
+                {% elif candidate.status == 'Rejected' %}bg-danger
+                {% elif candidate.status == 'Withdrawn' %}bg-secondary
+                {% else %}bg-warning text-dark{% endif %}">
+                {{ candidate.get_status_display }}
+              </span>
+            </div>
+            {% if candidate.status == 'Hired' %}
+              <p class="text-success mb-1"><i class="fas fa-check-circle me-1"></i>Kandidat telah diterima.</p>
+              {% if candidate.mprf %}<p class="small text-muted">MPRF {{ candidate.mprf.nomor_mprf }}: {{ candidate.mprf.get_status_display }}</p>{% endif %}
+            {% elif candidate.status == 'Rejected' %}
+              <p class="text-danger"><i class="fas fa-times-circle me-1"></i>Kandidat ditolak.</p>
+            {% elif candidate.status == 'Withdrawn' %}
+              <p class="text-muted"><i class="fas fa-sign-out-alt me-1"></i>Kandidat mengundurkan diri.</p>
+            {% else %}
+              <p class="text-muted mb-3">Proses masih berlangsung.</p>
+              <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <form method="post" action="{% url 'candidate_update_status' candidate.pk %}">{% csrf_token %}
+                  <input type="hidden" name="status" value="Hired">
+                  <button type="submit" class="btn btn-success btn-sm"
+                          onclick="return confirm('Tandai kandidat sebagai DITERIMA (Hired)?')">
+                    <i class="fas fa-user-check me-1"></i>Terima (Hired)
+                  </button>
+                </form>
+                <form method="post" action="{% url 'candidate_update_status' candidate.pk %}">{% csrf_token %}
+                  <input type="hidden" name="status" value="Rejected">
+                  <button type="submit" class="btn btn-danger btn-sm"
+                          onclick="return confirm('Tandai kandidat sebagai DITOLAK (Rejected)?')">
+                    <i class="fas fa-user-times me-1"></i>Tolak (Rejected)
+                  </button>
+                </form>
+                <form method="post" action="{% url 'candidate_update_status' candidate.pk %}">{% csrf_token %}
+                  <input type="hidden" name="status" value="Withdrawn">
+                  <button type="submit" class="btn btn-outline-secondary btn-sm"
+                          onclick="return confirm('Tandai sebagai Withdrawn?')">
+                    <i class="fas fa-sign-out-alt me-1"></i>Withdrawn
+                  </button>
+                </form>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const TOTAL_TABS = 8;
+let currentTab = 1;
+
+function showTab(n) {
+  currentTab = n;
+  for (let i = 1; i <= TOTAL_TABS; i++) {
+    const panel = document.getElementById('tab-content-' + i);
+    const circle = document.getElementById('step-circle-' + i);
+    if (panel) panel.classList.toggle('d-none', i !== n);
+    if (circle) {
+      if (i === n) {
+        circle.style.background = '#0d6efd';
+        circle.style.color = 'white';
+      } else {
+        circle.style.background = '#e9ecef';
+        circle.style.color = '#6c757d';
+      }
+    }
+  }
+}
+
+// DISC Chart
+{% if psy_result and psy_result.disc_profil %}
+window.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('discChart');
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['D\nDominance', 'I\nInfluence', 'S\nSteadiness', 'C\nConscientious'],
+        datasets: [{
+          data: [{{ psy_result.disc_d }}, {{ psy_result.disc_i }}, {{ psy_result.disc_s }}, {{ psy_result.disc_c }}],
+          backgroundColor: ['rgba(220,53,69,0.8)','rgba(13,202,240,0.8)','rgba(25,135,84,0.8)','rgba(111,66,193,0.8)'],
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, max: 100 } }
+      }
+    });
+  }
+});
+{% endif %}
+
+showTab(1);
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Absensi{% endblock %}
+{% block breadcrumb %}Absensi{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-clock me-2 text-primary"></i>Data Absensi</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'attendance_bulk' %}" class="btn btn-success btn-sm"><i class="fas fa-users-cog me-1"></i>Input Massal</a>
+        <a href="{% url 'attendance_import' %}" class="btn btn-outline-success btn-sm"><i class="fas fa-file-import me-1"></i>Import Excel</a>
+        <a href="{% url 'check_in' %}" class="btn btn-primary btn-sm"><i class="fas fa-fingerprint me-1"></i>Check-In / Out</a>
+        <a href="{% url 'attendance_report' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-chart-bar me-1"></i>Laporan</a>
+    </div>
+</div>
+
+<div class="card mb-3"><div class="card-body py-3">
+    <!-- Shortcut filter cepat -->
+    <div class="d-flex gap-2 flex-wrap mb-2">
+        <small class="text-muted align-self-center me-1">Shortcut:</small>
+        <a href="?month=2&year=2025" class="btn btn-sm {% if month == 2 and year == 2025 %}btn-primary{% else %}btn-outline-secondary{% endif %} py-0 px-2" style="font-size:.78rem;">Feb 2025</a>
+        <a href="?month=3&year=2025" class="btn btn-sm {% if month == 3 and year == 2025 %}btn-primary{% else %}btn-outline-secondary{% endif %} py-0 px-2" style="font-size:.78rem;">Mar 2025</a>
+        <a href="?month=1&year=2025" class="btn btn-sm {% if month == 1 and year == 2025 %}btn-primary{% else %}btn-outline-secondary{% endif %} py-0 px-2" style="font-size:.78rem;">Jan 2025</a>
+    </div>
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3"><select name="month" class="form-select form-select-sm">
+            <option value="1" {% if month == 1 %}selected{% endif %}>Januari</option>
+            <option value="2" {% if month == 2 %}selected{% endif %}>Februari</option>
+            <option value="3" {% if month == 3 %}selected{% endif %}>Maret</option>
+            <option value="4" {% if month == 4 %}selected{% endif %}>April</option>
+            <option value="5" {% if month == 5 %}selected{% endif %}>Mei</option>
+            <option value="6" {% if month == 6 %}selected{% endif %}>Juni</option>
+            <option value="7" {% if month == 7 %}selected{% endif %}>Juli</option>
+            <option value="8" {% if month == 8 %}selected{% endif %}>Agustus</option>
+            <option value="9" {% if month == 9 %}selected{% endif %}>September</option>
+            <option value="10" {% if month == 10 %}selected{% endif %}>Oktober</option>
+            <option value="11" {% if month == 11 %}selected{% endif %}>November</option>
+            <option value="12" {% if month == 12 %}selected{% endif %}>Desember</option>
+        </select></div>
+        <div class="col-md-2"><input type="number" name="year" class="form-control form-control-sm" value="{{ year }}" min="2020" max="2030"></div>
+        <div class="col-auto"><button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search me-1"></i>Tampilkan</button></div>
+        <div class="col-md-3 ms-auto">
+            <input type="text" id="searchAbsensi" class="form-control form-control-sm" placeholder="Cari nama karyawan...">
+        </div>
+    </form>
+</div></div>
+
+<div class="card"><div class="card-body p-0">
+    <div class="table-responsive-wrap">
+<table class="table table-hover mb-0" id="tblAbsensi">
+        <thead class="table-light">
+            <tr>
+                <th>Karyawan</th>
+                <th>Tanggal</th>
+                <th>Check-In</th>
+                <th>Check-Out</th>
+                <th>Telat (menit)</th>
+                <th>Lembur (jam)</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for att in attendances %}
+            <tr>
+                <td>{{ att.employee.nama }}</td>
+                <td>{{ att.tanggal|date:"d/m/Y" }}</td>
+                <td>{{ att.check_in|time:"H:i"|default:"-" }}</td>
+                <td>{{ att.check_out|time:"H:i"|default:"-" }}</td>
+                <td>{% if att.keterlambatan > 0 %}<span class="text-danger">{{ att.keterlambatan }}</span>{% else %}-{% endif %}</td>
+                <td>{% if att.lembur_jam > 0 %}<span class="text-success">{{ att.lembur_jam }}</span>{% else %}-{% endif %}</td>
+                <td><span class="badge {% if att.status == 'Hadir' %}bg-success{% elif att.status == 'Cuti' %}bg-info{% elif att.status == 'Sakit' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ att.status }}</span></td>
+            </tr>
+            {% empty %}
+            <tr class="dt-empty">
+                    <td colspan="7" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-list-check"></i></div>
+                            <div class="empty-state-title">Belum ada data absensi</div>
+                            <div class="empty-state-desc">Import data absensi dari mesin fingerprint atau tambah manual.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'attendance_import' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Import Absensi</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div></div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <small class="text-muted">Total: {{ attendances|length }} data</small>
+    {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Search filter sederhana — tidak pakai DataTables, urutan server dipertahankan
+document.getElementById('searchAbsensi').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('#tblAbsensi tbody tr').forEach(function(row) {
+        var nama = row.cells[0] ? row.cells[0].textContent.toLowerCase() : '';
+        row.style.display = nama.includes(q) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

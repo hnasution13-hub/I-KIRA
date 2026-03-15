@@ -1,0 +1,39 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Pelanggaran Karyawan{% endblock %}
+{% block breadcrumb %}Industrial Relation / Pelanggaran{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-gavel me-2 text-danger"></i>Pelanggaran Karyawan</h4>
+    <a href="{% url 'violation_add' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Tambah SP</a>
+</div>
+<div class="card"><div class="card-body p-0">
+    <div class="table-responsive-wrap">
+<table class="table table-hover datatable mb-0" id="tbl-pelanggaran">
+        <thead class="table-light"><tr><th>Karyawan</th><th>Tipe SP</th><th>Tanggal</th><th>Tingkat</th><th>Poin</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody>
+            {% for v in violations %}
+            <tr>
+                <td><a href="{% url 'employee_detail' v.employee.pk %}" class="fw-semibold text-decoration-none">{{ v.employee.nama }}</a><br><small class="text-muted">{{ v.employee.nik }}</small></td>
+                <td><span class="badge bg-danger">{{ v.tipe_pelanggaran }}</span></td>
+                <td>{{ v.tanggal_kejadian|date:"d/m/Y" }}</td>
+                <td><span class="badge {% if v.tingkat == 'Berat' %}bg-danger{% elif v.tingkat == 'Sedang' %}bg-warning text-dark{% else %}bg-info{% endif %}">{{ v.tingkat }}</span></td>
+                <td class="text-center">{{ v.poin }}</td>
+                <td><span class="badge {% if v.status == 'Selesai' %}bg-success{% elif v.status == 'Proses' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ v.status }}</span></td>
+                <td><a href="{% url 'violation_detail' v.pk %}" class="btn btn-sm btn-outline-info me-1"><i class="fas fa-eye"></i></a><a href="{% url 'violation_edit' v.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a></td>
+            </tr>
+            {% empty %}
+            <tr class="dt-empty">
+                    <td colspan="7" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-shield-check"></i></div>
+                            <div class="empty-state-title">Tidak ada data pelanggaran</div>
+                            <div class="empty-state-desc">Tidak ada pelanggaran yang tercatat. Pertahankan!</div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div></div>
+{% endblock %}

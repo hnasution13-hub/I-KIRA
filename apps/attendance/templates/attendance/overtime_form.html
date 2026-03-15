@@ -1,0 +1,49 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit Lembur{% else %}Tambah Lembur{% endif %} - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Absensi / Lembur / {% if instance %}Edit{% else %}Tambah{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-business-time me-2 text-warning"></i>
+        {% if instance %}Edit Data Lembur{% else %}Tambah Data Lembur{% endif %}
+    </h4>
+    <a href="{% url 'overtime_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<div class="card" style="max-width:600px;">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <div class="label-with-help"><label class="form-label fw-semibold" for="id_employee">Karyawan <span class="text-danger">*</span></label>
+                {{ form.employee }}
+                {% if form.employee.errors %}<div class="text-danger small">{{ form.employee.errors }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold" for="id_tanggal_lembur">Tanggal Lembur <span class="text-danger">*</span></label>
+                {{ form.tanggal }}
+                {% if form.tanggal.errors %}<div class="text-danger small">{{ form.tanggal.errors }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+                <div class="label-with-help"><label class="form-label fw-semibold">Jam Lembur <span class="text-danger">*</span><div class="hris-tooltip-wrap"><span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span><div class="hris-tooltip-box" role="tooltip">Jumlah jam lembur yang diajukan. Lembur dihitung berdasarkan UU Ketenagakerjaan: jam ke-1 = 1.5x upah/jam, jam ke-2 dst = 2x upah/jam.</div></div></div>
+                {{ form.jam_lembur }}
+                <div class="form-text">Masukkan dalam satuan jam (contoh: 1.5 = 1 jam 30 menit)</div>
+                {% if form.jam_lembur.errors %}<div class="text-danger small">{{ form.jam_lembur.errors }}</div>{% endif %}
+            </div>
+            <div class="mb-4">
+                <div class="label-with-help"><label class="form-label fw-semibold">Keterangan<div class="hris-tooltip-wrap"><span class="hris-tooltip-icon" tabindex="0" role="button" aria-label="Bantuan">?</span><div class="hris-tooltip-box" role="tooltip">Tuliskan pekerjaan yang dikerjakan saat lembur. Contoh: "Finishing laporan keuangan Q3 untuk audit esok hari".</div></div></div>
+                {{ form.keterangan }}
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>Simpan
+                </button>
+                <a href="{% url 'overtime_list' %}" class="btn btn-outline-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

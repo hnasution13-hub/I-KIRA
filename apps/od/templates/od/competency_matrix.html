@@ -1,0 +1,103 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Competency Matrix{% endblock %}
+{% block breadcrumb %}OD — Competency Matrix{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="fas fa-table me-2" style="color:#818cf8;"></i>Competency Matrix</h4>
+    <small class="text-muted">Karyawan vs Kompetensi — hijau = memenuhi, merah = gap</small>
+  </div>
+  <a href="{% url 'od:competency_gap_report' %}?periode={{ periode }}" class="btn btn-sm btn-outline-primary">
+    <i class="fas fa-exclamation-triangle me-1"></i> Gap Report
+  </a>
+</div>
+
+<!-- FILTER -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
+      <select name="dept" class="form-select form-select-sm" style="width:200px;" onchange="this.form.submit()">
+        <option value="">Semua Departemen</option>
+        {% for d in depts %}
+        <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.nama }}</option>
+        {% endfor %}
+      </select>
+      <select name="periode" class="form-select form-select-sm" style="width:120px;" onchange="this.form.submit()">
+        <option value="2024" {% if periode == "2024" %}selected{% endif %}>2024</option>
+        <option value="2025" {% if periode == "2025" %}selected{% endif %}>2025</option>
+        <option value="2026" {% if periode == "2026" %}selected{% endif %}>2026</option>
+        <option value="2027" {% if periode == "2027" %}selected{% endif %}>2027</option>
+      </select>
+      {% if selected_dept %}
+      <a href="?periode={{ periode }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="d-flex gap-3 mb-3 small">
+  <span><span style="display:inline-block;width:14px;height:14px;background:#dcfce7;border:1px solid #86efac;border-radius:2px;"></span> Memenuhi / Melebihi</span>
+  <span><span style="display:inline-block;width:14px;height:14px;background:#fee2e2;border:1px solid #fca5a5;border-radius:2px;"></span> Gap (di bawah standar)</span>
+  <span><span style="display:inline-block;width:14px;height:14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:2px;"></span> Belum dinilai</span>
+</div>
+
+{% if matrix %}
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0" style="overflow-x:auto;">
+    <table class="table table-sm table-bordered mb-0" style="font-size:11px; min-width:900px;">
+      <thead style="background:#1e3a5f; color:#fff; position:sticky; top:0;">
+        <tr>
+          <th style="min-width:160px; padding:8px 12px;">Karyawan</th>
+          <th style="min-width:100px;">Jabatan</th>
+          {% for comp in competencies %}
+          <th class="text-center" style="min-width:80px; font-size:10px; writing-mode:vertical-rl; transform:rotate(180deg); height:80px; white-space:nowrap;">
+            {{ comp.kode }}
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in matrix %}
+        <tr>
+          <td class="fw-semibold ps-3">{{ row.employee.nama }}</td>
+          <td class="text-muted small">{{ row.employee.jabatan.nama|default:"—" }}</td>
+          {% for cell in row.cells %}
+          <td class="text-center"
+              style="{% if cell.aktual and cell.required %}{% if cell.gap >= 0 %}background:#dcfce7;{% else %}background:#fee2e2;{% endif %}{% else %}background:#f9fafb;{% endif %}"
+              title="{{ cell.competency.nama }}: Aktual {{ cell.aktual|default:'?' }} / Butuh {{ cell.required|default:'?' }}">
+            {% if cell.aktual %}
+              <span class="fw-bold">{{ cell.aktual }}</span>
+              {% if cell.required %}
+              <span class="text-muted">/{{ cell.required }}</span>
+              {% endif %}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- QUICK ASSESS LINK -->
+<div class="mt-3 d-flex gap-2 flex-wrap">
+  {% for row in matrix %}
+  <a href="{% url 'od:employee_competency_assess' row.employee.pk %}?periode={{ periode }}"
+     class="btn btn-sm btn-outline-secondary">
+    <i class="fas fa-pencil me-1"></i> Nilai: {{ row.employee.nama }}
+  </a>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card border-0 shadow-sm">
+  <div class="card-body text-center text-muted py-5">
+    Belum ada data. Tambahkan <a href="{% url 'od:competency_list' %}">kompetensi</a> dan lakukan penilaian terlebih dahulu.
+  </div>
+</div>
+{% endif %}
+{% endblock %}

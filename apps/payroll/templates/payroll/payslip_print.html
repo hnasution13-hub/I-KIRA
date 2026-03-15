@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+      <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slip Gaji - {{ detail.employee.nama }} - {{ detail.payroll.periode }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+            background: #f5f5f5;
+        }
+        .page {
+            background: #fff;
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 32px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #c40000;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+        .company-name { font-size: 16px; font-weight: bold; color: #c40000; margin-bottom: 2px; }
+        .periode { color: #666; font-size: 11px; }
+        .status-badge {
+            background: #198754; color: #fff;
+            padding: 3px 10px; border-radius: 4px; font-size: 11px;
+        }
+        .info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+            margin-bottom: 14px; padding: 12px; background: #f9f9f9; border-radius: 4px;
+        }
+        .info-label { color: #888; font-size: 10px; margin-bottom: 2px; }
+        .info-value { font-weight: bold; font-size: 12px; }
+        .absensi {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 8px; text-align: center; margin-bottom: 14px;
+            padding: 10px; background: #f0f4ff; border-radius: 4px;
+        }
+        .absensi .val { font-size: 15px; font-weight: bold; }
+        .absensi .lbl { font-size: 10px; color: #888; }
+        .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+        .section-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; }
+        .section-title.income { color: #198754; }
+        .section-title.deduct { color: #c40000; }
+        table { width: 100%; border-collapse: collapse; }
+        table td { padding: 3px 4px; font-size: 11px; }
+        table td:last-child { text-align: right; }
+        .total-row td { font-weight: bold; border-top: 1px solid #ddd; padding-top: 5px; }
+        .total-income td { color: #198754; }
+        .total-deduct td { color: #c40000; }
+        .thp {
+            border-top: 2px solid #333;
+            padding-top: 14px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .thp-label { font-size: 14px; font-weight: bold; }
+        .thp-amount { font-size: 20px; font-weight: bold; color: #c40000; }
+        .bank-info { margin-top: 8px; font-size: 10px; color: #888; }
+        .print-btn {
+            display: block; text-align: center;
+            margin: 16px auto; padding: 8px 28px;
+            background: #0d6efd; color: #fff; border: none;
+            border-radius: 4px; font-size: 13px; cursor: pointer;
+        }
+        .no-print { }
+        @media print {
+            body { background: #fff; }
+            .page { margin: 0; border: none; padding: 24px; box-shadow: none; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print" style="text-align:center; padding: 12px 0;">
+    <button class="print-btn" onclick="window.print()">🖨️ Cetak Slip Gaji</button>
+</div>
+
+<div class="page">
+    <!-- Header -->
+    <div class="header">
+        <div>
+            <div class="company-name">{{ COMPANY_NAME }}</div>
+            <div class="periode">Slip Gaji Periode {{ detail.payroll.periode }}</div>
+        </div>
+        <div>
+            <span class="status-badge">{{ detail.payroll.get_status_display }}</span>
+        </div>
+    </div>
+
+    <!-- Info Karyawan -->
+    <div class="info-grid">
+        <div>
+            <div class="info-label">Nama</div>
+            <div class="info-value">{{ detail.employee.nama }}</div>
+        </div>
+        <div>
+            <div class="info-label">NIK</div>
+            <div class="info-value">{{ detail.employee.nik }}</div>
+        </div>
+        <div>
+            <div class="info-label">Departemen</div>
+            <div class="info-value">{{ detail.employee.department|default:"-" }}</div>
+        </div>
+        <div>
+            <div class="info-label">Jabatan</div>
+            <div class="info-value">{{ detail.employee.jabatan|default:"-" }}</div>
+        </div>
+    </div>
+
+    <!-- Absensi -->
+    <div class="absensi">
+        <div>
+            <div class="val">{{ detail.hari_kerja }}</div>
+            <div class="lbl">Hari Kerja</div>
+        </div>
+        <div>
+            <div class="val" style="color:#198754;">{{ detail.hari_hadir }}</div>
+            <div class="lbl">Hadir</div>
+        </div>
+        <div>
+            <div class="val" style="color:#c40000;">{{ detail.hari_absen }}</div>
+            <div class="lbl">Absen</div>
+        </div>
+        <div>
+            <div class="val" style="color:#0d6efd;">{{ detail.jam_lembur }}</div>
+            <div class="lbl">Jam Lembur</div>
+        </div>
+    </div>
+
+    <!-- Pendapatan & Potongan -->
+    <div class="cols">
+        <div>
+            <div class="section-title income">Pendapatan</div>
+            <table>
+                <tr><td>Gaji Pokok</td><td>{{ detail.gaji_pokok|floatformat:0 }}</td></tr>
+                {% if detail.tunjangan_jabatan %}<tr><td>Tunj. Jabatan</td><td>{{ detail.tunjangan_jabatan|floatformat:0 }}</td></tr>{% endif %}
+                {% if detail.tunjangan_transport %}<tr><td>Tunj. Transport</td><td>{{ detail.tunjangan_transport|floatformat:0 }}</td></tr>{% endif %}
+                {% if detail.tunjangan_makan %}<tr><td>Tunj. Makan</td><td>{{ detail.tunjangan_makan|floatformat:0 }}</td></tr>{% endif %}
+                {% if detail.tunjangan_komunikasi %}<tr><td>Tunj. Komunikasi</td><td>{{ detail.tunjangan_komunikasi|floatformat:0 }}</td></tr>{% endif %}
+                {% if detail.tunjangan_kesehatan %}<tr><td>Tunj. Kesehatan</td><td>{{ detail.tunjangan_kesehatan|floatformat:0 }}</td></tr>{% endif %}
+                {% if detail.upah_lembur %}<tr><td>Upah Lembur</td><td>{{ detail.upah_lembur|floatformat:0 }}</td></tr>{% endif %}
+                <tr class="total-row total-income"><td>Total Kotor</td><td>{{ detail.gaji_kotor|floatformat:0 }}</td></tr>
+            </table>
+        </div>
+        <div>
+            <div class="section-title deduct">Potongan</div>
+            <table>
+                {% if detail.potongan_telat %}<tr><td>Denda Telat</td><td>{{ detail.potongan_telat|floatformat:0 }}</td></tr>{% endif %}
+                {% if detail.potongan_absen %}<tr><td>Pot. Absen</td><td>{{ detail.potongan_absen|floatformat:0 }}</td></tr>{% endif %}
+                <tr><td>BPJS Kesehatan</td><td>{{ detail.bpjs_kesehatan|floatformat:0 }}</td></tr>
+                <tr><td>BPJS TK</td><td>{{ detail.bpjs_ketenagakerjaan|floatformat:0 }}</td></tr>
+                <tr><td>PPH 21</td><td>{{ detail.pph21|floatformat:0 }}</td></tr>
+                {% if detail.potongan_lainnya %}<tr><td>Potongan Lain</td><td>{{ detail.potongan_lainnya|floatformat:0 }}</td></tr>{% endif %}
+                <tr class="total-row total-deduct"><td>Total Potongan</td><td>{{ detail.total_potongan|floatformat:0 }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Take Home Pay -->
+    <div class="thp">
+        <div class="thp-label">GAJI BERSIH (TAKE HOME PAY)</div>
+        <div class="thp-amount">Rp {{ detail.gaji_bersih|floatformat:"0g" }}</div>
+    </div>
+    {% if detail.employee.nama_bank %}
+    <div class="bank-info">
+        Transfer ke: {{ detail.employee.nama_bank }} - {{ detail.employee.no_rek }}
+        a/n {{ detail.employee.nama_rek }}
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>

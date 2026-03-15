@@ -1,0 +1,518 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{{ employee.nama }} - Detail Karyawan{% endblock %}
+{% block breadcrumb %}Karyawan / {{ employee.nama }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-user me-2 text-primary"></i>{{ employee.nama }}</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'employee_edit' employee.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-edit me-1"></i>Edit</a>
+        <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            {% if employee.foto %}<img src="{{ employee.foto.url }}" class="rounded-circle mb-3" width="100" height="100" style="object-fit:cover;">
+            {% else %}<div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width:100px;height:100px;"><i class="fas fa-user fa-2x text-white"></i></div>{% endif %}
+            <h5 class="fw-bold">{{ employee.nama }}</h5>
+            <p class="text-muted mb-1">{{ employee.jabatan|default:"Jabatan belum diatur" }}</p>
+            <span class="badge {% if employee.status == 'Aktif' %}bg-success{% else %}bg-secondary{% endif %}">{{ employee.status }}</span>
+            <hr>
+            <div class="text-start">
+                <div class="mb-2"><small class="text-muted">NIK</small><div class="fw-semibold">{{ employee.nik }}</div></div>
+                <div class="mb-2"><small class="text-muted">Departemen</small><div class="fw-semibold">{{ employee.department|default:"-" }}</div></div>
+                <div class="mb-2"><small class="text-muted">Status Karyawan</small><div class="fw-semibold">{{ employee.status_karyawan }}</div></div>
+                <div class="mb-2"><small class="text-muted">Tanggal Masuk</small><div class="fw-semibold">{{ employee.join_date|date:"d F Y" }}</div></div>
+                <div class="mb-2"><small class="text-muted">Masa Kerja</small><div class="fw-semibold">{{ employee.masa_kerja_display }}</div></div>
+            </div>
+        </div>
+        {% if salary %}
+        <div class="card mt-3">
+            <div class="card-header"><h5><i class="fas fa-money-bill-wave me-2 text-success"></i>Upah & Benefit</h5></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between"><span>Gaji Pokok</span><strong>Rp {{ salary.gaji_pokok|floatformat:"0g" }}</strong></div>
+                <div class="d-flex justify-content-between mt-1"><span>Total Tunjangan</span><strong>Rp {{ salary.total_tunjangan|floatformat:"0g" }}</strong></div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between"><span class="fw-bold">Take Home Pay</span><strong class="text-success">Rp {{ salary.total_take_home_pay|floatformat:"0g" }}</strong></div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="col-md-8">
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-info">Info Pribadi</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-keluarga">Keluarga & Darurat</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-contracts">Kontrak ({{ contracts|length }})</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-leaves">Cuti ({{ leaves|length }})</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-violations">Pelanggaran ({{ violations|length }})</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-devices"><i class="fas fa-mobile-alt me-1"></i>Perangkat Portal</a></li>
+        </ul>
+        <div class="tab-content">
+
+            <div class="tab-pane fade show active" id="tab-info">
+
+                <div class="card mb-3">
+                    <div class="card-header py-2"><small class="fw-bold text-uppercase text-muted">Penempatan</small></div>
+                    <div class="card-body"><div class="row">
+                        <div class="col-6 mb-2"><small class="text-muted">Perusahaan</small><div class="fw-semibold">{{ employee.perusahaan|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Departemen</small><div class="fw-semibold">{{ employee.department|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Point of Hire</small><div class="fw-semibold">{{ employee.point_of_hire|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Job Site</small><div class="fw-semibold">{{ employee.job_site|default:"-" }}</div></div>
+                    </div></div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header py-2"><small class="fw-bold text-uppercase text-muted">Data Pribadi</small></div>
+                    <div class="card-body"><div class="row">
+                        <div class="col-6 mb-2"><small class="text-muted">Email</small><div>{{ employee.email|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">No. HP</small><div>{{ employee.no_hp|default:"-" }}{% if employee.no_hp %} / {{ employee.no_hp }}{% endif %}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Tempat, Tgl Lahir</small><div>{{ employee.tempat_lahir|default:"-" }}, {{ employee.tanggal_lahir|date:"d F Y"|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Jenis Kelamin</small><div>{{ employee.get_jenis_kelamin_display|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Agama</small><div>{{ employee.agama|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Pendidikan</small><div>{{ employee.pendidikan|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Golongan Darah</small><div>{{ employee.golongan_darah|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Status Nikah</small><div>{{ employee.status_nikah|default:"-" }}</div></div>
+                        {% if employee.jenis_sim %}
+                        <div class="col-6 mb-2"><small class="text-muted">SIM</small><div>{{ employee.jenis_sim }} — {{ employee.no_sim|default:"-" }}</div></div>
+                        {% endif %}
+                    </div></div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header py-2"><small class="fw-bold text-uppercase text-muted">Alamat KTP</small></div>
+                    <div class="card-body">
+                        <div class="border rounded p-3 bg-light" style="background:#f8f9fa!important;color:#212529!important;">
+                            {% if employee.alamat or employee.kelurahan or employee.provinsi %}
+                                {% if employee.alamat %}<div class="mb-1" style="color:#212529"><i class="fas fa-map-marker-alt me-2 text-secondary" style="width:16px"></i>{{ employee.alamat }}</div>{% endif %}
+                                {% if employee.rt or employee.rw %}<div class="mb-1" style="color:#212529"><i class="fas fa-hashtag me-2 text-secondary" style="width:16px"></i>RT {{ employee.rt|default:"0" }} / RW {{ employee.rw|default:"0" }}</div>{% endif %}
+                                {% if employee.kelurahan %}<div class="mb-1" style="color:#212529"><i class="fas fa-building me-2 text-secondary" style="width:16px"></i>Kel. {{ employee.kelurahan }}</div>{% endif %}
+                                {% if employee.kecamatan %}<div class="mb-1" style="color:#212529"><i class="fas fa-map me-2 text-secondary" style="width:16px"></i>Kec. {{ employee.kecamatan }}</div>{% endif %}
+                                {% if employee.kabupaten %}<div class="mb-1" style="color:#212529"><i class="fas fa-city me-2 text-secondary" style="width:16px"></i>{{ employee.kabupaten }}</div>{% endif %}
+                                {% if employee.provinsi %}<div class="mb-1" style="color:#212529"><i class="fas fa-flag me-2 text-secondary" style="width:16px"></i>Prov. {{ employee.provinsi }}</div>{% endif %}
+                                {% if employee.kode_pos %}<div class="mt-1"><span class="badge bg-secondary">Kode Pos: {{ employee.kode_pos }}</span></div>{% endif %}
+                            {% else %}<span class="fst-italic" style="color:#6c757d">Alamat belum diisi</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header py-2"><small class="fw-bold text-uppercase text-muted">Dokumen & Bank</small></div>
+                    <div class="card-body"><div class="row">
+                        <div class="col-6 mb-2"><small class="text-muted">No. KTP</small><div>{{ employee.no_ktp|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">No. NPWP</small><div>{{ employee.no_npwp|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">No. BPJS Kesehatan</small><div>{{ employee.no_bpjs_kes|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">No. BPJS TK</small><div>{{ employee.no_bpjs_tk|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Bank</small><div>{{ employee.nama_bank|default:"-" }} — {{ employee.no_rek|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">A/N Rekening</small><div>{{ employee.nama_rek|default:"-" }}</div></div>
+                    </div></div>
+                </div>
+
+            </div>
+
+            <div class="tab-pane fade" id="tab-keluarga">
+
+                <div class="card mb-3">
+                    <div class="card-header py-2"><small class="fw-bold text-uppercase text-muted"><i class="fas fa-users me-1"></i>Data Keluarga</small></div>
+                    <div class="card-body"><div class="row">
+                        <div class="col-6 mb-2"><small class="text-muted">Nama Bapak Kandung</small><div class="fw-semibold">{{ employee.nama_bapak|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"><small class="text-muted">Nama Ibu Kandung</small><div class="fw-semibold">{{ employee.nama_ibu|default:"-" }}</div></div>
+                        {% if employee.status_nikah == 'Menikah' %}
+                        <div class="col-6 mb-2"><small class="text-muted">Nama Suami/Istri</small><div class="fw-semibold">{{ employee.nama_pasangan|default:"-" }}</div></div>
+                        <div class="col-6 mb-2"></div>
+                        {% endif %}
+                        {% with anak_list=employee.anak_list.all %}
+                        {% if anak_list %}
+                        <div class="col-12 mt-1 mb-1"><small class="text-muted fw-semibold">Data Anak</small></div>
+                        <div class="col-12">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:50px">Ke-</th>
+                                        <th>Nama</th>
+                                        <th>Tgl Lahir</th>
+                                        <th>JK</th>
+                                        <th>No. BPJS Kes.</th>
+                                        <th style="width:80px">Tanggungan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for anak in anak_list %}
+                                <tr>
+                                    <td class="text-center">{{ anak.urutan }}</td>
+                                    <td class="fw-semibold">{{ anak.nama }}</td>
+                                    <td><small>{{ anak.tgl_lahir|date:"d/m/Y"|default:"-" }}</small></td>
+                                    <td>{{ anak.get_jenis_kelamin_display|default:"-" }}</td>
+                                    <td><small>{{ anak.no_bpjs_kes|default:"-" }}</small></td>
+                                    <td class="text-center">
+                                        {% if anak.tanggungan_bpjs %}
+                                        <span class="badge bg-success">Ya</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Tidak</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    </div></div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header py-2"><small class="fw-bold text-uppercase text-muted"><i class="fas fa-phone-alt me-1 text-danger"></i>Kontak Darurat</small></div>
+                    <div class="card-body">
+                        {% if employee.hp_darurat %}
+                        <div class="d-flex align-items-center p-2 border rounded mb-2">
+                            <div class="rounded-circle bg-danger d-flex align-items-center justify-content-center me-3" style="width:38px;height:38px;min-width:38px">
+                                <i class="fas fa-phone text-white small"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">{{ employee.hp_darurat }}</div>
+                                <small class="text-muted">Kontak Darurat 1</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if employee.hp_darurat_2 %}
+                        <div class="d-flex align-items-center p-2 border rounded mb-2">
+                            <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center me-3" style="width:38px;height:38px;min-width:38px">
+                                <i class="fas fa-phone text-white small"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">{{ employee.hp_darurat_2 }}</div>
+                                <small class="text-muted">Kontak Darurat 2</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if not employee.hp_darurat and not employee.hp_darurat_2 %}
+                        <span class="text-muted fst-italic">Kontak darurat belum diisi</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+            <div class="tab-pane fade" id="tab-contracts">
+                <div class="card"><div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>No. Kontrak</th><th>Tipe</th><th>Mulai</th><th>Selesai</th><th>Status</th></tr></thead>
+                        <tbody>{% for c in contracts %}<tr>
+                            <td><a href="{% url 'contract_detail' c.pk %}">{{ c.nomor_kontrak }}</a></td>
+                            <td><small>{{ c.tipe_kontrak }}</small></td>
+                            <td><small>{{ c.tanggal_mulai|date:"d/m/Y" }}</small></td>
+                            <td><small>{{ c.tanggal_selesai|date:"d/m/Y"|default:"-" }}</small></td>
+                            <td><span class="badge {% if c.status == 'Aktif' %}bg-success{% else %}bg-secondary{% endif %}">{{ c.status }}</span></td>
+                        </tr>{% empty %}<tr><td colspan="5" class="text-center text-muted py-3">Belum ada kontrak</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div></div>
+            </div>
+            <div class="tab-pane fade" id="tab-leaves">
+                <div class="card"><div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Tipe</th><th>Tanggal</th><th>Hari</th><th>Status</th></tr></thead>
+                        <tbody>{% for l in leaves %}<tr>
+                            <td>{{ l.tipe_cuti }}</td>
+                            <td><small>{{ l.tanggal_mulai|date:"d/m/Y" }} - {{ l.tanggal_selesai|date:"d/m/Y" }}</small></td>
+                            <td>{{ l.jumlah_hari }}</td>
+                            <td><span class="badge {% if l.status == 'Approved' %}bg-success{% elif l.status == 'Pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ l.status }}</span></td>
+                        </tr>{% empty %}<tr><td colspan="4" class="text-center text-muted py-3">Belum ada data cuti</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div></div>
+            </div>
+            <div class="tab-pane fade" id="tab-violations">
+                <div class="card"><div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Tipe</th><th>Tanggal</th><th>Tingkat</th><th>Status</th></tr></thead>
+                        <tbody>{% for v in violations %}<tr>
+                            <td>{{ v.tipe_pelanggaran }}</td>
+                            <td><small>{{ v.tanggal_kejadian|date:"d/m/Y" }}</small></td>
+                            <td><span class="badge {% if v.tingkat == 'Berat' %}bg-danger{% elif v.tingkat == 'Sedang' %}bg-warning text-dark{% else %}bg-info{% endif %}">{{ v.tingkat }}</span></td>
+                            <td>{{ v.status }}</td>
+                        </tr>{% empty %}<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada pelanggaran</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div></div>
+            </div>
+
+            <!-- ── Tab Perangkat Portal (Anti-Fraud) ─────────────────────── -->
+            <div class="tab-pane fade" id="tab-devices">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center py-2">
+                  <span class="fw-semibold"><i class="fas fa-mobile-alt me-2 text-danger"></i>Perangkat Terdaftar (Portal)</span>
+                  <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+                    <i class="fas fa-plus me-1"></i>Daftarkan Perangkat
+                  </button>
+                </div>
+                <div class="card-body p-0">
+                  <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                      <tr><th>MAC Address / ID Perangkat</th><th>Nama</th><th>Platform</th><th>Terdaftar</th><th>Terakhir Dipakai</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                      {% for dev in employee.devices.all %}
+                      <tr>
+                        <td><code style="font-size:.8rem">{{ dev.mac_address }}</code></td>
+                        <td>{{ dev.nama_perangkat|default:"—" }}</td>
+                        <td><small>{{ dev.platform|default:"—" }}</small></td>
+                        <td><small>{{ dev.created_at|date:"d/m/Y" }}<br><span class="text-muted">{{ dev.terdaftar_oleh }}</span></small></td>
+                        <td><small>{{ dev.last_seen|date:"d/m/Y H:i"|default:"Belum dipakai" }}</small></td>
+                        <td>
+                          {% if dev.aktif %}
+                          <span class="badge bg-success">Aktif</span>
+                          {% else %}
+                          <span class="badge bg-secondary">Nonaktif</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                      {% empty %}
+                      <tr><td colspan="6" class="text-center text-muted py-3">
+                        <i class="fas fa-mobile-alt fa-2x d-block mb-2 opacity-25"></i>
+                        Belum ada perangkat terdaftar.<br>
+                        <small>Daftarkan perangkat karyawan agar check-in dari portal dapat diverifikasi.</small>
+                      </td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Log Check-In Terbaru -->
+              <div class="card mt-3">
+                <div class="card-header py-2"><span class="fw-semibold"><i class="fas fa-list-alt me-2"></i>Log Check-In/Out Terbaru (10)</span></div>
+                <div class="card-body p-0">
+                  <table class="table table-sm mb-0">
+                    <thead class="table-light"><tr><th>Waktu</th><th>Tipe</th><th>GPS</th><th>Perangkat</th><th>Flag</th></tr></thead>
+                    <tbody>
+                      {% for log in employee.checkin_logs.all|slice:":10" %}
+                      <tr {% if log.flagged %}style="background:rgba(255,0,0,.05)"{% endif %}>
+                        <td><small>{{ log.waktu|date:"d/m/Y H:i" }}</small></td>
+                        <td><span class="badge {% if log.tipe == 'checkin' %}bg-success{% else %}bg-primary{% endif %}">{{ log.get_tipe_display }}</span></td>
+                        <td>
+                          {% if log.gps_valid %}
+                          <a href="https://maps.google.com/?q={{ log.latitude }},{{ log.longitude }}" target="_blank" class="text-success" title="Lihat di Maps">
+                            <i class="fas fa-map-marker-alt"></i> {{ log.latitude|floatformat:4 }}, {{ log.longitude|floatformat:4 }}
+                          </a>
+                          {% else %}<span class="text-danger"><i class="fas fa-times-circle"></i> Tidak ada</span>{% endif %}
+                        </td>
+                        <td>
+                          <small>{% if log.device_dikenal %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-exclamation-circle text-warning"></i>{% endif %}
+                          <code style="font-size:.75rem">{{ log.mac_address|default:"—" }}</code></small>
+                        </td>
+                        <td>
+                          {% if log.flagged %}<span class="badge bg-danger" title="{{ log.catatan_flag }}">⚠ Dicurigai</span>
+                          {% else %}<span class="badge bg-light text-muted">OK</span>{% endif %}
+                        </td>
+                      </tr>
+                      {% empty %}
+                      <tr><td colspan="5" class="text-center text-muted py-2">Belum ada log</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal Daftar Perangkat -->
+<div class="modal fade" id="addDeviceModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-mobile-alt me-2"></i>Daftarkan Perangkat Karyawan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'employee_add_device' employee.pk %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-info py-2 small">
+            <i class="fas fa-info-circle me-1"></i>
+            MAC Address / ID Perangkat tersedia di halaman portal karyawan (bawah topbar), atau dari pengaturan perangkat.
+            Format: <code>XX:XX:XX:XX:XX:XX</code>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">MAC Address / ID Perangkat <span class="text-danger">*</span></label>
+            <input type="text" name="mac_address" class="form-control" placeholder="AB:CD:EF:12:34:56" required
+                   pattern="[0-9A-Fa-f:]{17}" style="font-family:monospace;letter-spacing:1px">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nama Perangkat</label>
+            <input type="text" name="nama_perangkat" class="form-control" placeholder="Contoh: iPhone 14 Pro — Andi">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Platform / OS</label>
+            <input type="text" name="platform" class="form-control" placeholder="Android 14 / iOS 17">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Catatan</label>
+            <textarea name="catatan" class="form-control" rows="2" placeholder="Keterangan tambahan..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-danger"><i class="fas fa-save me-1"></i>Daftarkan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PSIKOTES BERKALA KARYAWAN ═══ -->
+{% if addon_advanced_psychotest %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <span class="fw-semibold">
+                    <i class="fas fa-flask me-2" style="color:#7b1fa2;"></i>Psikotes Berkala
+                </span>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'adv_employee_report' employee.pk %}" class="btn btn-sm btn-outline-secondary" style="font-size:.78rem;">
+                        <i class="fas fa-chart-line me-1"></i>Laporan Lengkap
+                    </a>
+                    <a href="{% url 'adv_employee_session_create' employee.pk %}" class="btn btn-sm text-white" style="background:#7b1fa2;font-size:.78rem;">
+                        <i class="fas fa-plus me-1"></i>Buat Sesi Baru
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% with emp_sessions=employee.adv_sessions.all %}
+                {% if emp_sessions %}
+
+                {# Donut skor terakhir dari sesi terbaru yang completed #}
+                {% with last_sess=emp_sessions.first %}
+                {% if last_sess.status == 'completed' %}
+                <div class="d-flex flex-wrap gap-3 mb-3 justify-content-center">
+                    {% for res in last_sess.results.all %}
+                    <div class="text-center">
+                        <div style="position:relative;width:72px;height:72px;margin:0 auto;">
+                            <canvas id="ep_donut_{{ res.pk }}" width="72" height="72"></canvas>
+                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.1;">
+                                <div class="fw-bold" style="font-size:.9rem;color:{% if res.grade == 'A' %}#388e3c{% elif res.grade == 'B' %}#1976d2{% elif res.grade == 'C' %}#f57c00{% else %}#c62828{% endif %};">
+                                    {{ res.skor_total }}%
+                                </div>
+                                <div style="font-size:.58rem;color:#888;">{{ res.grade }}</div>
+                            </div>
+                        </div>
+                        <div style="font-size:.72rem;font-weight:600;margin-top:3px;">{{ res.get_test_type_display }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                {# Daftar sesi #}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="font-size:.78rem;">Tanggal</th>
+                                <th style="font-size:.78rem;">Tujuan</th>
+                                <th style="font-size:.78rem;">Paket</th>
+                                <th style="font-size:.78rem;">Status</th>
+                                <th style="font-size:.78rem;">Link / Hasil</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for sess in emp_sessions %}
+                        <tr>
+                            <td style="font-size:.8rem;">{{ sess.created_at|date:"d/m/Y" }}</td>
+                            <td>
+                                <span class="badge rounded-pill px-2
+                                    {% if sess.tujuan == 'berkala' %}bg-primary
+                                    {% elif sess.tujuan == 'promosi' %}bg-success
+                                    {% elif sess.tujuan == 'evaluasi' %}bg-warning text-dark
+                                    {% else %}bg-secondary{% endif %}"
+                                    style="font-size:.68rem;">
+                                    {{ sess.tujuan|default:"berkala"|capfirst }}
+                                </span>
+                            </td>
+                            <td>
+                                {% for tipe in sess.paket %}
+                                <span class="badge rounded-pill px-2" style="background:#7b1fa2;font-size:.68rem;">{{ tipe }}</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if sess.status == 'completed' %}<span class="badge bg-success" style="font-size:.7rem;">Selesai</span>
+                                {% elif sess.status == 'started' %}<span class="badge bg-warning text-dark" style="font-size:.7rem;">Berjalan</span>
+                                {% elif sess.status == 'expired' %}<span class="badge bg-danger" style="font-size:.7rem;">Expired</span>
+                                {% else %}<span class="badge bg-secondary" style="font-size:.7rem;">Pending</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if sess.status == 'completed' %}
+                                <a href="{% url 'adv_session_detail' sess.pk %}" class="btn btn-sm btn-outline-secondary py-0" style="font-size:.72rem;">
+                                    <i class="fas fa-chart-bar me-1"></i>Hasil
+                                </a>
+                                {% elif sess.is_accessible %}
+                                <div class="input-group input-group-sm" style="max-width:220px;">
+                                    <input type="text" class="form-control" id="ep_link_{{ sess.pk }}"
+                                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'adv_tes_intro' sess.token %}"
+                                           readonly style="font-size:.7rem;">
+                                    <button class="btn btn-outline-secondary" type="button"
+                                        onclick="navigator.clipboard.writeText(document.getElementById('ep_link_{{ sess.pk }}').value);this.innerHTML='<i class='fas fa-check'></i>'">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                {% if employee.no_hp %}
+                                <a href="https://wa.me/62{{ employee.no_hp|slice:'1:' }}?text=Halo+{{ employee.nama|urlencode }}%2C+silakan+kerjakan+psikotes+berkala+di%3A+{{ request.scheme }}%3A%2F%2F{{ request.get_host }}{% url 'adv_tes_intro' sess.token %}"
+                                   target="_blank" class="btn btn-sm btn-success mt-1 py-0" style="font-size:.7rem;">
+                                    <i class="fab fa-whatsapp me-1"></i>Kirim WA
+                                </a>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted" style="font-size:.75rem;">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-flask fa-2x mb-2 d-block opacity-25"></i>
+                    <div style="font-size:.85rem;">Belum ada sesi psikotes berkala.</div>
+                    <a href="{% url 'adv_employee_session_create' employee.pk %}" class="btn btn-sm mt-2 text-white" style="background:#7b1fa2;font-size:.8rem;">
+                        <i class="fas fa-plus me-1"></i>Buat Sesi Pertama
+                    </a>
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Chart donut untuk sesi terakhir #}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+    const GC = {A:'#388e3c',B:'#1976d2',C:'#f57c00',D:'#c62828'};
+    {% with last_sess=employee.adv_sessions.first %}
+    {% if last_sess and last_sess.status == 'completed' %}
+    {% for res in last_sess.results.all %}
+    {% if res.skor_total is not None %}
+    (function(){
+        const el = document.getElementById('ep_donut_{{ res.pk }}');
+        if (!el) return;
+        new Chart(el, {
+            type: 'doughnut',
+            data: { datasets: [{ data: [{{ res.skor_total }}, {{ 100|add:"-"|add:res.skor_total|default:0 }}],
+                backgroundColor: [GC['{{ res.grade }}']||'#9e9e9e','#f0f0f0'], borderWidth:0 }] },
+            options: { cutout:'70%', plugins:{ legend:{display:false}, tooltip:{enabled:false} } }
+        });
+    })();
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+})();
+</script>
+{% endif %}
+
+{% endblock %}

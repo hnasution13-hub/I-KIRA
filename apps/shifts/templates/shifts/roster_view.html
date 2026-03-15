@@ -1,0 +1,443 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Roster Bulanan{% endblock %}
+{% block breadcrumb %}Shift / Roster{% endblock %}
+
+{% block extra_css %}
+<style>
+.roster-wrap        { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.roster-table       { border-collapse:separate; border-spacing:0; min-width:900px; }
+.roster-table th,
+.roster-table td    { border:1px solid #dee2e6; padding:0; }
+.sticky-col         { position:sticky; left:0; z-index:2; background:#fff;
+                      border-right:2px solid #adb5bd !important; min-width:170px; }
+.sticky-head        { position:sticky; top:0; z-index:3; background:#212529; }
+.sticky-head.sticky-col { z-index:4; }
+.roster-cell        { min-width:40px; width:40px; cursor:pointer; transition:opacity .15s; text-align:center; }
+.roster-cell:hover  { filter:brightness(1.1); }
+.roster-cell.loading{ opacity:.35; pointer-events:none; }
+.cell-inner         { display:block; padding:5px 2px; font-size:.62rem; font-weight:600; }
+.cell-weekend       { background:#f8f9fa; }
+.cell-shift         { color:#fff; border-radius:3px; display:block; padding:3px 1px; font-size:.62rem; font-weight:700; }
+.cell-off           { background:#6c757d !important; }
+.cell-empty         { color:#ced4da; font-size:.75rem; display:block; }
+@keyframes shimmer  { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
+.skeleton           { background:linear-gradient(90deg,#e9ecef 25%,#f8f9fa 50%,#e9ecef 75%);
+                      background-size:600px 100%; animation:shimmer 1.2s infinite linear;
+                      border-radius:3px; display:inline-block; }
+.sk-cell            { height:28px; width:36px; margin:2px; }
+.sk-name            { height:14px; width:120px; margin-bottom:4px; }
+.sk-dept            { height:10px; width:80px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Roster Bulanan</h4>
+        <small class="text-muted">{{ bulan_nama }} {{ year }}{% if total_emp %} &middot; <strong>{{ total_emp }}</strong> karyawan{% endif %}</small>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalBulk">
+            <i class="fas fa-fill-drip me-1"></i>Isi Massal
+        </button>
+        <a href="{% url 'shift_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-layer-group me-1"></i>Master Shift
+        </a>
+    </div>
+</div>
+
+{# Filter #}
+<div class="card mb-3 border-0 shadow-sm"><div class="card-body py-2">
+<form method="get" class="row g-2 align-items-end">
+    <div class="col-sm-2">
+        <label class="form-label small fw-semibold mb-1">Bulan</label>
+        <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+            {% for m,n in bulan_list %}
+            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-sm-1">
+        <label class="form-label small fw-semibold mb-1">Tahun</label>
+        <input type="number" name="year" class="form-control form-control-sm"
+               value="{{ year }}" min="2020" max="2035" onchange="this.form.submit()" style="width:80px">
+    </div>
+    <div class="col-sm-3">
+        <label class="form-label small fw-semibold mb-1">
+            Departemen
+            {% if require_dept_filter %}<span class="badge bg-warning text-dark ms-1" style="font-size:.6rem">Wajib</span>{% endif %}
+        </label>
+        <select name="dept" class="form-select form-select-sm" onchange="this.form.submit()">
+            {% if not require_dept_filter %}<option value="">Semua Departemen</option>{% endif %}
+            <option value="">-- Pilih Departemen --</option>
+            {% for d in departments %}
+            <option value="{{ d.id }}" {% if dept_filter == d.id|stringformat:"s" %}selected{% endif %}>{{ d.nama }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-sm-3">
+        <label class="form-label small fw-semibold mb-1">Cari Karyawan</label>
+        <div class="input-group input-group-sm">
+            <input type="text" name="q" class="form-control" placeholder="Nama..." value="{{ search }}">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+            {% if search %}<a href="?month={{ month }}&year={{ year }}&dept={{ dept_filter }}" class="btn btn-outline-secondary">✕</a>{% endif %}
+        </div>
+    </div>
+    <input type="hidden" name="page" value="1">
+</form>
+</div></div>
+
+{% if require_dept_filter and not dept_filter and not search %}
+{# Pilih dept dulu #}
+<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
+    <i class="fas fa-filter fa-3x text-primary mb-3 opacity-50"></i>
+    <h5>Pilih Departemen Terlebih Dahulu</h5>
+    <p class="text-muted">Terlalu banyak karyawan untuk ditampilkan sekaligus.</p>
+    <div class="d-flex gap-2 justify-content-center flex-wrap">
+        {% for d in departments %}
+        <a href="?month={{ month }}&year={{ year }}&dept={{ d.id }}" class="btn btn-outline-primary btn-sm">{{ d.nama }}</a>
+        {% endfor %}
+    </div>
+</div></div>
+
+{% else %}
+
+{# Shift legend #}
+<div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+    <small class="text-muted fw-semibold">KLIK SHIFT → KLIK CELL:</small>
+    {% for s in shifts %}
+    <button type="button" class="btn btn-sm text-white px-2 py-1"
+            style="background:{{ s.warna }};border:none;font-size:.7rem"
+            onclick="setFillMode('{{ s.id }}','{{ s.kode }}','{{ s.warna }}')">
+        {{ s.kode }}{% if s.jam_masuk %}<span class="opacity-75" style="font-size:.6rem"> {{ s.jam_masuk|time:"H:i" }}</span>{% endif %}
+    </button>
+    {% endfor %}
+    <button type="button" class="btn btn-sm btn-secondary px-2 py-1" style="font-size:.7rem"
+            onclick="setFillMode('OFF','OFF','#6c757d')">OFF</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" style="font-size:.7rem"
+            onclick="clearFillMode()">✎ Edit</button>
+</div>
+
+<div id="fillBanner" class="alert alert-warning py-2 mb-2 d-none">
+    <i class="fas fa-paint-brush me-2"></i>Mode: <strong id="fillLabel"></strong>
+    &nbsp;<a href="#" onclick="clearFillMode();return false" class="ms-3 alert-link">✕ Nonaktif</a>
+</div>
+
+{# Skeleton #}
+<div id="skeletonWrap" class="card border-0 shadow-sm mb-3">
+<div class="card-body p-2">
+    {% for i in "12345678"|make_list %}
+    <div class="d-flex gap-1 align-items-center mb-1">
+        <div style="min-width:170px">
+            <div class="skeleton sk-name"></div>
+            <div class="skeleton sk-dept mt-1"></div>
+        </div>
+        {% for d in all_dates %}<div class="skeleton sk-cell"></div>{% endfor %}
+    </div>
+    {% endfor %}
+    <div class="text-center text-muted small mt-3">
+        <i class="fas fa-spinner fa-spin me-2"></i>Memuat roster...
+    </div>
+</div>
+</div>
+
+{# Roster table — populated by JS #}
+<div id="rosterWrap" class="card border-0 shadow-sm mb-3" style="display:none">
+<div class="card-body p-0">
+<div class="roster-wrap">
+<table class="roster-table w-100">
+    <thead>
+        <tr>
+            <th class="sticky-col sticky-head px-2 py-2 text-white" style="font-size:.75rem">
+                <div>Karyawan</div><div class="opacity-50" style="font-size:.6rem">Departemen</div>
+            </th>
+            {% for tgl in all_dates %}
+            <th class="sticky-head text-center text-white px-0"
+                style="min-width:40px;font-size:.65rem" title="{{ tgl|date:'l, d M Y' }}">
+                <div class="fw-bold">{{ tgl|date:"d" }}</div>
+                <div class="opacity-60" style="font-size:.58rem">
+                    {% if tgl.weekday == 6 %}<span class="text-danger">Min</span>
+                    {% elif tgl.weekday == 5 %}<span class="text-warning">Sab</span>
+                    {% else %}{{ tgl|date:"D"|slice:":2" }}{% endif %}
+                </div>
+            </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody id="rosterBody"></tbody>
+</table>
+</div></div></div>
+
+{# Pagination #}
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+    <small class="text-muted">
+        Karyawan {{ page_obj.start_index }}–{{ page_obj.end_index }} dari {{ total_emp }}
+        (Hal {{ page_obj.number }}/{{ page_obj.paginator.num_pages }})
+    </small>
+    <nav><ul class="pagination pagination-sm mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?month={{ month }}&year={{ year }}&dept={{ dept_filter }}&q={{ search }}&page={{ page_obj.previous_page_number }}"><i class="fas fa-chevron-left"></i></a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num == 1 or num == page_obj.paginator.num_pages %}
+            <li class="page-item"><a class="page-link" href="?month={{ month }}&year={{ year }}&dept={{ dept_filter }}&q={{ search }}&page={{ num }}">{{ num }}</a></li>
+            {% elif num == page_obj.number|add:"-1" or num == page_obj.number|add:"1" %}
+            <li class="page-item"><a class="page-link" href="?month={{ month }}&year={{ year }}&dept={{ dept_filter }}&q={{ search }}&page={{ num }}">{{ num }}</a></li>
+            {% elif num == page_obj.number|add:"-2" or num == page_obj.number|add:"2" %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?month={{ month }}&year={{ year }}&dept={{ dept_filter }}&q={{ search }}&page={{ page_obj.next_page_number }}"><i class="fas fa-chevron-right"></i></a>
+        </li>
+        {% endif %}
+    </ul></nav>
+</div>
+{% endif %}
+{% endif %}
+
+{# Modal Edit Cell #}
+<div class="modal fade" id="modalCell" tabindex="-1">
+<div class="modal-dialog modal-sm"><div class="modal-content">
+    <div class="modal-header py-2">
+        <h6 class="modal-title" id="cellTitle">Edit Shift</h6>
+        <button class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body pb-2">
+        <input type="hidden" id="cEmpId"><input type="hidden" id="cTgl">
+        <div class="mb-2">
+            <label class="form-label small fw-semibold">Shift</label>
+            <select id="cShiftId" class="form-select form-select-sm">
+                <option value="">Tidak ada shift</option>
+                {% for s in shifts %}<option value="{{ s.id }}">[{{ s.kode }}] {{ s.nama }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="cIsOff">
+            <label class="form-check-label small" for="cIsOff">Tandai OFF / Libur</label>
+        </div>
+        <div>
+            <label class="form-label small fw-semibold">Keterangan</label>
+            <input type="text" id="cKet" class="form-control form-control-sm" placeholder="Opsional">
+        </div>
+    </div>
+    <div class="modal-footer py-2">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+        <button class="btn btn-primary btn-sm" onclick="saveCellFromModal()">Simpan</button>
+    </div>
+</div></div>
+</div>
+
+{# Modal Bulk Fill #}
+<div class="modal fade" id="modalBulk" tabindex="-1">
+<div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Isi Roster Massal</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Shift</label>
+            <select id="bShiftId" class="form-select">
+                <option value="">-- Pilih Shift --</option>
+                {% for s in shifts %}<option value="{{ s.id }}">[{{ s.kode }}] {{ s.nama }}</option>{% endfor %}
+                <option value="OFF">OFF (Libur)</option>
+            </select>
+        </div>
+        <div class="row g-2 mb-3">
+            <div class="col-6"><label class="form-label fw-semibold">Dari</label>
+                <input type="date" id="bStart" class="form-control" value="{{ all_dates.0|date:'Y-m-d' }}"></div>
+            <div class="col-6"><label class="form-label fw-semibold">Sampai</label>
+                <input type="date" id="bEnd" class="form-control" value="{{ all_dates|last|date:'Y-m-d' }}"></div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Hari</label>
+            <div class="d-flex gap-2 flex-wrap">
+                {% for idx,nama in hari_choices %}
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input bulk-hari" type="checkbox" id="bh{{ idx }}" value="{{ idx }}" {% if idx < 5 %}checked{% endif %}>
+                    <label class="form-check-label small" for="bh{{ idx }}">{{ nama|slice:":3" }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div>
+            <label class="form-label fw-semibold">Karyawan</label>
+            <select id="bEmpSelect" class="form-select" multiple size="5">
+                {% for row in grid %}<option value="{{ row.employee.id }}" selected>{{ row.employee.nama }}</option>{% endfor %}
+            </select>
+            <small class="text-muted">Ctrl+Klik = pilih beberapa</small>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button class="btn btn-success" id="btnBulk" onclick="doBulkFill()">
+            <i class="fas fa-fill-drip me-1"></i>Isi Sekarang
+        </button>
+    </div>
+</div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var SHIFTS = { {% for s in shifts %}'{{ s.id }}':{kode:'{{ s.kode }}',warna:'{{ s.warna }}'},{% endfor %} };
+var GRID_DATA = [
+{% for row in grid %}{
+    emp_id:'{{ row.employee.id }}',
+    nama:'{{ row.employee.nama|escapejs }}',
+    dept:'{{ row.employee.department|default:""|escapejs }}',
+    days:[{% for day in row.days %}{
+        tgl:'{{ day.tanggal|date:"Y-m-d" }}',
+        sid:{% if day.shift %}'{{ day.shift.id }}'{% else %}null{% endif %},
+        sk:{% if day.shift %}'{{ day.shift.kode|escapejs }}'{% else %}null{% endif %},
+        sw:{% if day.shift %}'{{ day.shift.warna }}'{% else %}null{% endif %},
+        off:{{ day.is_off|yesno:"true,false" }},
+        wknd:{{ day.tanggal.weekday|stringformat:"d" }} >= 5 ? true : false
+    }{% if not forloop.last %},{% endif %}{% endfor %}]
+}{% if not forloop.last %},{% endif %}{% endfor %}
+];
+
+// Fill mode
+var fillMode = null;
+function setFillMode(id,label,warna){
+    fillMode={id:id,label:label,warna:warna};
+    document.getElementById('fillBanner').classList.remove('d-none');
+    var lbl=document.getElementById('fillLabel');
+    lbl.textContent=label; lbl.style.color=warna;
+}
+function clearFillMode(){
+    fillMode=null;
+    document.getElementById('fillBanner').classList.add('d-none');
+}
+
+function getCsrf(){var m=document.cookie.match(/csrftoken=([^;]+)/);return m?m[1]:'';}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Build table rows via JS innerHTML — fastest approach, avoids Django template loop bottleneck
+function buildTable(){
+    var tbody=document.getElementById('rosterBody');
+    if(!tbody||!GRID_DATA.length){
+        document.getElementById('skeletonWrap').style.display='none';
+        document.getElementById('rosterWrap').style.display='';
+        return;
+    }
+    var html='';
+    for(var i=0;i<GRID_DATA.length;i++){
+        var row=GRID_DATA[i];
+        html+='<tr><td class="sticky-col px-2 py-1">'
+            +'<div class="fw-semibold" style="font-size:.8rem">'+esc(row.nama)+'</div>'
+            +'<div class="text-muted" style="font-size:.68rem">'+esc(row.dept)+'</div></td>';
+        for(var j=0;j<row.days.length;j++){
+            var d=row.days[j];
+            var wknd=(new Date(d.tgl).getDay()===0||new Date(d.tgl).getDay()===6);
+            var inner='';
+            if(d.off) inner='<span class="cell-shift cell-off">OFF</span>';
+            else if(d.sid) inner='<span class="cell-shift" style="background:'+d.sw+'">'+esc(d.sk)+'</span>';
+            else inner='<span class="cell-empty">–</span>';
+            html+='<td class="roster-cell'+(wknd?' cell-weekend':'')+'"'
+                +' data-emp="'+row.emp_id+'" data-tgl="'+d.tgl+'"'
+                +' data-shift="'+(d.sid||'')+'"'
+                +(d.off?' data-off="1"':'')
+                +' onclick="handleCell(this)">'
+                +'<span class="cell-inner">'+inner+'</span></td>';
+        }
+        html+='</tr>';
+    }
+    tbody.innerHTML=html;
+    document.getElementById('skeletonWrap').style.display='none';
+    document.getElementById('rosterWrap').style.display='';
+}
+
+function handleCell(cell){
+    if(fillMode){
+        var isOff=fillMode.id==='OFF';
+        saveCell(cell.dataset.emp,cell.dataset.tgl,isOff?null:fillMode.id,isOff,'',cell);
+    } else {
+        document.getElementById('cEmpId').value=cell.dataset.emp;
+        document.getElementById('cTgl').value=cell.dataset.tgl;
+        document.getElementById('cShiftId').value=cell.dataset.shift||'';
+        document.getElementById('cIsOff').checked=!!cell.dataset.off;
+        document.getElementById('cKet').value='';
+        document.getElementById('cellTitle').textContent='Edit — '+cell.dataset.tgl;
+        new bootstrap.Modal(document.getElementById('modalCell')).show();
+    }
+}
+
+function saveCellFromModal(){
+    var empId=document.getElementById('cEmpId').value;
+    var tgl=document.getElementById('cTgl').value;
+    var shiftId=document.getElementById('cShiftId').value||null;
+    var isOff=document.getElementById('cIsOff').checked;
+    var ket=document.getElementById('cKet').value;
+    var cell=document.querySelector('.roster-cell[data-emp="'+empId+'"][data-tgl="'+tgl+'"]');
+    bootstrap.Modal.getInstance(document.getElementById('modalCell')).hide();
+    saveCell(empId,tgl,shiftId,isOff,ket,cell);
+}
+
+function saveCell(empId,tgl,shiftId,isOff,ket,cell){
+    if(cell) cell.classList.add('loading');
+    fetch('{% url "roster_save_cell" %}',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},
+        body:JSON.stringify({employee_id:empId,tanggal:tgl,shift_id:shiftId,is_off:isOff,keterangan:ket})
+    })
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(data){
+        if(cell) cell.classList.remove('loading');
+        if(!data.ok){alert('Gagal: '+data.error);return;}
+        var inner='';
+        if(isOff){inner='<span class="cell-shift cell-off">OFF</span>';cell.dataset.off='1';cell.dataset.shift='';}
+        else if(shiftId&&SHIFTS[shiftId]){var s=SHIFTS[shiftId];inner='<span class="cell-shift" style="background:'+s.warna+'">'+esc(s.kode)+'</span>';cell.dataset.shift=shiftId;delete cell.dataset.off;}
+        else{inner='<span class="cell-empty">–</span>';cell.dataset.shift='';delete cell.dataset.off;}
+        cell.querySelector('.cell-inner').innerHTML=inner;
+        showToast('Tersimpan','success');
+    })
+    .catch(function(err){if(cell)cell.classList.remove('loading');alert('Error: '+err.message);});
+}
+
+function doBulkFill(){
+    var shiftId=document.getElementById('bShiftId').value;
+    if(!shiftId){alert('Pilih shift.');return;}
+    var btn=document.getElementById('btnBulk');
+    btn.disabled=true;btn.textContent='Memproses...';
+    fetch('{% url "roster_bulk_fill" %}',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},
+        body:JSON.stringify({
+            shift_id:shiftId==='OFF'?null:shiftId,is_off:shiftId==='OFF',
+            tgl_start:document.getElementById('bStart').value,
+            tgl_end:document.getElementById('bEnd').value,
+            hari_list:Array.from(document.querySelectorAll('.bulk-hari:checked')).map(function(c){return parseInt(c.value);}),
+            employee_ids:Array.from(document.getElementById('bEmpSelect').selectedOptions).map(function(o){return o.value;})
+        })
+    })
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(data){
+        btn.disabled=false;btn.innerHTML='<i class="fas fa-fill-drip me-1"></i>Isi Sekarang';
+        bootstrap.Modal.getInstance(document.getElementById('modalBulk')).hide();
+        if(data.ok){showToast('Berhasil '+data.saved+' cell. Memuat ulang...','success');setTimeout(function(){location.reload();},1200);}
+        else{alert('Gagal: '+data.error);}
+    })
+    .catch(function(err){btn.disabled=false;alert('Error: '+err.message);});
+}
+
+function showToast(msg,type){
+    var t=document.createElement('div');
+    t.className='toast align-items-center text-white bg-'+(type||'primary')+' border-0 show';
+    t.style.cssText='position:fixed;bottom:24px;right:24px;z-index:9999;min-width:260px;padding:10px 16px;border-radius:8px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)';
+    t.textContent=msg;
+    document.body.appendChild(t);
+    setTimeout(function(){t.remove();},2500);
+}
+
+// Init — skeleton tampil dulu, lalu table di-build setelah browser selesai paint
+document.addEventListener('DOMContentLoaded',function(){
+    requestAnimationFrame(function(){setTimeout(buildTable,60);});
+});
+</script>
+{% endblock %}

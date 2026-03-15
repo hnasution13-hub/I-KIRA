@@ -1,0 +1,54 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Library Template KPI{% endblock %}
+{% block breadcrumb %}Performance / Template KPI{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0">Library Template KPI</h5>
+  <a href="{% url 'kpi_template_create' %}" class="btn btn-sm btn-danger"><i class="fas fa-plus me-1"></i>Tambah Template</a>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive-wrap">
+<table class="table table-hover mb-0" style="font-size:.84rem;">
+      <thead><tr><th>Nama KPI</th><th>Kategori</th><th>Satuan</th><th>Arah</th><th>Aksi</th></tr></thead>
+      <tbody>
+      {% for t in templates %}
+      <tr>
+        <td>
+          <div class="fw-semibold">{{ t.nama }}</div>
+          {% if t.deskripsi %}<small class="text-muted">{{ t.deskripsi|truncatechars:60 }}</small>{% endif %}
+        </td>
+        <td>{% if t.kategori %}<span class="badge bg-secondary" style="font-size:.7rem;">{{ t.kategori }}</span>{% else %}—{% endif %}</td>
+        <td>{{ t.satuan }}</td>
+        <td>
+          <span style="font-size:.78rem;">
+            {% if t.arah == 'tinggi' %}<i class="fas fa-arrow-trend-up text-success"></i> Tinggi{% else %}<i class="fas fa-arrow-trend-down text-danger"></i> Rendah{% endif %}
+          </span>
+        </td>
+        <td>
+          <a href="{% url 'kpi_template_edit' t.pk %}" class="btn btn-outline-secondary btn-sm" style="font-size:.72rem;"><i class="fas fa-edit"></i></a>
+          <form method="post" action="{% url 'kpi_template_delete' t.pk %}" class="d-inline" onsubmit="return confirm('Hapus template ini?')">
+            {% csrf_token %}<button type="submit" class="btn btn-outline-danger btn-sm" style="font-size:.72rem;"><i class="fas fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr class="dt-empty">
+                    <td colspan="5" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-list-check"></i></div>
+                            <div class="empty-state-title">Belum ada template KPI</div>
+                            <div class="empty-state-desc">Buat template KPI sebagai acuan penilaian kinerja karyawan.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'kpi_template_create' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Buat Template KPI</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+</div>
+  </div>
+</div>
+{% endblock %}

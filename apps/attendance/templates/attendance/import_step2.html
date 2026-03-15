@@ -1,0 +1,153 @@
+{% extends 'base_dashboard.html' %}
+{% load attendance_filters %}
+{% block title %}Mapping Kolom Absensi{% endblock %}
+{% block breadcrumb %}Absensi / Import / Mapping Kolom{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-columns me-2 text-success"></i>Import Data Absensi — Mapping Kolom
+    </h4>
+    <a href="{% url 'attendance_import' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Upload Ulang
+    </a>
+</div>
+
+<!-- Progress indicator -->
+<div class="d-flex align-items-center gap-3 mb-4">
+    <div class="d-flex align-items-center gap-2 opacity-50">
+        <span class="badge bg-success rounded-circle p-2">✓</span>
+        <span class="small fw-semibold">Upload File</span>
+    </div>
+    <div class="text-muted">→</div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary rounded-circle p-2">2</span>
+        <span class="small fw-bold">Mapping Kolom</span>
+    </div>
+    <div class="text-muted">→</div>
+    <div class="d-flex align-items-center gap-2 opacity-50">
+        <span class="badge bg-secondary rounded-circle p-2">3</span>
+        <span class="small fw-semibold">Selesai</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Kiri: Form mapping -->
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-success text-white fw-bold py-2">
+                <i class="fas fa-sliders-h me-2"></i>Mapping Kolom File → Sistem
+            </div>
+            <div class="card-body p-3">
+                <p class="text-muted small mb-3">
+                    Pilih kolom mana di file Excel yang sesuai dengan field sistem.
+                    Kolom bertanda <span class="text-danger fw-bold">*</span> wajib.
+                </p>
+                <form method="post" action="{% url 'attendance_import_process' %}">
+                    {% csrf_token %}
+                    {% for field_key, field_label in system_fields %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">
+                            {{ field_label }}
+                            {% if field_key == 'nik' or field_key == 'tanggal' %}
+                            <span class="text-danger">*</span>
+                            {% endif %}
+                        </label>
+                        <select name="map_{{ field_key }}" class="form-select form-select-sm"
+                                {% if field_key == 'nik' or field_key == 'tanggal' %}required{% endif %}>
+                            <option value="">— tidak dipakai —</option>
+                            {% for i, col in headers|enumerate %}
+                            <option value="{{ i }}"
+                                {% if col|lower == field_key|lower or col|lower == field_label|lower %}selected{% endif %}>
+                                Kolom {{ i|add:1 }}: {{ col }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endfor %}
+
+                    <hr>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="overwrite" value="1" id="chk-overwrite">
+                        <label class="form-check-label small fw-semibold" for="chk-overwrite">
+                            Overwrite data yang sudah ada
+                        </label>
+                        <div class="form-text">Jika dicentang, data absensi existing pada tanggal yang sama akan ditimpa.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-file-import me-2"></i>Proses Import
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanan: Preview data -->
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light fw-bold py-2">
+                <i class="fas fa-table me-2 text-secondary"></i>Preview Data (5 baris pertama)
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" style="font-size:.82rem;">
+                        <thead class="table-dark">
+                            <tr>
+                                {% for col in headers %}
+                                <th class="text-nowrap px-3 py-2">{{ col }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in preview %}
+                            <tr>
+                                {% for cell in row %}
+                                <td class="px-3 py-2 text-nowrap">
+                                    {% if cell %}{{ cell }}{% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="99" class="text-center text-muted py-3">Tidak ada data preview.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-muted small py-2">
+                <i class="fas fa-info-circle me-1"></i>
+                Menampilkan maks. 5 baris pertama sebagai preview.
+            </div>
+        </div>
+
+        <!-- Info format -->
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-body p-3">
+                <p class="fw-semibold small mb-2"><i class="fas fa-info-circle text-info me-1"></i>Format yang diterima:</p>
+                <div class="row g-2 small text-muted">
+                    <div class="col-6">
+                        <strong>Tanggal:</strong><br>
+                        <code>2024-01-15</code><br>
+                        <code>15/01/2024</code><br>
+                        <code>15-01-2024</code>
+                    </div>
+                    <div class="col-6">
+                        <strong>Jam:</strong><br>
+                        <code>08:00</code><br>
+                        <code>08:00:00</code><br>
+                        <code>08.00</code>
+                    </div>
+                    <div class="col-12 mt-2">
+                        <strong>Status:</strong>
+                        <code>Hadir</code> / <code>H</code> /
+                        <code>Tidak Hadir</code> / <code>A</code> /
+                        <code>Izin</code> / <code>Sakit</code> /
+                        <code>Cuti</code> / <code>WFH</code> / <code>Libur</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}{% if object %}Edit{% else %}Tambah{% endif %} Lokasi{% endblock %}
+{% block breadcrumb %}Asset Management / Form Lokasi{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'locations:location_list' %}" class="text-secondary text-decoration-none small"><i class="fas fa-arrow-left me-1"></i>Lokasi</a>
+    <h4 class="text-white mb-0 mt-1">{% if object %}Edit: {{ object.name }}{% else %}Tambah Lokasi Baru{% endif %}</h4>
+</div>
+<div class="row"><div class="col-md-7">
+    <div class="card bg-dark border-secondary">
+        <div class="card-body">
+            <form method="post">{% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="form-label text-secondary small">Kode *</label>
+                        {% render_field form.code class="form-control bg-dark text-white border-secondary" %}
+                        {% if form.code.errors %}<div class="text-danger small">{{ form.code.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-8"><label class="form-label text-secondary small">Nama *</label>
+                        {% render_field form.name class="form-control bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-6"><label class="form-label text-secondary small">Tipe</label>
+                        {% render_field form.type class="form-select bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-6"><label class="form-label text-secondary small">Lokasi Induk</label>
+                        {% render_field form.parent class="form-select bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-6"><label class="form-label text-secondary small">Kapasitas</label>
+                        {% render_field form.capacity class="form-control bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-12"><label class="form-label text-secondary small">Deskripsi</label>
+                        {% render_field form.description class="form-control bg-dark text-white border-secondary" rows="3" %}
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Simpan</button>
+                    <a href="{% url 'locations:location_list' %}" class="btn btn-outline-secondary">Batal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div></div>
+{% endblock %}

@@ -1,0 +1,643 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+<title>HRIS SmartDesk — Human Resource Information System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:        #e63329;
+  --red-dark:   #b01f17;
+  --red-glow:   rgba(230,51,41,0.18);
+  --bg:         #080808;
+  --bg2:        #101010;
+  --bg3:        #161616;
+  --surface:    #1c1c1c;
+  --border:     #2a2a2a;
+  --border2:    #333;
+  --text:       #f0f0f0;
+  --muted:      #888;
+  --muted2:     #555;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: .4;
+}
+
+/* ── NAVBAR ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 60px;
+  height: 68px;
+  background: rgba(8,8,8,.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo-icon {
+  width: 36px; height: 36px; background: var(--red);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem; color: #fff; letter-spacing: 1px;
+  overflow: hidden; flex-shrink: 0;
+}
+.nav-logo-icon img { width:36px;height:36px;object-fit:contain;border-radius:8px;display:none; }
+.nav-logo-text { font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .9rem; color: var(--text); letter-spacing: .5px; line-height: 1.2; }
+.nav-logo-text span { display: block; font-size: .7rem; color: var(--muted); font-weight: 400; }
+.nav-links { display: flex; align-items: center; gap: 36px; list-style: none; }
+.nav-links a { color: var(--muted); text-decoration: none; font-size: .85rem; font-weight: 500; letter-spacing: .5px; text-transform: uppercase; transition: color .2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-cta { display: flex; align-items: center; gap: 12px; }
+.btn-nav { background: var(--red); color: #fff; text-decoration: none; padding: 9px 22px; border-radius: 6px; font-size: .82rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; transition: background .2s, transform .15s; display: flex; align-items: center; gap: 7px; }
+.btn-nav:hover { background: var(--red-dark); transform: translateY(-1px); }
+.btn-nav-ghost { background: transparent; border: 1px solid var(--border2); color: var(--muted); }
+.btn-nav-ghost:hover { border-color: var(--red); color: var(--text); background: transparent; }
+
+/* ── HERO ── */
+.hero { min-height: 100vh; display: flex; align-items: center; padding: 100px 60px 60px; position: relative; overflow: hidden; }
+.hero-bg-glow { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(230,51,41,.12) 0%, transparent 70%); top: -100px; left: -200px; pointer-events: none; }
+.hero-bg-glow2 { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(230,51,41,.08) 0%, transparent 70%); bottom: 0; right: 10%; pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.hero-content { max-width: 640px; position: relative; z-index: 2; }
+.hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(230,51,41,.1); border: 1px solid rgba(230,51,41,.3); border-radius: 20px; padding: 6px 16px; font-size: .75rem; font-weight: 600; color: var(--red); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 32px; }
+.hero-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--red); display: block; box-shadow: 0 0 8px var(--red); animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+.hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(5rem, 8vw, 8.5rem); line-height: .92; letter-spacing: 2px; margin-bottom: 28px; }
+.hero-title .red { color: var(--red); }
+.hero-title .outline { -webkit-text-stroke: 2px rgba(255,255,255,.2); color: transparent; }
+.hero-desc { font-size: 1.05rem; color: var(--muted); line-height: 1.75; max-width: 480px; margin-bottom: 44px; }
+.hero-desc strong { color: var(--text); font-weight: 500; }
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+.btn-primary { background: var(--red); color: #fff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: .9rem; font-weight: 600; letter-spacing: .5px; display: flex; align-items: center; gap: 10px; transition: all .2s; border: none; cursor: pointer; }
+.btn-primary:hover { background: var(--red-dark); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(230,51,41,.3); }
+.btn-ghost { background: transparent; color: var(--text); text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: .9rem; font-weight: 500; border: 1px solid var(--border2); display: flex; align-items: center; gap: 10px; transition: all .2s; }
+.btn-ghost:hover { border-color: var(--muted); background: var(--surface); }
+
+/* Hero visual */
+.hero-visual { position: absolute; right: 60px; top: 50%; transform: translateY(-50%); z-index: 2; }
+.hero-card-stack { position: relative; width: 380px; height: 420px; }
+.hero-card { position: absolute; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; backdrop-filter: blur(10px); }
+.hero-card-main { width: 340px; left: 20px; top: 20px; box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(230,51,41,.1); }
+.hero-card-back { width: 300px; left: 0; top: 0; background: var(--bg3); opacity: .6; transform: rotate(-3deg); }
+.hc-label { font-size: .7rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.hc-val { font-size: 1.5rem; font-weight: 700; margin-bottom: 16px; }
+.hc-val.red { color: var(--red); }
+.hc-bar-wrap { background: var(--bg3); border-radius: 4px; height: 6px; margin-bottom: 10px; overflow: hidden; }
+.hc-bar { height: 100%; background: var(--red); border-radius: 4px; }
+.hc-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.hc-row:last-child { border: none; }
+.hc-name { font-size: .82rem; }
+.hc-badge { font-size: .7rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.badge-green { background: rgba(34,197,94,.15); color: #22c55e; }
+.badge-yellow { background: rgba(251,191,36,.15); color: #fbbf24; }
+.badge-red { background: rgba(230,51,41,.15); color: var(--red); }
+
+/* ── STATS ── */
+.stats { padding: 40px 60px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); display: grid; grid-template-columns: repeat(4, 1fr); background: var(--bg2); }
+.stat-item { padding: 20px 32px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+.stat-item:last-child { border: none; }
+.stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; line-height: 1; color: var(--red); letter-spacing: 1px; }
+.stat-label { font-size: .8rem; color: var(--muted); letter-spacing: .5px; }
+
+/* ── SECTIONS ── */
+section { padding: 100px 60px; }
+.section-eyebrow { display: inline-block; font-size: .72rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--red); background: rgba(230,51,41,.08); border: 1px solid rgba(230,51,41,.2); padding: 5px 14px; border-radius: 4px; margin-bottom: 20px; }
+.section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.8rem, 4vw, 4.2rem); letter-spacing: 2px; line-height: 1; margin-bottom: 16px; }
+.section-title span { color: var(--red); }
+.section-desc { font-size: 1rem; color: var(--muted); max-width: 520px; line-height: 1.7; margin-bottom: 60px; }
+
+/* ── FEATURES ── */
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.feature-card { background: var(--bg2); padding: 36px 32px; transition: background .2s; position: relative; overflow: hidden; }
+.feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--red); opacity: 0; transition: opacity .2s; }
+.feature-card:hover { background: var(--bg3); }
+.feature-card:hover::before { opacity: 1; }
+.fc-icon { width: 44px; height: 44px; border-radius: 10px; background: rgba(230,51,41,.1); border: 1px solid rgba(230,51,41,.2); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 20px; }
+.fc-title { font-size: 1rem; font-weight: 600; margin-bottom: 10px; }
+.fc-desc { font-size: .85rem; color: var(--muted); line-height: 1.65; }
+
+/* ── MODULES ── */
+.modules-bg { background: var(--bg2); }
+.modules-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.module-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px; display: flex; align-items: flex-start; gap: 20px; transition: border-color .2s, transform .2s; position: relative; }
+.module-item:hover { border-color: var(--border2); transform: translateY(-2px); }
+.module-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+.module-info h4 { font-weight: 600; margin-bottom: 6px; }
+.module-info p { font-size: .84rem; color: var(--muted); line-height: 1.6; }
+.module-tag { position: absolute; top: 16px; right: 16px; font-size: .65rem; font-weight: 700; letter-spacing: 1px; padding: 3px 8px; border-radius: 4px; background: rgba(230,51,41,.1); color: var(--red); border: 1px solid rgba(230,51,41,.2); text-transform: uppercase; }
+.module-tag.addon { background: rgba(251,191,36,.08); color: #fbbf24; border-color: rgba(251,191,36,.2); }
+
+/* ── PAKET HARGA ── */
+.pricing-bg { background: var(--bg); }
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.pricing-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 36px 32px; position: relative; transition: border-color .2s, transform .2s; display: flex; flex-direction: column; }
+.pricing-card:hover { transform: translateY(-4px); }
+.pricing-card.featured { border-color: var(--red); background: linear-gradient(135deg, var(--bg3) 0%, rgba(230,51,41,.05) 100%); }
+.pricing-card.featured::before { content: 'PALING POPULER'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--red); color: #fff; font-size: .65rem; font-weight: 700; letter-spacing: 2px; padding: 4px 14px; border-radius: 20px; white-space: nowrap; }
+.pricing-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 2px; margin-bottom: 6px; }
+.pricing-desc { font-size: .83rem; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+.pricing-price { margin-bottom: 8px; }
+.pricing-price .amount { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: var(--red); letter-spacing: 1px; }
+.pricing-price .period { font-size: .8rem; color: var(--muted); }
+.pricing-alt { font-size: .78rem; color: var(--muted2); margin-bottom: 28px; border-top: 1px solid var(--border); padding-top: 12px; }
+.pricing-features { list-style: none; flex: 1; margin-bottom: 32px; }
+.pricing-features li { font-size: .85rem; color: var(--muted); padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: flex-start; }
+.pricing-features li:last-child { border: none; }
+.pricing-features li::before { content: '✓'; color: var(--red); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.pricing-features li.addon-item::before { content: '+'; color: #fbbf24; }
+.btn-pricing { display: block; text-align: center; padding: 14px; border-radius: 8px; font-weight: 600; font-size: .88rem; text-decoration: none; transition: all .2s; letter-spacing: .5px; }
+.btn-pricing-fill { background: var(--red); color: #fff; }
+.btn-pricing-fill:hover { background: var(--red-dark); }
+.btn-pricing-outline { border: 1px solid var(--border2); color: var(--muted); }
+.btn-pricing-outline:hover { border-color: var(--red); color: var(--text); }
+
+/* ── HOW IT WORKS ── */
+.steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+.steps-grid::before { content: ''; position: absolute; top: 28px; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, var(--border2), var(--border2), transparent); z-index: 0; }
+.step { padding: 0 24px; text-align: center; position: relative; z-index: 1; }
+.step-num { width: 56px; height: 56px; border-radius: 50%; background: var(--bg2); border: 2px solid var(--border2); display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: .9rem; font-weight: 500; color: var(--red); margin: 0 auto 20px; transition: all .2s; }
+.step:hover .step-num { background: var(--red); color: #fff; border-color: var(--red); box-shadow: 0 0 20px rgba(230,51,41,.4); }
+.step h4 { font-weight: 600; margin-bottom: 8px; font-size: .95rem; }
+.step p { font-size: .83rem; color: var(--muted); line-height: 1.6; }
+
+/* ── CTA ── */
+.cta-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.cta-inner { background: linear-gradient(135deg, var(--bg3) 0%, rgba(230,51,41,.06) 100%); border: 1px solid var(--border); border-radius: 20px; padding: 64px; display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: center; position: relative; overflow: hidden; }
+.cta-inner::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(230,51,41,.1) 0%, transparent 60%); pointer-events: none; }
+.cta-title { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 2px; line-height: 1; margin-bottom: 12px; }
+.cta-title span { color: var(--red); }
+.cta-desc { font-size: .95rem; color: var(--muted); line-height: 1.6; max-width: 480px; }
+.cta-actions { display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
+
+/* ── FOOTER ── */
+footer { padding: 60px 60px 32px; border-top: 1px solid var(--border); }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
+.footer-brand p { font-size: .85rem; color: var(--muted); line-height: 1.7; margin-top: 16px; max-width: 280px; }
+.footer-col h5 { font-size: .75rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted2); margin-bottom: 16px; }
+.footer-col a { display: block; font-size: .85rem; color: var(--muted); text-decoration: none; margin-bottom: 10px; transition: color .15s; }
+.footer-col a:hover { color: var(--text); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; border-top: 1px solid var(--border); font-size: .8rem; color: var(--muted2); }
+
+/* ── ANIMATE ── */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 1024px) {
+  nav { padding: 0 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 100px 24px 60px; }
+  .hero-visual { display: none; }
+  .hero-title { font-size: 5rem; }
+  .stats { grid-template-columns: repeat(2, 1fr); padding: 40px 24px; }
+  section { padding: 64px 24px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .modules-grid { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .steps-grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+  .steps-grid::before { display: none; }
+  .cta-inner { grid-template-columns: 1fr; padding: 36px; }
+  .cta-actions { align-items: flex-start; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">
+      <img id="navLogoImg" alt="Logo">
+      <span id="navLogoFb">H</span>
+    </div>
+    <div class="nav-logo-text">
+      HRIS SmartDesk
+      <span>Human Resource Information System</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#fitur">Fitur</a></li>
+    <li><a href="#modul">Modul</a></li>
+    <li><a href="#harga">Harga</a></li>
+    <li><a href="#cara-kerja">Cara Kerja</a></li>
+    <li><a href="#enterprise">Enterprise</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a href="{% url 'login' %}" class="btn-nav btn-nav-ghost">Masuk</a>
+    <a href="{% url 'registration:landing' %}" class="btn-nav">→ Coba Gratis</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-glow"></div>
+  <div class="hero-bg-glow2"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content reveal">
+    <div class="hero-badge">Human Resource Information System</div>
+    <h1 class="hero-title">
+      <span class="red">HRIS</span><br>
+      SMART<br>
+      <span class="outline">DESK</span>
+    </h1>
+    <p class="hero-desc">
+      Kelola seluruh SDM perusahaan Anda dengan sistem yang <strong>terintegrasi</strong> —
+      dari rekrutmen, absensi, penggajian, psikotes, hingga manajemen aset dan laporan analitik real-time.
+    </p>
+    <div class="hero-actions">
+      <a href="{% url 'registration:landing' %}" class="btn-primary">
+        <span>→</span> Coba Gratis 14 Hari
+      </a>
+      <a href="#fitur" class="btn-ghost">
+        <span>↓</span> Lihat Fitur
+      </a>
+    </div>
+  </div>
+  <div class="hero-visual reveal">
+    <div class="hero-card-stack">
+      <div class="hero-card hero-card-back"></div>
+      <div class="hero-card hero-card-main">
+        <div class="hc-label">Total Karyawan Aktif</div>
+        <div class="hc-val red">247</div>
+        <div class="hc-label">Kehadiran Hari Ini</div>
+        <div class="hc-bar-wrap"><div class="hc-bar" style="width:89%"></div></div>
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:20px;">89% — 220 hadir</div>
+        <div class="hc-row"><span class="hc-name">Engineering</span><span class="hc-badge badge-green">94% Hadir</span></div>
+        <div class="hc-row"><span class="hc-name">Marketing</span><span class="hc-badge badge-yellow">78% Hadir</span></div>
+        <div class="hc-row"><span class="hc-name">Finance</span><span class="hc-badge badge-green">100% Hadir</span></div>
+        <div class="hc-row"><span class="hc-name">Operations</span><span class="hc-badge badge-red">65% Hadir</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats reveal">
+  <div class="stat-item">
+    <span class="stat-num">15+</span>
+    <span class="stat-label">Modul Terintegrasi</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num">100%</span>
+    <span class="stat-label">Cloud-Based & Scalable</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num">MULTI</span>
+    <span class="stat-label">Tenant — Satu Server, Banyak Klien</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num">PWA</span>
+    <span class="stat-label">Portal Karyawan Mobile-Ready</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="fitur">
+  <div class="reveal">
+    <span class="section-eyebrow">Fitur Unggulan</span>
+    <h2 class="section-title">DIRANCANG UNTUK<br><span>SKALA ENTERPRISE</span></h2>
+    <p class="section-desc">Setiap fitur dibangun dengan mempertimbangkan kebutuhan perusahaan — performa, keamanan, dan kemudahan operasional.</p>
+  </div>
+  <div class="features-grid reveal">
+    <div class="feature-card">
+      <div class="fc-icon">📊</div>
+      <div class="fc-title">Analytics Real-Time</div>
+      <div class="fc-desc">Dashboard interaktif dengan grafik kehadiran per departemen, tren rekrutmen, dan KPI karyawan yang diperbarui secara langsung.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">🕐</div>
+      <div class="fc-title">Manajemen Shift Fleksibel</div>
+      <div class="fc-desc">Pengaturan shift dengan jam istirahat, toleransi keterlambatan, toleransi pulang cepat, dan rotasi shift otomatis.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">🧠</div>
+      <div class="fc-title">Psikotes Advanced</div>
+      <div class="fc-desc">Tes psikometri ilmiah Big Five OCEAN, Cognitive Speed, dan SJT — laporan otomatis untuk seleksi kandidat yang lebih tepat.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">📱</div>
+      <div class="fc-title">Portal Karyawan PWA</div>
+      <div class="fc-desc">Absensi GPS, slip gaji, pengajuan cuti, dan jadwal kerja langsung dari smartphone — bisa dipakai offline, auto-sync saat online.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">💰</div>
+      <div class="fc-title">Penggajian Otomatis</div>
+      <div class="fc-desc">Kalkulasi gaji, tunjangan, dan potongan otomatis. Slip gaji PDF dan file transfer siap kirim ke bank (format CSV/TXT).</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">🔒</div>
+      <div class="fc-title">Role-Based Access & Audit</div>
+      <div class="fc-desc">Kontrol akses granular per modul dan per data. Audit trail lengkap untuk setiap perubahan data karyawan.</div>
+    </div>
+  </div>
+</section>
+
+<!-- MODULES -->
+<section id="modul" class="modules-bg">
+  <div class="reveal">
+    <span class="section-eyebrow">Modul Sistem</span>
+    <h2 class="section-title">EKOSISTEM<br><span>LENGKAP</span></h2>
+    <p class="section-desc">Semua yang dibutuhkan HR ada dalam satu platform. Modul inti inklusif, add-on tersedia sesuai kebutuhan.</p>
+  </div>
+  <div class="modules-grid reveal">
+    <div class="module-item">
+      <div class="module-icon">👥</div>
+      <div class="module-info">
+        <h4>Manajemen Karyawan</h4>
+        <p>Data lengkap karyawan, struktur organisasi, jabatan, riwayat karir, dan log perubahan biodata.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">📋</div>
+      <div class="module-info">
+        <h4>Rekrutmen & Seleksi</h4>
+        <p>Manpower request, pipeline kandidat, ATS scan CV dengan AI scoring, offering letter, dan cetak dokumen.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">✅</div>
+      <div class="module-info">
+        <h4>Absensi, Cuti & Lembur</h4>
+        <p>Manajemen shift, izin, cuti, lembur, import fingerprint, dan rekapitulasi otomatis dengan approval chain.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">💳</div>
+      <div class="module-info">
+        <h4>Penggajian (Payroll)</h4>
+        <p>Komponen gaji fleksibel, tunjangan per lokasi/jabatan, slip gaji PDF, dan export file transfer bank.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">📄</div>
+      <div class="module-info">
+        <h4>Kontrak Karyawan</h4>
+        <p>CRUD kontrak PKWT/PKWTT/PHL, perpanjang kontrak, cetak dokumen, dan notifikasi kontrak hampir habis.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">⚖️</div>
+      <div class="module-info">
+        <h4>Hubungan Industrial</h4>
+        <p>Catat pelanggaran, SP otomatis, pesangon PP 35/2021, surat PHK, perjanjian bersama, dan surat keterangan kerja.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">📈</div>
+      <div class="module-info">
+        <h4>Penilaian Kinerja (KPI)</h4>
+        <p>Template KPI per periode, input penilaian, review atasan, dan ranking kinerja karyawan.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">🏢</div>
+      <div class="module-info">
+        <h4>OD & Kompetensi</h4>
+        <p>Workload standard, FTE planning, competency matrix, gap report, org chart, dan approval matrix.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">📊</div>
+      <div class="module-info">
+        <h4>Laporan & Analitik</h4>
+        <p>6 laporan terintegrasi: absensi, payroll, karyawan, kontrak, pelanggaran, dan rekrutmen — export Excel.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">📱</div>
+      <div class="module-info">
+        <h4>Portal Karyawan (Self-Service)</h4>
+        <p>Absensi GPS, slip gaji, pengajuan cuti, jadwal kerja, dan edit profil langsung dari smartphone.</p>
+      </div>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">🧪</div>
+      <div class="module-info">
+        <h4>Advanced Psychotest</h4>
+        <p>Tes psikometri OCEAN Big Five dengan laporan dan interpretasi otomatis per kandidat.</p>
+      </div>
+      <span class="module-tag addon">Add-On</span>
+    </div>
+    <div class="module-item">
+      <div class="module-icon">📦</div>
+      <div class="module-info">
+        <h4>Asset Management</h4>
+        <p>Pencatatan aset, kategori hierarki, mutasi, maintenance, audit, dan laporan depresiasi otomatis.</p>
+      </div>
+      <span class="module-tag addon">Add-On</span>
+    </div>
+  </div>
+</section>
+
+<!-- PAKET HARGA -->
+<section id="harga" class="pricing-bg">
+  <div class="reveal">
+    <span class="section-eyebrow">Paket Harga</span>
+    <h2 class="section-title">PILIH PAKET<br><span>YANG SESUAI</span></h2>
+    <p class="section-desc">Tersedia pilihan langganan bulanan (SaaS) maupun implementasi langsung. Semua paket sudah termasuk onboarding dan dukungan teknis.</p>
+  </div>
+  <div class="pricing-grid reveal">
+
+    <!-- STARTER -->
+    <div class="pricing-card">
+      <div class="pricing-name">Starter</div>
+      <div class="pricing-desc">Untuk perusahaan kecil yang baru mulai mendigitalisasi HR.</div>
+      <div class="pricing-price">
+        <span class="amount">Hub Kami</span>
+      </div>
+      <div class="pricing-alt">atau implementasi sekali bayar — hubungi untuk penawaran</div>
+      <ul class="pricing-features">
+        <li>Hingga 50 karyawan</li>
+        <li>Manajemen Karyawan</li>
+        <li>Absensi, Cuti & Lembur</li>
+        <li>Penggajian (Payroll)</li>
+        <li>Kontrak Karyawan</li>
+        <li>Portal Karyawan (PWA)</li>
+        <li>Laporan & Export Excel</li>
+        <li>Dukungan teknis via WhatsApp & Email</li>
+      </ul>
+      <a href="https://wa.me/{{ SALES_WA }}?text=Halo,%20saya%20tertarik%20paket%20Starter%20HRIS%20SmartDesk" target="_blank" class="btn-pricing btn-pricing-outline">Hubungi Kami →</a>
+    </div>
+
+    <!-- PROFESSIONAL -->
+    <div class="pricing-card featured">
+      <div class="pricing-name">Professional</div>
+      <div class="pricing-desc">Untuk perusahaan menengah dengan kebutuhan HR yang lebih lengkap.</div>
+      <div class="pricing-price">
+        <span class="amount">Hub Kami</span>
+      </div>
+      <div class="pricing-alt">atau implementasi sekali bayar — hubungi untuk penawaran</div>
+      <ul class="pricing-features">
+        <li>Hingga 500 karyawan</li>
+        <li>Semua fitur Starter</li>
+        <li>Rekrutmen & Seleksi (ATS)</li>
+        <li>Hubungan Industrial</li>
+        <li>Penilaian Kinerja (KPI)</li>
+        <li>OD & Kompetensi</li>
+        <li>Shift & Roster</li>
+        <li>Audit Trail lengkap</li>
+        <li class="addon-item">Advanced Psychotest (Add-On)</li>
+        <li class="addon-item">Asset Management (Add-On)</li>
+      </ul>
+      <a href="https://wa.me/{{ SALES_WA }}?text=Halo,%20saya%20tertarik%20paket%20Professional%20HRIS%20SmartDesk" target="_blank" class="btn-pricing btn-pricing-fill">Hubungi Kami →</a>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div class="pricing-card">
+      <div class="pricing-name">Enterprise</div>
+      <div class="pricing-desc">Untuk perusahaan besar dengan kebutuhan kustomisasi dan multi-lokasi.</div>
+      <div class="pricing-price">
+        <span class="amount">Custom</span>
+      </div>
+      <div class="pricing-alt">harga disesuaikan — implementasi + lisensi sesuai kebutuhan</div>
+      <ul class="pricing-features">
+        <li>Karyawan tidak terbatas</li>
+        <li>Semua fitur Professional</li>
+        <li>Multi-tenant (banyak perusahaan)</li>
+        <li>Kustomisasi modul & alur kerja</li>
+        <li>Dedicated server / on-premise</li>
+        <li>Training tim HR on-site</li>
+        <li>Semua Add-On sudah termasuk</li>
+        <li>Prioritas penanganan isu</li>
+      </ul>
+      <a href="mailto:{{ SALES_EMAIL }}?subject=Penawaran%20Enterprise%20HRIS%20SmartDesk" class="btn-pricing btn-pricing-outline">Diskusi Kebutuhan →</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="cara-kerja" style="background: var(--bg2);">
+  <div class="reveal">
+    <span class="section-eyebrow">Cara Kerja</span>
+    <h2 class="section-title">MULAI DALAM<br><span>4 LANGKAH</span></h2>
+    <p class="section-desc">Implementasi cepat, tanpa ribet. Kami mendampingi dari awal hingga go-live.</p>
+  </div>
+  <div class="steps-grid reveal">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h4>Konsultasi & Setup</h4>
+      <p>Analisis kebutuhan perusahaan, konfigurasi struktur organisasi, jabatan, dan role akses.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h4>Import Data</h4>
+      <p>Migrasi data karyawan eksisting dari sistem lama atau Excel — proses cepat dengan template siap pakai.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h4>Training Tim HR</h4>
+      <p>Pelatihan tim HR untuk semua modul yang digunakan. Dokumentasi panduan tersedia lengkap.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <h4>Go Live & Support</h4>
+      <p>Sistem aktif dengan pendampingan penuh. Dukungan teknis via WhatsApp & Email selama jam kerja.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ENTERPRISE CTA -->
+<section id="enterprise" class="cta-section">
+  <div class="cta-inner reveal">
+    <div>
+      <span class="section-eyebrow">Demo Gratis</span>
+      <h2 class="cta-title">LIHAT SENDIRI<br><span>SEBELUM MEMUTUSKAN</span></h2>
+      <p class="cta-desc">
+        Coba akun demo selama 14 hari — data sudah terisi, semua fitur bisa langsung dijajal.
+        Tidak perlu kartu kredit, tidak ada komitmen.
+      </p>
+    </div>
+    <div class="cta-actions">
+      <a href="{% url 'registration:landing' %}" class="btn-primary" style="white-space:nowrap;">
+        → Daftar Demo Gratis
+      </a>
+      <a href="https://wa.me/{{ SALES_WA }}?text=Halo,%20saya%20ingin%20tahu%20lebih%20lanjut%20tentang%20HRIS%20SmartDesk" target="_blank" class="btn-ghost" style="white-space:nowrap;">
+        💬 Tanya via WhatsApp
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid reveal">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo" style="text-decoration:none;">
+        <div class="nav-logo-icon">
+          <img id="footerLogoImg" alt="Logo">
+          <span id="footerLogoFb">H</span>
+        </div>
+        <div class="nav-logo-text">
+          HRIS SmartDesk
+          <span>Human Resource Information System</span>
+        </div>
+      </a>
+      <p>Platform HRIS untuk perusahaan Indonesia yang ingin mengelola SDM lebih efisien dan berbasis data.</p>
+    </div>
+    <div class="footer-col">
+      <h5>Produk</h5>
+      <a href="#fitur">Fitur Unggulan</a>
+      <a href="#modul">Semua Modul</a>
+      <a href="#harga">Paket Harga</a>
+      <a href="{% url 'registration:landing' %}">Coba Gratis</a>
+    </div>
+    <div class="footer-col">
+      <h5>Informasi</h5>
+      <a href="#cara-kerja">Cara Kerja</a>
+      <a href="#enterprise">Demo</a>
+      <a href="mailto:{{ SALES_EMAIL }}">Kontak</a>
+    </div>
+    <div class="footer-col">
+      <h5>Support</h5>
+      <a href="mailto:{{ SALES_EMAIL }}">Email Support</a>
+      <a href="https://wa.me/{{ SALES_WA }}" target="_blank">WhatsApp</a>
+      <a href="{% url 'login' %}">Login</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 HRIS SmartDesk. All rights reserved.</span>
+    <span style="font-family:'DM Mono',monospace;font-size:.75rem;color:var(--muted2);">v2.0 — Enterprise Edition</span>
+  </div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+<script>
+(function(){
+  var logoUrl = "{% static 'images/Logo.png' %}";
+  [['navLogoImg','navLogoFb'],['footerLogoImg','footerLogoFb']].forEach(function(pair){
+    var img = document.getElementById(pair[0]);
+    var fb  = document.getElementById(pair[1]);
+    if(!img) return;
+    img.src = logoUrl;
+    img.onload  = function(){ img.style.display='block'; if(fb) fb.style.display='none'; };
+    img.onerror = function(){ img.style.display='none';  if(fb) fb.style.display=''; };
+  });
+})();
+</script>
+</body>
+</html>

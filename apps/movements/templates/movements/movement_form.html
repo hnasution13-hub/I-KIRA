@@ -1,0 +1,89 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}{% if object %}Edit{% else %}Tambah{% endif %} Mutasi{% endblock %}
+{% block breadcrumb %}Asset Management / Form Mutasi{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'movements:movement_list' %}" class="text-secondary text-decoration-none small"><i class="fas fa-arrow-left me-1"></i>Mutasi</a>
+    <h4 class="text-white mb-0 mt-1">{% if object %}Edit Mutasi{% else %}Tambah Mutasi Aset{% endif %}</h4>
+</div>
+<form method="post">{% csrf_token %}
+<div class="row g-4">
+    <!-- Informasi Utama -->
+    <div class="col-md-12">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header border-secondary"><h6 class="text-white mb-0">Informasi Mutasi</h6></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label text-secondary small">Aset *</label>
+                        {% render_field form.asset class="form-select bg-dark text-white border-secondary" %}
+                        {% if form.asset.errors %}<div class="text-danger small">{{ form.asset.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3"><label class="form-label text-secondary small">Tipe Mutasi *</label>
+                        {% render_field form.movement_type class="form-select bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-3"><label class="form-label text-secondary small">Tanggal *</label>
+                        {% render_field form.movement_date class="form-control bg-dark text-white border-secondary" type="date" %}
+                    </div>
+                    <div class="col-md-3"><label class="form-label text-secondary small">No. Dokumen</label>
+                        {% render_field form.document_no class="form-control bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-3"><label class="form-label text-secondary small">Tgl. Dokumen</label>
+                        {% render_field form.document_date class="form-control bg-dark text-white border-secondary" type="date" %}
+                    </div>
+                    <div class="col-md-3"><label class="form-label text-secondary small">Biaya</label>
+                        {% render_field form.cost class="form-control bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-12"><label class="form-label text-secondary small">Keterangan</label>
+                        {% render_field form.description class="form-control bg-dark text-white border-secondary" rows="2" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Dari dan Ke -->
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header border-secondary"><h6 class="text-white mb-0"><i class="fas fa-arrow-right me-2 text-danger"></i>Dari</h6></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-12"><label class="form-label text-secondary small">PIC Asal</label>
+                        {% render_field form.from_pic class="form-select bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-12"><label class="form-label text-secondary small">Lokasi Asal</label>
+                        {% render_field form.from_location class="form-select bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-12"><label class="form-label text-secondary small">Kondisi Asal</label>
+                        {% render_field form.from_condition class="form-control bg-dark text-white border-secondary" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-dark border-success">
+            <div class="card-header border-success"><h6 class="text-white mb-0"><i class="fas fa-arrow-right me-2 text-success"></i>Ke</h6></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-12"><label class="form-label text-secondary small">PIC Tujuan</label>
+                        {% render_field form.to_pic class="form-select bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-12"><label class="form-label text-secondary small">Lokasi Tujuan</label>
+                        {% render_field form.to_location class="form-select bg-dark text-white border-secondary" %}
+                    </div>
+                    <div class="col-md-12"><label class="form-label text-secondary small">Kondisi Tujuan</label>
+                        {% render_field form.to_condition class="form-control bg-dark text-white border-secondary" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Simpan Mutasi</button>
+            <a href="{% url 'movements:movement_list' %}" class="btn btn-outline-secondary">Batal</a>
+        </div>
+    </div>
+</div>
+</form>
+{% endblock %}

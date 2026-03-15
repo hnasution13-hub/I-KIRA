@@ -1,0 +1,89 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Detail SP - {{ sp.employee.nama }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'sp_list' %}">Surat Peringatan</a></li>
+      <li class="breadcrumb-item active">Detail</li>
+    </ol>
+  </nav>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0">⚠️ {{ sp.level_label }} — {{ sp.employee.nama }}</h4>
+    <div class="d-flex gap-2">
+      <a href="{% url 'sp_print' sp.pk %}" target="_blank" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-printer me-1"></i>Cetak
+      </a>
+      <a href="{% url 'sp_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+    </div>
+  </div>
+  {% if messages %}{% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">{{ msg|safe }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+  {% endfor %}{% endif %}
+  <div class="row g-3">
+    <div class="col-md-5">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-semibold small bg-light">Info SP</div>
+        <div class="card-body small">
+          <table class="table table-sm table-borderless mb-0">
+            <tr><td class="text-muted">Level</td><td>
+              <span class="badge {% if sp.level == 1 %}bg-warning text-dark{% elif sp.level == 2 %}bg-danger{% else %}bg-danger{% endif %}">
+                {{ sp.level_label }}</span>
+              {% if sp.is_eskalasi %}<span class="badge bg-secondary ms-1">Eskalasi</span>{% endif %}
+            </td></tr>
+            <tr><td class="text-muted">Nomor</td><td>{{ sp.nomor_sp|default:"-" }}</td></tr>
+            <tr><td class="text-muted">Tanggal SP</td><td>{{ sp.tanggal_sp|date:"d F Y" }}</td></tr>
+            <tr><td class="text-muted">Berlaku s/d</td><td>{{ sp.tanggal_berlaku_sampai|date:"d F Y" }}</td></tr>
+            <tr><td class="text-muted">Status</td><td>
+              <span class="badge {% if sp.status == 'aktif' %}bg-success{% elif sp.status == 'expired' %}bg-secondary{% else %}bg-light text-dark border{% endif %}">
+                {{ sp.get_status_display }}</span></td></tr>
+            <tr><td class="text-muted">Pelanggaran</td><td>{{ sp.label_pelanggaran }}</td></tr>
+            <tr><td class="text-muted">Kategori</td><td>{{ sp.kategori_pelanggaran }}</td></tr>
+            <tr><td class="text-muted">Tingkat</td><td>{{ sp.tingkat_pelanggaran }}</td></tr>
+            <tr><td class="text-muted">Dasar Pasal</td><td>{{ sp.dasar_pasal }}</td></tr>
+          </table>
+        </div>
+      </div>
+      {# Riwayat SP karyawan ini #}
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold small bg-light">Riwayat SP — {{ sp.employee.nama }}</div>
+        <div class="card-body p-2">
+          {% for h in history %}
+          <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded
+               {% if h.pk == sp.pk %}bg-warning bg-opacity-25 border border-warning{% elif h.status == 'aktif' %}bg-light border{% else %}bg-light{% endif %} mb-1 small">
+            <div>
+              <span class="badge {% if h.level == 1 %}bg-warning text-dark{% else %}bg-danger{% endif %} me-1">SP {{ h.level }}</span>
+              {{ h.label_pelanggaran|truncatechars:35 }}
+            </div>
+            <div class="text-nowrap ms-2">
+              <a href="{% url 'sp_detail' h.pk %}" class="text-decoration-none text-muted">{{ h.tanggal_sp|date:"d/m/Y" }}</a>
+              <span class="badge {% if h.status == 'aktif' %}bg-success{% else %}bg-secondary{% endif %} ms-1">{{ h.status }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-7">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-semibold small bg-danger text-white">Uraian Pelanggaran</div>
+        <div class="card-body small">{{ sp.uraian_pelanggaran|linebreaksbr }}</div>
+      </div>
+      {% if sp.sanksi %}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-semibold small bg-light">Sanksi</div>
+        <div class="card-body small">{{ sp.sanksi|linebreaksbr }}</div>
+      </div>
+      {% endif %}
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold small bg-light">Penandatangan</div>
+        <div class="card-body small">
+          <strong>{{ sp.nama_penandatangan }}</strong><br>
+          <span class="text-muted">{{ sp.jabatan_penandatangan }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

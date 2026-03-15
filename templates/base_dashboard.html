@@ -1,0 +1,1184 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Dashboard{% endblock %} — HRIS SmartDesk</title>
+<link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── THEME VARIABLES ── */
+:root {
+  --red: #e63329; --red-dark: #c0211a; --red-glow: rgba(230,51,41,.15);
+  --sidebar-w: 260px; --topbar-h: 62px;
+  --radius: 10px; --font: 'Inter', sans-serif;
+}
+[data-theme="dark"] {
+  --bg:#0f0f0f; --bg2:#171717; --bg3:#1e1e1e;
+  --surface:#252525; --surface2:#2c2c2c;
+  --border:#2e2e2e; --border2:#3a3a3a;
+  --text:#f0f0f0; --text2:#c8c8c8; --muted:#888; --muted2:#555;
+  --hover:rgba(255,255,255,.04); --active-bg:rgba(230,51,41,.1);
+  --shadow:0 4px 24px rgba(0,0,0,.5); --shadow-lg:0 8px 40px rgba(0,0,0,.65);
+}
+[data-theme="light"] {
+  --bg:#f2f4f7; --bg2:#ffffff; --bg3:#f7f8fa;
+  --surface:#f0f2f5; --surface2:#e5e8ed;
+  --border:#e1e5eb; --border2:#ced4da;
+  --text:#1a1d23; --text2:#3d4450; --muted:#6c7585; --muted2:#a0a8b4;
+  --hover:rgba(0,0,0,.04); --active-bg:rgba(230,51,41,.07);
+  --shadow:0 2px 12px rgba(0,0,0,.08); --shadow-lg:0 6px 30px rgba(0,0,0,.12);
+}
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;transition:background .3s,color .3s;line-height:1.55;}
+
+/* ── SKIP NAV (Aksesibilitas) ── */
+.skip-nav{position:fixed;top:-100px;left:20px;z-index:9999;background:var(--red);color:#fff;padding:10px 20px;border-radius:0 0 8px 8px;font-size:.85rem;font-weight:600;text-decoration:none;transition:top .2s;}
+.skip-nav:focus{top:0;outline:3px solid #fff;outline-offset:2px;}
+
+/* ── FOCUS RING GLOBAL (Aksesibilitas) ── */
+:focus-visible{outline:2px solid var(--red)!important;outline-offset:2px;}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--red)!important;outline-offset:2px;border-radius:4px;}
+
+/* ══ SIDEBAR ══ */
+.sidebar{width:var(--sidebar-w);height:100vh;position:fixed;left:0;top:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;transition:width .25s cubic-bezier(.4,0,.2,1),background .3s;overflow:hidden;}
+.sidebar.collapsed{width:64px;}
+
+/* Logo */
+.sb-logo{height:var(--topbar-h);display:flex;align-items:center;padding:0 16px;gap:12px;border-bottom:1px solid var(--border);flex-shrink:0;overflow:hidden;text-decoration:none;}
+.sb-logo-img{width:36px;height:36px;object-fit:contain;flex-shrink:0;border-radius:8px;}
+.sb-logo-fallback{width:36px;height:36px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;flex-shrink:0;}
+.sb-logo-text{overflow:hidden;transition:opacity .2s;white-space:nowrap;}
+.sb-logo-name{font-size:.92rem;font-weight:700;color:var(--text);letter-spacing:-.3px;}
+.sb-logo-sub{font-size:.68rem;color:var(--muted);font-weight:400;}
+.sidebar.collapsed .sb-logo-text{opacity:0;width:0;}
+
+/* Toggle btn */
+.sb-toggle{position:absolute;top:50%;right:-13px;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:var(--bg2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.65rem;z-index:101;transition:all .15s;box-shadow:var(--shadow);}
+.sb-toggle:hover{background:var(--surface);color:var(--text);}
+
+/* Scroll */
+.sb-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 0 16px;}
+.sb-scroll::-webkit-scrollbar{width:3px;}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* Section label */
+.sb-section{padding:16px 18px 5px;font-size:.64rem;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted2);white-space:nowrap;transition:opacity .2s;}
+.sidebar.collapsed .sb-section{opacity:0;}
+
+/* Group */
+.sb-group{margin-bottom:1px;}
+.sb-group-btn{display:flex;align-items:center;padding:0 14px;height:40px;cursor:pointer;gap:8px;transition:background .15s;user-select:none;}
+.sb-group-btn:hover{background:var(--hover);}
+.sb-group-ico{width:22px;text-align:center;font-size:.88rem;color:var(--muted);flex-shrink:0;transition:color .15s;}
+.sb-group-btn:hover .sb-group-ico{color:var(--text2);}
+.sb-group-lbl{flex:1;font-size:.83rem;font-weight:600;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;transition:opacity .2s;}
+.sidebar.collapsed .sb-group-lbl{opacity:0;}
+.sb-group-arrow{font-size:.6rem;color:var(--muted2);transition:transform .2s;flex-shrink:0;margin-left:auto;}
+.sb-group.open .sb-group-arrow{transform:rotate(90deg);}
+.sidebar.collapsed .sb-group-arrow{display:none;}
+.sb-addon-badge{font-size:.55rem;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(251,191,36,.12);color:#f59e0b;border:1px solid rgba(251,191,36,.2);flex-shrink:0;white-space:nowrap;}
+.sidebar.collapsed .sb-addon-badge{display:none;}
+
+/* Items */
+.sb-items{overflow:hidden;max-height:0;transition:max-height .3s cubic-bezier(.4,0,.2,1);}
+.sb-group.open .sb-items{max-height:800px;}
+
+.sb-item{display:flex;align-items:center;gap:10px;padding:0 14px 0 22px;height:38px;text-decoration:none;color:var(--muted);font-size:.82rem;font-weight:400;white-space:nowrap;transition:background .12s,color .12s;position:relative;}
+.sb-item::before{content:'';position:absolute;left:14px;top:7px;bottom:7px;width:1.5px;background:var(--border);border-radius:1px;transition:background .15s;}
+.sb-item:hover{background:var(--hover);color:var(--text);}
+.sb-item:hover::before{background:var(--border2);}
+.sb-item.active{color:var(--text);background:var(--active-bg);font-weight:500;}
+.sb-item.active::before{background:var(--red);}
+.sb-item-ico{width:16px;text-align:center;font-size:.78rem;flex-shrink:0;}
+.sb-item-lbl{flex:1;transition:opacity .2s;}
+.sidebar.collapsed .sb-item-lbl{opacity:0;}
+.sb-item-tag{font-size:.57rem;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0;}
+.sb-item-tag.addon{background:rgba(251,191,36,.12);color:#f59e0b;}
+.sb-item-tag.soon{background:rgba(99,102,241,.12);color:#818cf8;}
+.sidebar.collapsed .sb-item-tag{display:none;}
+
+/* Footer */
+.sb-footer{border-top:1px solid var(--border);padding:12px;flex-shrink:0;}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius);overflow:hidden;}
+.sb-avatar{width:32px;height:32px;border-radius:8px;background:var(--red);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:#fff;flex-shrink:0;overflow:hidden;}
+.sb-avatar img{width:32px;height:32px;object-fit:cover;border-radius:8px;display:block;}
+.sb-user-info{overflow:hidden;transition:opacity .2s;}
+.sb-user-name{font-size:.83rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-user-role{font-size:.69rem;color:var(--muted);}
+.sidebar.collapsed .sb-user-info{opacity:0;}
+
+/* ── SIDEBAR MOBILE OVERLAY ── */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;backdrop-filter:blur(2px);}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1);}
+  .sidebar.mobile-open{transform:translateX(0);}
+  .sidebar.collapsed{width:var(--sidebar-w);transform:translateX(-100%);}
+  .sidebar.collapsed.mobile-open{transform:translateX(0);}
+  .sb-overlay.active{display:block;}
+  .sb-toggle{display:none;}
+  .topbar{left:0!important;}
+  .main-wrap{margin-left:0!important;width:100%!important;}
+}
+
+/* ══ TOPBAR ══ */
+.topbar{position:fixed;left:var(--sidebar-w);right:0;top:0;height:var(--topbar-h);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:90;transition:left .25s cubic-bezier(.4,0,.2,1),background .3s;box-shadow:var(--shadow);}
+body.sb-collapsed .topbar{left:64px;}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.breadcrumb-wrap{font-size:.83rem;color:var(--muted);display:flex;align-items:center;gap:7px;}
+.breadcrumb-wrap .bc-cur{color:var(--text);font-weight:500;}
+.bc-sep{color:var(--muted2);}
+.topbar-right{display:flex;align-items:center;gap:6px;}
+
+/* Mobile menu btn */
+.tb-mobile-menu{display:none;width:36px;height:36px;border-radius:8px;background:transparent;border:1px solid var(--border2);align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:.9rem;transition:all .15s;}
+.tb-mobile-menu:hover{background:var(--surface);color:var(--text);}
+@media(max-width:768px){.tb-mobile-menu{display:flex;}}
+
+/* Theme toggle */
+.tb-theme{width:66px;height:34px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;cursor:pointer;padding:3px;position:relative;flex-shrink:0;transition:background .3s;}
+.tb-theme-thumb{position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:14px;background:var(--red);transition:transform .25s cubic-bezier(.4,0,.2,1);box-shadow:0 2px 8px rgba(0,0,0,.35);}
+[data-theme="light"] .tb-theme-thumb{transform:translateX(30px);background:#f59e0b;}
+.tb-theme-track{display:flex;align-items:center;justify-content:space-between;width:100%;padding:0 5px;position:relative;z-index:1;}
+.tb-ico-moon,.tb-ico-sun{font-size:.72rem;transition:color .25s;}
+[data-theme="dark"]  .tb-ico-moon{color:#fff;}
+[data-theme="dark"]  .tb-ico-sun{color:var(--muted2);}
+[data-theme="light"] .tb-ico-sun{color:#fff;}
+[data-theme="light"] .tb-ico-moon{color:var(--muted2);}
+
+/* Topbar btn */
+.tb-btn{width:36px;height:36px;border-radius:8px;background:transparent;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:.85rem;transition:all .15s;text-decoration:none;position:relative;}
+.tb-btn:hover{background:var(--surface);color:var(--text);}
+.tb-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--bg2);}
+.tb-divider{width:1px;height:22px;background:var(--border);margin:0 4px;}
+
+/* User dropdown */
+.tb-user-wrap{position:relative;}
+.tb-user{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:8px;cursor:pointer;transition:background .15s;user-select:none;}
+.tb-user:hover{background:var(--surface);}
+.tb-avatar{width:32px;height:32px;border-radius:8px;background:var(--red);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;color:#fff;flex-shrink:0;overflow:hidden;}
+.tb-avatar img{width:32px;height:32px;object-fit:cover;border-radius:8px;display:block;}
+.tb-user-name{font-size:.84rem;font-weight:600;color:var(--text);}
+.tb-user-role{font-size:.69rem;color:var(--muted);}
+.tb-chevron{font-size:.6rem;color:var(--muted);transition:transform .2s;margin-left:2px;}
+.tb-user-wrap.open .tb-chevron{transform:rotate(180deg);}
+
+.tb-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;min-width:192px;z-index:200;overflow:hidden;box-shadow:var(--shadow-lg);animation:ddIn .15s ease;}
+.tb-user-wrap.open .tb-dropdown{display:block;}
+@keyframes ddIn{from{opacity:0;transform:translateY(-8px);}}
+.tb-dd-head{padding:14px 16px 11px;border-bottom:1px solid var(--border);}
+.tb-dd-name{font-size:.85rem;font-weight:600;color:var(--text);}
+.tb-dd-email{font-size:.71rem;color:var(--muted);margin-top:2px;}
+.tb-dd-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:.83rem;color:var(--text2);text-decoration:none;transition:background .12s;border:none;background:none;width:100%;font-family:var(--font);cursor:pointer;}
+.tb-dd-item:hover{background:var(--hover);color:var(--text);}
+.tb-dd-item.danger{color:#f87171;}
+.tb-dd-item.danger:hover{background:rgba(230,51,41,.08);}
+.tb-dd-item i{width:15px;text-align:center;color:var(--muted);font-size:.82rem;}
+.tb-dd-item.danger i{color:#f87171;}
+.tb-dd-sep{height:1px;background:var(--border);}
+
+/* ══ MAIN ══ */
+.main-wrap{margin-left:var(--sidebar-w);margin-top:var(--topbar-h);min-height:calc(100vh - var(--topbar-h));padding:28px 28px 48px;transition:margin-left .25s cubic-bezier(.4,0,.2,1);width:calc(100% - var(--sidebar-w));}
+body.sb-collapsed .main-wrap{margin-left:64px;width:calc(100% - 64px);}
+
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.page-title{font-size:1.35rem;font-weight:700;letter-spacing:-.3px;}
+.page-sub{font-size:.82rem;color:var(--muted);margin-top:3px;}
+.page-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ══ COMPONENTS ══ */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;font-family:var(--font);font-size:.83rem;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .15s;white-space:nowrap;}
+.btn-red{background:var(--red);color:#fff;}
+.btn-red:hover{background:var(--red-dark);color:#fff;}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+.btn-outline:hover{background:var(--surface);color:var(--text);}
+.btn-ghost{background:transparent;color:var(--muted);border:none;}
+.btn-ghost:hover{color:var(--text);background:var(--hover);}
+.btn-sm{padding:6px 14px;font-size:.79rem;}
+.btn-xs{padding:4px 10px;font-size:.75rem;}
+
+.card{background:var(--bg2)!important;border:1px solid var(--border)!important;border-radius:12px!important;padding:20px;transition:background .3s,border-color .3s;}
+.card-header{background:transparent!important;border-bottom:1px solid var(--border)!important;padding:14px 18px!important;color:var(--text)!important;}
+.card-body{color:var(--text)!important;}
+.card-title{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:12px;}
+
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color .2s,box-shadow .2s;}
+.stat-card:hover{border-color:var(--border2);box-shadow:var(--shadow);}
+.stat-value{font-size:2rem;font-weight:700;line-height:1.1;margin-bottom:4px;letter-spacing:-.5px;}
+.stat-label{font-size:.8rem;color:var(--muted);font-weight:500;}
+.stat-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+
+.table{color:var(--text)!important;}
+thead th{padding:11px 14px;text-align:left;font-size:.73rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)!important;border-bottom:1px solid var(--border)!important;background:transparent!important;white-space:nowrap;}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
+.table-light{--bs-table-bg:transparent!important;}
+tbody tr:hover{background:var(--hover)!important;}
+tbody tr:last-child td{border-bottom:none;}
+
+.badge{display:inline-block;padding:4px 10px;border-radius:5px;font-size:.71rem;font-weight:600;}
+.badge-green,.badge-aktif{background:rgba(34,197,94,.12);color:#4ade80;}
+.badge-red,.badge-inactive{background:rgba(230,51,41,.12);color:#f87171;}
+.badge-yellow,.badge-pending{background:rgba(251,191,36,.12);color:#fbbf24;}
+.badge-blue{background:rgba(59,130,246,.12);color:#60a5fa;}
+.badge-purple{background:rgba(168,85,247,.12);color:#c084fc;}
+.badge-gray{background:rgba(255,255,255,.07);color:var(--muted);}
+
+.form-control,.form-select{background:var(--surface)!important;border:1px solid var(--border2)!important;color:var(--text)!important;font-family:var(--font);font-size:.85rem;border-radius:8px!important;transition:border-color .2s;}
+.form-control:focus,.form-select:focus{border-color:var(--red)!important;box-shadow:0 0 0 3px var(--red-glow)!important;background:var(--surface)!important;}
+.form-label{font-size:.8rem;font-weight:600;color:var(--text2);margin-bottom:5px;}
+.input-group-text{background:var(--surface2)!important;border-color:var(--border2)!important;color:var(--muted)!important;}
+/* Form validation visual */
+.form-control.is-invalid,.form-select.is-invalid{border-color:#f87171!important;background-image:none!important;}
+.form-control.is-valid,.form-select.is-valid{border-color:#4ade80!important;background-image:none!important;}
+.invalid-feedback{color:#f87171;font-size:.77rem;margin-top:4px;}
+.valid-feedback{color:#4ade80;font-size:.77rem;margin-top:4px;}
+/* Help text */
+.form-help{font-size:.75rem;color:var(--muted);margin-top:4px;display:flex;align-items:flex-start;gap:5px;line-height:1.4;}
+.form-help i{color:var(--muted2);margin-top:1px;flex-shrink:0;}
+
+/* Bootstrap overrides */
+.btn-outline-primary{color:#60a5fa!important;border-color:#60a5fa!important;font-size:.79rem;}
+.btn-outline-primary:hover{background:rgba(59,130,246,.1)!important;color:#60a5fa!important;}
+.btn-outline-danger{color:#f87171!important;border-color:#f87171!important;font-size:.79rem;}
+.btn-outline-danger:hover{background:rgba(230,51,41,.1)!important;color:#f87171!important;}
+.text-muted{color:var(--muted)!important;}
+.text-primary{color:#60a5fa!important;}
+.text-success{color:#4ade80!important;}
+.text-warning{color:#fbbf24!important;}
+.text-danger{color:#f87171!important;}
+.text-info{color:#38bdf8!important;}
+[data-theme="light"] .text-primary{color:#2563eb!important;}
+[data-theme="light"] .text-success{color:#16a34a!important;}
+[data-theme="light"] .text-warning{color:#d97706!important;}
+[data-theme="light"] .text-danger{color:#dc2626!important;}
+a{color:inherit;}
+
+/* ── TOOLTIP SYSTEM ── */
+.hris-tooltip-wrap{position:relative;display:inline-flex;align-items:center;}
+.hris-tooltip-icon{width:16px;height:16px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:.62rem;color:var(--muted);cursor:help;margin-left:5px;flex-shrink:0;transition:border-color .15s,color .15s;}
+.hris-tooltip-icon:hover{border-color:var(--red);color:var(--red);}
+.hris-tooltip-box{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;min-width:200px;max-width:280px;font-size:.78rem;color:var(--text2);line-height:1.5;z-index:300;box-shadow:var(--shadow-lg);white-space:normal;pointer-events:none;}
+.hris-tooltip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--border2);}
+.hris-tooltip-wrap:hover .hris-tooltip-box,.hris-tooltip-wrap:focus-within .hris-tooltip-box{display:block;}
+/* Label + tooltip helper */
+.label-with-help{display:flex;align-items:center;gap:0;margin-bottom:5px;}
+.label-with-help .form-label{margin-bottom:0;}
+
+/* ── ONBOARDING CHECKLIST BANNER ── */
+.onboarding-banner{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:24px;position:relative;overflow:hidden;}
+.onboarding-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--red),#f59e0b);}
+.onboarding-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.onboarding-title{font-size:.95rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:10px;}
+.onboarding-title i{color:var(--red);}
+.onboarding-progress-text{font-size:.78rem;color:var(--muted);}
+.onboarding-progress-bar{height:4px;background:var(--surface2);border-radius:2px;margin-bottom:16px;overflow:hidden;}
+.onboarding-progress-fill{height:100%;background:linear-gradient(90deg,var(--red),#f59e0b);border-radius:2px;transition:width .4s ease;}
+.onboarding-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;}
+.onboarding-step{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface);text-decoration:none;color:var(--text);transition:border-color .15s,background .15s;}
+.onboarding-step:hover{border-color:var(--red);background:var(--hover);color:var(--text);}
+.onboarding-step.done{opacity:.55;pointer-events:none;}
+.onboarding-step-icon{width:32px;height:32px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);flex-shrink:0;}
+.onboarding-step.done .onboarding-step-icon{background:rgba(34,197,94,.12);color:#4ade80;}
+.onboarding-step-body{flex:1;min-width:0;}
+.onboarding-step-label{font-size:.83rem;font-weight:600;line-height:1.3;}
+.onboarding-step.done .onboarding-step-label{text-decoration:line-through;}
+.onboarding-step-desc{font-size:.74rem;color:var(--muted);margin-top:2px;line-height:1.35;}
+.onboarding-step-check{font-size:.85rem;color:#4ade80;margin-top:2px;flex-shrink:0;}
+.onboarding-dismiss{position:absolute;top:12px;right:12px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:.75rem;padding:4px 8px;border-radius:5px;transition:all .15s;}
+.onboarding-dismiss:hover{background:var(--hover);color:var(--text);}
+
+/* Toasts */
+.messages-wrap{position:fixed;top:74px;right:20px;z-index:500;display:flex;flex-direction:column;gap:8px;}
+.toast-item{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;min-width:280px;max-width:380px;box-shadow:var(--shadow-lg);animation:toastIn .3s cubic-bezier(.4,0,.2,1);}
+.toast-item.success{border-color:rgba(34,197,94,.3);}
+.toast-item.error{border-color:rgba(230,51,41,.3);}
+.toast-item.warning{border-color:rgba(251,191,36,.3);}
+.toast-text{font-size:.84rem;flex:1;color:var(--text);line-height:1.4;}
+.toast-close{color:var(--muted);cursor:pointer;font-size:.78rem;}
+@keyframes toastIn{from{transform:translateX(20px);opacity:0;}}
+
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:16px;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 20px;}
+.empty-state-icon{width:72px;height:72px;border-radius:18px;background:var(--surface);border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--muted);margin-bottom:18px;}
+.empty-state-title{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:8px;}
+.empty-state-desc{font-size:.85rem;color:var(--muted);max-width:360px;margin:0 auto 20px;line-height:1.55;}
+
+/* ── MOBILE RESPONSIVE TABLES ── */
+.table-responsive-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;}
+.table-responsive-wrap::-webkit-scrollbar{height:4px;}
+.table-responsive-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+@media(max-width:768px){
+  .col-hide-mobile{display:none!important;}
+  .page-title{font-size:1.1rem;}
+  .page-header{margin-bottom:16px;}
+  .main-wrap{padding:16px 16px 40px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .grid-2-1{grid-template-columns:1fr;}
+  .stat-card .stat-value{font-size:1.6rem;}
+}
+@media(max-width:480px){
+  .topbar-right .tb-user-name,.topbar-right .tb-user-role{display:none;}
+  .tb-divider{display:none;}
+}
+{% block extra_css %}{% endblock %}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- Skip navigation untuk aksesibilitas -->
+<a href="#main-content" class="skip-nav">Langsung ke konten utama</a>
+
+<!-- Mobile sidebar overlay -->
+<div class="sb-overlay" id="sbOverlay" onclick="closeMobileSidebar()" aria-hidden="true"></div>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Menu utama">
+  <a class="sb-logo" href="{% url 'dashboard' %}">
+    <img id="sbLogoImg" alt="Logo" class="sb-logo-img" style="display:none;">
+    <div class="sb-logo-fallback" id="sbLogoFallback">H</div>
+    <div class="sb-logo-text">
+      <div class="sb-logo-name">HRIS SmartDesk</div>
+      <div class="sb-logo-sub">Enterprise Edition</div>
+    </div>
+  </a>
+  <div class="sb-toggle" onclick="toggleSidebar()">
+    <i class="fas fa-chevron-left" id="sbIcon"></i>
+  </div>
+
+  <div class="sb-scroll">
+
+    <!-- DASHBOARD -->
+    <div class="sb-section">Dashboard</div>
+    <div class="sb-group open" data-g="dash">
+      <div class="sb-items">
+        <a href="{% url 'dashboard' %}" class="sb-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-chart-line"></i><span class="sb-item-lbl">Overview</span>
+        </a>
+        <a href="{% url 'report_attendance' %}" class="sb-item {% if request.resolver_match.url_name == 'report_attendance' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-chart-bar"></i><span class="sb-item-lbl">Analytics</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- STRUKTUR ORGANISASI -->
+    <div class="sb-section">Struktur Organisasi</div>
+    <div class="sb-group" data-g="org">
+      <div class="sb-group-btn" onclick="toggleGroup('org')">
+        <i class="sb-group-ico fas fa-users"></i>
+        <span class="sb-group-lbl">Database Karyawan</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'employee_list' %}" class="sb-item {% if 'employee' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-id-card"></i><span class="sb-item-lbl">Data Karyawan</span>
+        </a>
+        <a href="{% url 'job_library_list' %}" class="sb-item {% if 'job_library' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-layer-group"></i><span class="sb-item-lbl">Job Library</span>
+        </a>
+        <a href="{% url 'orgchart_list' %}" class="sb-item {% if 'orgchart' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-sitemap"></i><span class="sb-item-lbl">Org Chart</span>
+        </a>
+        {% if request.user.is_hr %}
+        <a href="{% url 'approval_matrix_list' %}" class="sb-item {% if 'approval_matrix' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-check-double"></i><span class="sb-item-lbl">Approval Matrix</span>
+        </a>
+        {% endif %}
+        <a href="{% url 'employee_accounts' %}" class="sb-item {% if request.resolver_match.url_name == 'employee_accounts' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-user-shield"></i><span class="sb-item-lbl">Akun Portal Karyawan</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- REKRUTMEN -->
+    <div class="sb-section">Rekrutmen</div>
+    <div class="sb-group" data-g="rekrut">
+      <div class="sb-group-btn" onclick="toggleGroup('rekrut')">
+        <i class="sb-group-ico fas fa-briefcase"></i>
+        <span class="sb-group-lbl">Pipeline Rekrutmen</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'mprf_list' %}" class="sb-item {% if 'mprf' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-clipboard-list"></i><span class="sb-item-lbl">Manpower Request</span>
+        </a>
+        <a href="{% url 'candidate_list' %}" class="sb-item {% if 'candidate' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-user-plus"></i><span class="sb-item-lbl">Kandidat &amp; Pipeline</span>
+        </a>
+        <a href="{% url 'ats_scan' %}" class="sb-item {% if 'ats' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-robot"></i><span class="sb-item-lbl">ATS Scan CV</span>
+        </a>
+        <a href="{% url 'psychotest_session_list' %}" class="sb-item {% if 'psychotest_session' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-brain"></i><span class="sb-item-lbl">Psikotes Dasar</span>
+        </a>
+        {% if addon_advanced_psychotest %}
+        <a href="{% url 'adv_session_list' %}" class="sb-item {% if 'adv_session' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-flask"></i>
+          <span class="sb-item-lbl">Advanced Psychotest</span>
+          <span class="sb-item-tag addon">⚡ Add-On</span>
+        </a>
+        {% else %}
+        <span class="sb-item" style="opacity:.4; cursor:not-allowed;" title="Aktifkan lisensi di Profil Perusahaan">
+          <i class="sb-item-ico fas fa-flask"></i>
+          <span class="sb-item-lbl">Advanced Psychotest</span>
+          <span class="sb-item-tag soon">🔒 Nonaktif</span>
+        </span>
+        {% endif %}
+        <a href="{% url 'candidate_list' %}?tab=rekomendasi" class="sb-item">
+          <i class="sb-item-ico fas fa-thumbs-up"></i><span class="sb-item-lbl">Rekomendasi &amp; MCU</span>
+        </a>
+        <a href="{% url 'offering_list' %}" class="sb-item {% if 'offering' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-file-signature"></i><span class="sb-item-lbl">Offering &amp; Onboarding</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ADMINISTRASI & COMBEN -->
+    <div class="sb-section">Administrasi &amp; Comben</div>
+    <div class="sb-group" data-g="absensi">
+      <div class="sb-group-btn" onclick="toggleGroup('absensi')">
+        <i class="sb-group-ico fas fa-clock"></i>
+        <span class="sb-group-lbl">Kehadiran</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'attendance_list' %}" class="sb-item {% if request.resolver_match.url_name == 'attendance_list' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-list-check"></i><span class="sb-item-lbl">Rekap Absensi</span>
+        </a>
+        <a href="{% url 'attendance_import' %}" class="sb-item {% if request.resolver_match.url_name == 'attendance_import' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-file-arrow-up"></i><span class="sb-item-lbl">Import Absensi</span>
+        </a>
+        <a href="{% url 'leave_list' %}" class="sb-item {% if 'leave' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-plane-departure"></i><span class="sb-item-lbl">Cuti &amp; Izin</span>
+        </a>
+        <a href="{% url 'overtime_list' %}" class="sb-item {% if 'overtime' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-hourglass-half"></i><span class="sb-item-lbl">Lembur</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="sb-group" data-g="shift">
+      <div class="sb-group-btn" onclick="toggleGroup('shift')">
+        <i class="sb-group-ico fas fa-calendar-days"></i>
+        <span class="sb-group-lbl">Shift &amp; Roster</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'shift_list' %}" class="sb-item {% if request.resolver_match.url_name == 'shift_list' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-business-time"></i><span class="sb-item-lbl">Pengaturan Shift</span>
+        </a>
+        <a href="{% url 'roster_view' %}" class="sb-item {% if request.resolver_match.url_name == 'roster_view' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-table-cells"></i><span class="sb-item-lbl">Roster Bulanan</span>
+        </a>
+        <a href="{% url 'assignment_list' %}" class="sb-item {% if 'assignment' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-user-clock"></i><span class="sb-item-lbl">Penugasan Shift</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="sb-group" data-g="payroll">
+      <div class="sb-group-btn" onclick="toggleGroup('payroll')">
+        <i class="sb-group-ico fas fa-money-bill-wave"></i>
+        <span class="sb-group-lbl">Penggajian</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'salary_list' %}" class="sb-item {% if 'salary' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-sliders"></i><span class="sb-item-lbl">Komponen Gaji</span>
+        </a>
+        <a href="{% url 'payroll_list' %}" class="sb-item {% if 'payroll' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-calculator"></i><span class="sb-item-lbl">Payroll &amp; Rekap</span>
+        </a>
+        <a href="{% url 'payroll_site_summary' %}" class="sb-item {% if request.resolver_match.url_name == 'payroll_site_summary' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-map-marker-alt"></i><span class="sb-item-lbl">Rekap Multi-Site</span>
+        </a>
+        <a href="{% url 'site_allowance_list' %}" class="sb-item {% if 'site_allowance' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-tags"></i><span class="sb-item-lbl">Site Allowance</span>
+        </a>
+        <a href="{% url 'report_payroll' %}" class="sb-item {% if request.resolver_match.url_name == 'report_payroll' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-receipt"></i><span class="sb-item-lbl">Laporan Payroll</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- HUBUNGAN INDUSTRIAL -->
+    <div class="sb-section">Hubungan Industrial</div>
+    <div class="sb-group" data-g="hi">
+      <div class="sb-group-btn" onclick="toggleGroup('hi')">
+        <i class="sb-group-ico fas fa-scale-balanced"></i>
+        <span class="sb-group-lbl">Hubungan Industrial</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'contract_list' %}" class="sb-item {% if request.resolver_match.url_name == 'contract_list' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-file-contract"></i><span class="sb-item-lbl">Kontrak Kerja</span>
+        </a>
+        <a href="{% url 'contract_expiring' %}" class="sb-item {% if request.resolver_match.url_name == 'contract_expiring' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-triangle-exclamation"></i><span class="sb-item-lbl">Kontrak Hampir Habis</span>
+        </a>
+        <a href="{% url 'violation_list' %}" class="sb-item {% if 'violation' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-gavel"></i><span class="sb-item-lbl">Pelanggaran &amp; SP</span>
+        </a>
+        <a href="{% url 'severance_list' %}" class="sb-item {% if request.resolver_match.url_name == 'severance_list' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-hand-holding-dollar"></i><span class="sb-item-lbl">Pesangon / PHK</span>
+        </a>
+        <a href="{% url 'severance_calculator' %}" class="sb-item {% if request.resolver_match.url_name == 'severance_calculator' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-square-root-variable"></i><span class="sb-item-lbl">Kalkulator Pesangon</span>
+        </a>
+        <a href="{% url 'pb_list' %}" class="sb-item {% if 'pb_' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          🤝 Perjanjian Bersama
+        </a>
+        <a href="{% url 'sp_list' %}" class="sb-item {% if 'sp_' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          ⚠️ Surat Peringatan
+        </a>
+        <a href="{% url 'surat_phk_list' %}" class="sb-item {% if 'surat_phk' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          📋 Surat PHK
+        </a>
+        <a href="{% url 'skk_list' %}" class="sb-item {% if 'skk_' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          📄 Surat Ket. Kerja
+        </a>
+          <i class="sb-item-ico fas fa-handshake"></i><span class="sb-item-lbl">Perjanjian Bersama</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- LAPORAN -->
+    <div class="sb-section">Laporan</div>
+    <div class="sb-group" data-g="laporan">
+      <div class="sb-group-btn" onclick="toggleGroup('laporan')">
+        <i class="sb-group-ico fas fa-chart-column"></i>
+        <span class="sb-group-lbl">Semua Laporan</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'report_list' %}" class="sb-item {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-grip"></i><span class="sb-item-lbl">Overview Laporan</span>
+        </a>
+        <a href="{% url 'report_attendance' %}" class="sb-item {% if request.resolver_match.url_name == 'report_attendance' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-calendar-check"></i><span class="sb-item-lbl">Laporan Absensi</span>
+        </a>
+        <a href="{% url 'report_employee' %}" class="sb-item {% if request.resolver_match.url_name == 'report_employee' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-users-between-lines"></i><span class="sb-item-lbl">Laporan Karyawan</span>
+        </a>
+        <a href="{% url 'report_recruitment' %}" class="sb-item {% if request.resolver_match.url_name == 'report_recruitment' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-user-tie"></i><span class="sb-item-lbl">Laporan Rekrutmen</span>
+        </a>
+        <a href="{% url 'report_contract' %}" class="sb-item {% if request.resolver_match.url_name == 'report_contract' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-file-lines"></i><span class="sb-item-lbl">Laporan Kontrak</span>
+        </a>
+        <a href="{% url 'report_violation' %}" class="sb-item {% if request.resolver_match.url_name == 'report_violation' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-flag"></i><span class="sb-item-lbl">Laporan Pelanggaran</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- PENGATURAN -->
+    <div class="sb-section">Pengaturan</div>
+    <div class="sb-group" data-g="setting">
+      <div class="sb-group-btn" onclick="toggleGroup('setting')">
+        <i class="sb-group-ico fas fa-gear"></i>
+        <span class="sb-group-lbl">Pengaturan</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'company_profile' %}" class="sb-item {% if request.resolver_match.url_name == 'company_profile' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-building"></i><span class="sb-item-lbl">Profil & Serial Key</span>
+        </a>
+        {% if user.is_superuser %}
+        <a href="{% url 'tenant_list' %}" class="sb-item {% if request.resolver_match.url_name == 'tenant_list' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-layer-group"></i><span class="sb-item-lbl">Daftar Tenant</span>
+          <span class="sb-item-tag" style="background:rgba(230,51,41,.15);color:var(--red);font-size:.65rem;padding:.1rem .4rem;border-radius:4px;font-weight:700;">DEV</span>
+        </a>
+        <a href="{% url 'qa_full' %}" class="sb-item {% if request.resolver_match.url_name == 'qa_full' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-flask"></i><span class="sb-item-lbl">QA Runner</span>
+          <span class="sb-item-tag" style="background:rgba(230,51,41,.15);color:var(--red);font-size:.65rem;padding:.1rem .4rem;border-radius:4px;font-weight:700;">DEV</span>
+        </a>
+        {% endif %}
+        <a href="{% url 'employee_accounts' %}" class="sb-item">
+          <i class="sb-item-ico fas fa-shield-halved"></i><span class="sb-item-lbl">Akun &amp; Akses</span>
+        </a>
+        <a href="{% url 'audit:statistics' %}" class="sb-item">
+          <i class="sb-item-ico fas fa-scroll"></i><span class="sb-item-lbl">Audit Log</span>
+        </a>
+        <a href="{% url 'logout' %}" class="sb-item" style="color:#f87171;">
+          <i class="sb-item-ico fas fa-right-from-bracket" style="color:#f87171;"></i>
+          <span class="sb-item-lbl">Logout</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ADD-ON -->
+    <div class="sb-section">Add-On Modules</div>
+    {% if addon_assets %}
+    <div class="sb-group" data-g="asset">
+      <div class="sb-group-btn" onclick="toggleGroup('asset')">
+        <i class="sb-group-ico fas fa-boxes-stacked" style="color:#f59e0b;"></i>
+        <span class="sb-group-lbl">Asset Management</span>
+        <span class="sb-addon-badge">⚡ Add-On</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'assets:asset_list' %}" class="sb-item">
+          <i class="sb-item-ico fas fa-laptop"></i><span class="sb-item-lbl">Daftar Aset</span>
+        </a>
+        <a href="{% url 'movements:movement_list' %}" class="sb-item">
+          <i class="sb-item-ico fas fa-arrows-turn-right"></i><span class="sb-item-lbl">Mutasi Aset</span>
+        </a>
+        <a href="{% url 'maintenance:maintenance_list' %}" class="sb-item">
+          <i class="sb-item-ico fas fa-wrench"></i><span class="sb-item-lbl">Maintenance</span>
+        </a>
+        <a href="{% url 'audit:statistics' %}" class="sb-item">
+          <i class="sb-item-ico fas fa-magnifying-glass-chart"></i><span class="sb-item-lbl">Audit Aset</span>
+        </a>
+        <a href="{% url 'asset_reports:dashboard' %}" class="sb-item">
+          <i class="sb-item-ico fas fa-chart-pie"></i><span class="sb-item-lbl">Laporan Aset</span>
+        </a>
+      </div>
+    </div>
+    {% else %}
+    <div class="sb-group">
+      <div class="sb-group-btn" style="opacity:.4; cursor:not-allowed;" title="Aktifkan lisensi di Profil Perusahaan">
+        <i class="sb-group-ico fas fa-boxes-stacked" style="color:#f59e0b;"></i>
+        <span class="sb-group-lbl">Asset Management</span>
+        <span class="sb-item-tag soon">🔒 Nonaktif</span>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if addon_od %}
+    <div class="sb-group" data-g="od">
+      <div class="sb-group-btn" onclick="toggleGroup('od')">
+        <i class="sb-group-ico fas fa-sitemap" style="color:#818cf8;"></i>
+        <span class="sb-group-lbl">Organisation Dev</span>
+        <span class="sb-addon-badge">⚡ Add-On</span>
+        <i class="fas fa-chevron-right sb-group-arrow"></i>
+      </div>
+      <div class="sb-items">
+        <a href="{% url 'od:dashboard' %}" class="sb-item {% if 'od' in request.resolver_match.namespace|default:'' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-gauge-high"></i><span class="sb-item-lbl">Dashboard OD</span>
+        </a>
+        <a href="{% url 'perf_dashboard' %}" class="sb-item {% if 'perf' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-chart-line"></i><span class="sb-item-lbl">Performance Mgmt</span>
+        </a>
+        <a href="{% url 'penilaian_list' %}" class="sb-item {% if 'penilaian' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-clipboard-list"></i><span class="sb-item-lbl">Daftar Penilaian</span>
+        </a>
+        <a href="{% url 'perf_ranking' %}" class="sb-item {% if request.resolver_match.url_name == 'perf_ranking' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-trophy"></i><span class="sb-item-lbl">Ranking Karyawan</span>
+        </a>
+        <a href="{% url 'kpi_template_list' %}" class="sb-item {% if 'kpi_template' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-list-check"></i><span class="sb-item-lbl">Library KPI</span>
+        </a>
+        <a href="{% url 'od:workload_list' %}" class="sb-item {% if 'workload' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-scale-balanced"></i><span class="sb-item-lbl">Workload Analysis</span>
+        </a>
+        <a href="{% url 'od:fte_planning' %}" class="sb-item {% if 'fte' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-chart-gantt"></i><span class="sb-item-lbl">FTE Planning</span>
+        </a>
+        <a href="{% url 'od:competency_list' %}" class="sb-item {% if 'competency' in request.resolver_match.url_name|default:'' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-brain"></i><span class="sb-item-lbl">Library Kompetensi</span>
+        </a>
+        <a href="{% url 'od:competency_matrix' %}" class="sb-item {% if request.resolver_match.url_name == 'competency_matrix' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-table"></i><span class="sb-item-lbl">Competency Matrix</span>
+        </a>
+        <a href="{% url 'od:competency_gap_report' %}" class="sb-item {% if request.resolver_match.url_name == 'competency_gap_report' %}active{% endif %}">
+          <i class="sb-item-ico fas fa-exclamation-triangle"></i><span class="sb-item-lbl">Gap Report</span>
+        </a>
+      </div>
+    </div>
+    {% else %}
+    <div class="sb-group">
+      <div class="sb-group-btn" style="opacity:.4; cursor:not-allowed;" title="Aktifkan lisensi di Profil Perusahaan">
+        <i class="sb-group-ico fas fa-sitemap" style="color:#818cf8;"></i>
+        <span class="sb-group-lbl">Organisation Dev</span>
+        <span class="sb-item-tag soon">🔒 Nonaktif</span>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /sb-scroll -->
+
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar">
+        {% if request.user.foto %}
+          <img src="{{ request.user.foto.url }}" alt="foto">
+        {% else %}
+          {{ request.user.first_name.0|upper }}{{ request.user.last_name.0|upper }}
+        {% endif %}
+      </div>
+      <div class="sb-user-info">
+        <div class="sb-user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+        <div class="sb-user-role">{{ request.user.profile.role|default:"Administrator" }}</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ TOPBAR ══ -->
+<header class="topbar" role="banner">
+  <div class="topbar-left">
+    <!-- Mobile menu toggle -->
+    <button class="tb-mobile-menu" onclick="openMobileSidebar()" aria-label="Buka menu navigasi" aria-expanded="false" id="mobileMenuBtn">
+      <i class="fas fa-bars" aria-hidden="true"></i>
+    </button>
+    <div class="breadcrumb-wrap" aria-label="Breadcrumb">
+      <span>HRIS</span>
+      <span class="bc-sep" aria-hidden="true">/</span>
+      <span class="bc-cur">{% block breadcrumb %}Dashboard{% endblock %}</span>
+      {% block breadcrumb_extra %}{% endblock %}
+    </div>
+  </div>
+  <div class="topbar-right">
+
+    <!-- Theme toggle -->
+    <div class="tb-theme" onclick="toggleTheme()" role="button" tabindex="0" aria-label="Ganti tema terang/gelap" onkeydown="if(event.key==='Enter'||event.key===' ')toggleTheme()">
+      <div class="tb-theme-thumb" id="themeThumb"></div>
+      <div class="tb-theme-track" aria-hidden="true">
+        <i class="tb-ico-moon fas fa-moon"></i>
+        <i class="tb-ico-sun fas fa-sun"></i>
+      </div>
+    </div>
+
+    {% if user.is_superuser %}
+    <a href="{% url 'portal_qa_access' %}" class="tb-btn" title="Buka Portal (QA)" target="_blank" aria-label="Buka portal karyawan (QA)">
+      <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+    </a>
+    <div class="tb-divider" aria-hidden="true"></div>
+
+    <!-- TENANT SWITCHER -->
+    <div style="position:relative;" id="tenantSwitcherWrap">
+      <button onclick="toggleTenantDD()" id="tenantSwitcherBtn"
+        style="display:flex;align-items:center;gap:.5rem;height:36px;padding:0 .75rem;
+               border-radius:8px;border:1px solid var(--border2);background:transparent;
+               color:var(--text);cursor:pointer;font-size:.82rem;font-weight:600;
+               transition:all .15s;white-space:nowrap;max-width:220px;"
+        title="Switch tenant aktif">
+        <i class="fas fa-building" style="color:var(--red);font-size:.8rem;flex-shrink:0;"></i>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          {% if current_company %}{{ current_company.nama }}{% else %}— Semua Tenant —{% endif %}
+        </span>
+        <i class="fas fa-chevron-down" style="font-size:.65rem;color:var(--muted);flex-shrink:0;"></i>
+      </button>
+      <div id="tenantSwitcherDD"
+           style="display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:240px;
+                  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+                  box-shadow:var(--shadow);z-index:200;overflow:hidden;">
+        <div style="padding:.5rem .75rem;font-size:.72rem;color:var(--muted);font-weight:700;
+                    text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);">
+          <i class="fas fa-code" style="margin-right:.35rem;color:var(--red);"></i>Developer — Pilih Tenant
+        </div>
+        <!-- Reset ke semua -->
+        <form method="post" action="{% url 'switch_tenant' %}">
+          {% csrf_token %}
+          <input type="hidden" name="company_id" value="0">
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit"
+            style="width:100%;text-align:left;padding:.55rem .85rem;background:{% if not active_tenant_id %}rgba(230,51,41,.08){% else %}transparent{% endif %};
+                   border:none;cursor:pointer;font-size:.83rem;color:var(--text);display:flex;align-items:center;gap:.6rem;">
+            <i class="fas fa-globe" style="color:var(--muted);width:14px;"></i>
+            <span>— Semua Tenant —</span>
+            {% if not active_tenant_id %}<i class="fas fa-check" style="margin-left:auto;color:var(--red);font-size:.75rem;"></i>{% endif %}
+          </button>
+        </form>
+        <div style="border-top:1px solid var(--border);"></div>
+        {% for t in all_tenants %}
+        <form method="post" action="{% url 'switch_tenant' %}">
+          {% csrf_token %}
+          <input type="hidden" name="company_id" value="{{ t.pk }}">
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit"
+            style="width:100%;text-align:left;padding:.55rem .85rem;
+                   background:{% if active_tenant_id == t.pk %}rgba(230,51,41,.08){% else %}transparent{% endif %};
+                   border:none;cursor:pointer;font-size:.83rem;color:var(--text);display:flex;align-items:center;gap:.6rem;">
+            <i class="fas fa-building" style="color:var(--muted);width:14px;"></i>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">{{ t.nama }}</span>
+            <span style="font-size:.68rem;padding:.1rem .4rem;border-radius:4px;flex-shrink:0;
+                         {% if t.status == 'aktif' %}background:rgba(34,197,94,.15);color:#16a34a;
+                         {% else %}background:rgba(148,163,184,.15);color:var(--muted);{% endif %}">
+              {{ t.status }}
+            </span>
+            {% if active_tenant_id == t.pk %}<i class="fas fa-check" style="color:var(--red);font-size:.75rem;"></i>{% endif %}
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+    </div>
+    <!-- /TENANT SWITCHER -->
+
+    {% endif %}
+    <div class="tb-divider" aria-hidden="true"></div>
+    <div class="tb-notif-wrap" id="notifWrap" style="position:relative;">
+      <button class="tb-btn" onclick="toggleNotifDD()" id="notifBtn"
+        aria-label="Notifikasi{% if notif_cuti_pending or notif_kontrak_expiring %} - ada item perlu perhatian{% endif %}"
+        aria-expanded="false" aria-haspopup="true">
+        <i class="fas fa-bell" aria-hidden="true"></i>
+        {% if notif_cuti_pending or notif_kontrak_expiring %}
+        <span class="tb-dot" aria-hidden="true"></span>
+        {% endif %}
+      </button>
+      <div class="tb-dropdown" id="notifDropdown" style="min-width:280px;right:0;" role="menu" aria-label="Notifikasi">
+        <div class="tb-dd-head" style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="tb-dd-name">Notifikasi</div>
+          {% if notif_cuti_pending or notif_kontrak_expiring %}
+          <span class="badge" style="background:rgba(230,51,41,.12);color:#f87171;font-size:.68rem;">
+            {{ notif_cuti_pending|add:notif_kontrak_expiring }} item
+          </span>
+          {% endif %}
+        </div>
+        {% if notif_cuti_pending %}
+        <a href="{% url 'leave_list' %}?status=Pending" class="tb-dd-item" role="menuitem">
+          <i class="fas fa-plane-departure" style="color:#fbbf24;" aria-hidden="true"></i>
+          <div>
+            <div style="font-weight:600;">Cuti / Izin Menunggu</div>
+            <div style="font-size:.72rem;color:var(--muted);">{{ notif_cuti_pending }} pengajuan perlu disetujui</div>
+          </div>
+        </a>
+        {% endif %}
+        {% if notif_kontrak_expiring %}
+        <a href="{% url 'contract_expiring' %}" class="tb-dd-item" role="menuitem">
+          <i class="fas fa-triangle-exclamation" style="color:#f87171;" aria-hidden="true"></i>
+          <div>
+            <div style="font-weight:600;">Kontrak Hampir Habis</div>
+            <div style="font-size:.72rem;color:var(--muted);">{{ notif_kontrak_expiring }} kontrak berakhir dalam 30 hari</div>
+          </div>
+        </a>
+        {% endif %}
+        {% if not notif_cuti_pending and not notif_kontrak_expiring %}
+        <div style="padding:20px 16px;text-align:center;color:var(--muted);font-size:.83rem;">
+          <i class="fas fa-check-circle" style="color:#4ade80;font-size:1.3rem;display:block;margin-bottom:8px;" aria-hidden="true"></i>
+          Semua beres! Tidak ada notifikasi.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="tb-divider" aria-hidden="true"></div>
+
+    <div class="tb-user-wrap" id="userWrap">
+      <div class="tb-user" onclick="toggleUserDD()">
+        <div class="tb-avatar">
+          {% if request.user.foto %}
+            <img src="{{ request.user.foto.url }}" alt="foto">
+          {% else %}
+            {{ request.user.first_name.0|upper }}{{ request.user.last_name.0|upper }}
+          {% endif %}
+        </div>
+        <div>
+          <div class="tb-user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+          <div class="tb-user-role">{{ request.user.profile.role|default:"Administrator" }}</div>
+        </div>
+        <i class="fas fa-chevron-down tb-chevron"></i>
+      </div>
+      <div class="tb-dropdown">
+        <div class="tb-dd-head">
+          <div class="tb-dd-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+          <div class="tb-dd-email">{{ request.user.email|default:"—" }}</div>
+        </div>
+        <a href="{% url 'profile' %}" class="tb-dd-item"><i class="fas fa-user"></i> Profil Saya</a>
+        <a href="{% url 'landing' %}" class="tb-dd-item"><i class="fas fa-globe"></i> Lihat Landing Page</a>
+        <div class="tb-dd-sep"></div>
+        <a href="{% url 'logout' %}" class="tb-dd-item danger"><i class="fas fa-right-from-bracket"></i> Logout</a>
+      </div>
+    </div>
+
+  </div>
+</header>
+
+{% if messages %}
+<div class="messages-wrap">
+  {% for message in messages %}
+  <div class="toast-item {% if message.tags %}{{ message.tags }}{% endif %}">
+    {% if message.tags == 'error' %}<i class="fas fa-circle-exclamation" style="color:#f87171;"></i>
+    {% elif message.tags == 'success' %}<i class="fas fa-circle-check" style="color:#4ade80;"></i>
+    {% else %}<i class="fas fa-circle-info" style="color:#60a5fa;"></i>{% endif %}
+    <span class="toast-text">{{ message }}</span>
+    <span class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-xmark"></i></span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<main class="main-wrap" id="main-content" role="main" aria-label="Konten utama">
+  {% if show_onboarding %}
+  <div class="onboarding-banner" id="onboardingBanner" role="region" aria-label="Panduan pengaturan awal">
+    <button class="onboarding-dismiss" onclick="dismissOnboarding()" aria-label="Tutup panduan pengaturan">
+      <i class="fas fa-xmark" aria-hidden="true"></i> Tutup
+    </button>
+    <div class="onboarding-header">
+      <div class="onboarding-title">
+        <i class="fas fa-rocket" aria-hidden="true"></i>
+        Selamat datang! Selesaikan pengaturan awal
+      </div>
+      <span class="onboarding-progress-text">{{ onboarding_done }} dari {{ onboarding_total }} langkah selesai</span>
+    </div>
+    <div class="onboarding-progress-bar" role="progressbar" aria-valuenow="{{ onboarding_done }}" aria-valuemin="0" aria-valuemax="{{ onboarding_total }}" aria-label="Progress pengaturan">
+      <div class="onboarding-progress-fill" style="width:{% widthratio onboarding_done onboarding_total 100 %}%"></div>
+    </div>
+    <div class="onboarding-steps">
+      {% for step in onboarding_steps %}
+      {% if step.done %}
+      <div class="onboarding-step done" aria-label="{{ step.label }} - selesai">
+        <div class="onboarding-step-icon" aria-hidden="true"><i class="fas fa-{{ step.icon }}"></i></div>
+        <div class="onboarding-step-body">
+          <div class="onboarding-step-label">{{ step.label }}</div>
+          <div class="onboarding-step-desc">{{ step.desc }}</div>
+        </div>
+        <i class="fas fa-check-circle onboarding-step-check" aria-hidden="true"></i>
+      </div>
+      {% else %}
+      <a href="{% url step.url %}" class="onboarding-step" aria-label="{{ step.label }} - belum selesai, klik untuk memulai">
+        <div class="onboarding-step-icon" aria-hidden="true"><i class="fas fa-{{ step.icon }}"></i></div>
+        <div class="onboarding-step-body">
+          <div class="onboarding-step-label">{{ step.label }}</div>
+          <div class="onboarding-step-desc">{{ step.desc }}</div>
+        </div>
+        <i class="fas fa-chevron-right" style="color:var(--muted);font-size:.75rem;margin-top:4px;" aria-hidden="true"></i>
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>
+/* ============================================================
+   HRIS – DataTables Global Init  (robust & tab-safe)
+   Aturan:
+   1. Tabel class="datatable"        → init otomatis saat visible
+   2. Tabel class="datatable-tab"    → init HANYA saat tab dibuka
+   3. Keduanya tidak akan dobel-init
+   4. Data kosong (tbody kosong / hanya .dt-empty) = TIDAK diinit
+      → tidak ada warning tn/18 sama sekali
+   ============================================================ */
+(function($){
+  /* Bahasa Indonesia shared */
+  var LANG_ID = {
+    search:       "Cari:",
+    lengthMenu:   "Tampilkan _MENU_ data",
+    info:         "Menampilkan _START_–_END_ dari _TOTAL_ data",
+    infoEmpty:    "Tidak ada data",
+    infoFiltered: "(difilter dari _MAX_ total)",
+    zeroRecords:  "Data tidak ditemukan",
+    paginate:     { first:"«", last:"»", next:"›", previous:"‹" }
+  };
+
+  /* Opsi default */
+  var DT_OPTS = {
+    pageLength : 25,
+    lengthMenu : [[10,25,50,100,-1],["10","25","50","100","Semua"]],
+    language   : LANG_ID,
+    order      : [],
+    ordering   : true,
+    autoWidth  : false,
+    responsive : false,
+  };
+
+  /* Validasi sebelum init – cegah tn/18 */
+  function isSafe(tbl) {
+    var $t   = $(tbl);
+    var thCt = $t.find('thead tr:first th, thead tr:first td').length;
+    /* Tabel tanpa thead atau 0 kolom = skip */
+    if (thCt === 0) return false;
+    /* Jika hanya ada baris .dt-empty (data kosong) = skip,
+       DataTables tidak perlu diinit untuk tabel tanpa data */
+    var $rows = $t.find('tbody tr').not('.dt-empty');
+    if ($rows.length === 0) return false;
+    /* Cek konsistensi kolom tbody (hanya baris pertama non-empty) */
+    var firstTdCt = $rows.first().find('td').length;
+    if (firstTdCt > 0 && firstTdCt !== thCt) {
+      console.warn('HRIS DataTables: kolom tidak cocok pada', tbl.id || tbl, '– thead:', thCt, 'tbody:', firstTdCt, '– skip init.');
+      return false;
+    }
+    return true;
+  }
+
+  /* Init satu tabel */
+  function initTable(tbl, extraOpts) {
+    if ($.fn.DataTable.isDataTable(tbl)) return;
+    if (!isSafe(tbl)) return;
+    try {
+      $(tbl).DataTable($.extend({}, DT_OPTS, extraOpts || {}));
+    } catch(e) {
+      console.warn('HRIS DataTables init error:', e);
+    }
+  }
+
+  $(document).ready(function(){
+    /* 1. Init semua tabel visible (bukan di dalam tab tersembunyi) */
+    $('table.datatable').each(function(){
+      /* Lewati tabel yang berada di dalam tab-pane yang belum aktif */
+      if ($(this).closest('.tab-pane').length && !$(this).closest('.tab-pane').hasClass('active')) return;
+      initTable(this);
+    });
+
+    /* 2. Init tabel di dalam tab Bootstrap saat tab dibuka */
+    $(document).on('shown.bs.tab', function(e){
+      var target = $(e.target).attr('href') || $(e.target).data('bs-target');
+      if (!target) return;
+      $(target).find('table.datatable, table.datatable-tab').each(function(){
+        initTable(this);
+      });
+    });
+
+    /* 3. Tabel class="datatable-tab" yang sudah visible saat load (tab aktif) */
+    $('table.datatable-tab').each(function(){
+      if ($(this).is(':visible')) initTable(this);
+    });
+  });
+})(jQuery);
+</script>
+<script>
+/* THEME */
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('hris_theme',t);}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
+(function(){applyTheme(localStorage.getItem('hris_theme')||'dark');})();
+
+/* SIDEBAR DESKTOP */
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar'),ic=document.getElementById('sbIcon');
+  const c=sb.classList.toggle('collapsed');
+  document.body.classList.toggle('sb-collapsed',c);
+  ic.className=c?'fas fa-chevron-right':'fas fa-chevron-left';
+  localStorage.setItem('hris_sb',c);
+}
+
+/* SIDEBAR MOBILE */
+function openMobileSidebar(){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sbOverlay');
+  const btn=document.getElementById('mobileMenuBtn');
+  sb.classList.add('mobile-open');
+  ov.classList.add('active');
+  document.body.style.overflow='hidden';
+  if(btn) btn.setAttribute('aria-expanded','true');
+}
+function closeMobileSidebar(){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sbOverlay');
+  const btn=document.getElementById('mobileMenuBtn');
+  sb.classList.remove('mobile-open');
+  ov.classList.remove('active');
+  document.body.style.overflow='';
+  if(btn) btn.setAttribute('aria-expanded','false');
+}
+/* Tutup sidebar mobile saat tekan Escape */
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeMobileSidebar();});
+
+/* GROUP */
+function toggleGroup(k){
+  const g=document.querySelector('[data-g="'+k+'"]');if(!g)return;
+  const open=g.classList.toggle('open');
+  const it=g.querySelector('.sb-items');if(it)it.style.maxHeight=open?'800px':'0';
+  const s=getState();s[k]=open;localStorage.setItem('hris_sg',JSON.stringify(s));
+}
+function getState(){try{return JSON.parse(localStorage.getItem('hris_sg')||'{}');}catch{return {};}}
+
+/* RESTORE */
+(function(){
+  if(localStorage.getItem('hris_sb')==='true'){
+    document.getElementById('sidebar').classList.add('collapsed');
+    document.body.classList.add('sb-collapsed');
+    const ic=document.getElementById('sbIcon');
+    if(ic) ic.className='fas fa-chevron-right';
+  }
+  const s=getState();
+  document.querySelectorAll('.sb-group').forEach(function(g){
+    const it=g.querySelector('.sb-items');if(!it)return;
+    const k=g.dataset.g,open=k in s?s[k]:g.classList.contains('open');
+    if(open){g.classList.add('open');it.style.maxHeight='800px';}
+    else{g.classList.remove('open');it.style.maxHeight='0';}
+  });
+  const a=document.querySelector('.sb-item.active');
+  if(a){const p=a.closest('.sb-group');if(p){p.classList.add('open');const it=p.querySelector('.sb-items');if(it)it.style.maxHeight='800px';}}
+})();
+
+/* USER DROPDOWN */
+function toggleUserDD(){
+  const w=document.getElementById('userWrap');
+  const dd=document.getElementById('notifDropdown');
+  if(dd) dd.style.display='none';
+  w.classList.toggle('open');
+}
+document.addEventListener('click',function(e){const w=document.getElementById('userWrap');if(w&&!w.contains(e.target))w.classList.remove('open');});
+
+/* NOTIFICATION DROPDOWN */
+function toggleNotifDD(){
+  const w=document.getElementById('notifWrap');
+  const dd=document.getElementById('notifDropdown');
+  const btn=document.getElementById('notifBtn');
+  if(!dd||!btn)return;
+  const isOpen=dd.style.display==='block';
+  document.getElementById('userWrap').classList.remove('open');
+  dd.style.display=isOpen?'none':'block';
+  btn.setAttribute('aria-expanded',String(!isOpen));
+}
+document.addEventListener('click',function(e){
+  const w=document.getElementById('notifWrap');
+  const dd=document.getElementById('notifDropdown');
+  const btn=document.getElementById('notifBtn');
+  if(w&&!w.contains(e.target)&&dd){dd.style.display='none';if(btn)btn.setAttribute('aria-expanded','false');}
+});
+function toggleTenantDD(){
+  const dd=document.getElementById('tenantSwitcherDD');
+  if(!dd)return;
+  dd.style.display=dd.style.display==='block'?'none':'block';
+}
+document.addEventListener('click',function(e){
+  const w=document.getElementById('tenantSwitcherWrap');
+  const dd=document.getElementById('tenantSwitcherDD');
+  if(w&&!w.contains(e.target)&&dd){dd.style.display='none';}
+});
+
+/* LOGO */
+(function(){
+  var img = document.getElementById('sbLogoImg');
+  var fb  = document.getElementById('sbLogoFallback');
+  if (!img) return;
+  img.src = "{% static 'images/Logo.png' %}";
+  img.onload  = function(){ img.style.display='block'; if(fb) fb.style.display='none'; };
+  img.onerror = function(){ img.style.display='none';  if(fb) fb.style.display='flex'; };
+})();
+
+/* TOAST AUTODISMISS */
+setTimeout(function(){
+  document.querySelectorAll('.toast-item').forEach(function(t){
+    t.style.transition='opacity .4s,transform .4s';t.style.opacity='0';t.style.transform='translateX(10px)';
+    setTimeout(function(){t.remove();},400);
+  });
+},5000);
+
+/* ONBOARDING DISMISS */
+function dismissOnboarding(){
+  const b=document.getElementById('onboardingBanner');
+  if(b){b.style.transition='opacity .3s,transform .3s';b.style.opacity='0';b.style.transform='translateY(-8px)';setTimeout(function(){b.remove();},300);}
+  // Simpan ke localStorage agar tidak muncul lagi hari ini
+  localStorage.setItem('hris_onboarding_dismissed', new Date().toDateString());
+}
+(function(){
+  const dismissed=localStorage.getItem('hris_onboarding_dismissed');
+  const b=document.getElementById('onboardingBanner');
+  if(b && dismissed === new Date().toDateString()) b.style.display='none';
+})();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

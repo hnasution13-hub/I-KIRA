@@ -1,0 +1,185 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Detail Sesi Psikotes - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Recruitment / Psikotes / Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-brain me-2" style="color:#7b1fa2;"></i>Detail Sesi Psikotes</h4>
+    <a href="{% url 'psychotest_session_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<div class="row g-3">
+    <!-- Info Sesi -->
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header fw-semibold"><i class="fas fa-info-circle me-2"></i>Info Sesi</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted d-block">Kandidat</small>
+                    <a href="{% url 'candidate_detail' session.candidate.pk %}" class="fw-semibold">{{ session.candidate.nama }}</a>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Posisi Dilamar</small>
+                    {{ session.candidate.posisi_dilamar|default:"-" }}
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Paket Tes</small>
+                    {% for p in session.paket %}
+                        <span class="badge bg-secondary me-1">{{ p }}</span>
+                    {% endfor %}
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Status</small>
+                    {% if session.status == 'completed' %}
+                        <span class="badge bg-success">Selesai</span>
+                    {% elif session.status == 'started' %}
+                        <span class="badge bg-warning text-dark">Sedang Dikerjakan</span>
+                    {% elif session.status == 'expired' %}
+                        <span class="badge bg-danger">Kadaluarsa</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Belum Dikerjakan</span>
+                    {% endif %}
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Dibuat Oleh</small>
+                    {{ session.created_by|default:"-" }}
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Tanggal Dibuat</small>
+                    {{ session.created_at|date:"d/m/Y H:i" }}
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Kadaluarsa</small>
+                    <span class="{% if session.is_expired and session.status != 'completed' %}text-danger fw-semibold{% endif %}">
+                        {{ session.expired_at|date:"d/m/Y H:i" }}
+                    </span>
+                </div>
+                {% if session.completed_at %}
+                <div class="mb-2">
+                    <small class="text-muted d-block">Selesai</small>
+                    {{ session.completed_at|date:"d/m/Y H:i" }}
+                </div>
+                {% endif %}
+
+                {% if session.is_accessible %}
+                <hr>
+                <div>
+                    <small class="text-muted d-block mb-1">Link Tes untuk Kandidat</small>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="linkTes"
+                            value="{{ request.scheme }}://{{ request.get_host }}{{ session.link }}" readonly>
+                        <button class="btn btn-outline-secondary" type="button"
+                            onclick="navigator.clipboard.writeText(document.getElementById('linkTes').value); this.innerHTML='<i class=\'fas fa-check\'></i>'">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Hasil -->
+    <div class="col-md-8">
+        {% if result %}
+        <div class="card mb-3">
+            <div class="card-header fw-semibold bg-success text-white">
+                <i class="fas fa-chart-bar me-2"></i>Hasil Psikotes
+                {% if result.grade %}<span class="badge bg-light text-dark ms-2">Grade: {{ result.grade }}</span>{% endif %}
+            </div>
+            <div class="card-body">
+                <!-- Skor -->
+                <div class="row g-3 mb-3">
+                    {% if result.skor_logika is not None %}
+                    <div class="col-6 col-md-3 text-center">
+                        <div class="fw-bold fs-4" style="color:#1976d2;">{{ result.skor_logika }}</div>
+                        <small class="text-muted">Logika</small>
+                        <div class="progress mt-1" style="height:4px;">
+                            <div class="progress-bar bg-primary" style="width:{{ result.skor_logika }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if result.skor_verbal is not None %}
+                    <div class="col-6 col-md-3 text-center">
+                        <div class="fw-bold fs-4" style="color:#388e3c;">{{ result.skor_verbal }}</div>
+                        <small class="text-muted">Verbal</small>
+                        <div class="progress mt-1" style="height:4px;">
+                            <div class="progress-bar bg-success" style="width:{{ result.skor_verbal }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if result.skor_numerik is not None %}
+                    <div class="col-6 col-md-3 text-center">
+                        <div class="fw-bold fs-4" style="color:#f57c00;">{{ result.skor_numerik }}</div>
+                        <small class="text-muted">Numerik</small>
+                        <div class="progress mt-1" style="height:4px;">
+                            <div class="progress-bar bg-warning" style="width:{{ result.skor_numerik }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if result.skor_total is not None %}
+                    <div class="col-6 col-md-3 text-center">
+                        <div class="fw-bold fs-4 text-danger">{{ result.skor_total }}</div>
+                        <small class="text-muted">Total</small>
+                        <div class="progress mt-1" style="height:4px;">
+                            <div class="progress-bar bg-danger" style="width:{{ result.skor_total }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- DISC -->
+                {% if result.disc_d or result.disc_i or result.disc_s or result.disc_c %}
+                <hr>
+                <h6 class="fw-semibold mb-2">Profil DISC</h6>
+                {% if result.disc_profil %}
+                    <span class="badge bg-purple me-2 mb-2" style="background:#7b1fa2;font-size:1rem;padding:6px 14px;">
+                        Tipe: {{ result.disc_profil }}
+                    </span>
+                {% endif %}
+                <div class="row g-2 mb-2">
+                    {% for label, val in result.disc_chart_data.items %}
+                    <div class="col-6 col-md-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold">{{ label }}</span><span>{{ val }}</span>
+                        </div>
+                        <div class="progress" style="height:8px;">
+                            <div class="progress-bar" style="width:{{ val }}%;background:#7b1fa2;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if result.disc_deskripsi %}
+                <div class="alert alert-light border mt-2 mb-0" style="font-size:0.85rem;">
+                    {{ result.disc_deskripsi }}
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <!-- Catatan HR -->
+                {% if result.catatan_hr %}
+                <hr>
+                <h6 class="fw-semibold">Catatan HR</h6>
+                <p class="mb-0 text-muted">{{ result.catatan_hr }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="fas fa-hourglass-half fa-3x mb-3 d-block opacity-25"></i>
+                {% if session.status == 'completed' %}
+                    Tes sudah selesai tapi hasil belum diproses.
+                {% elif session.status == 'expired' %}
+                    Sesi kadaluarsa sebelum kandidat menyelesaikan tes.
+                {% else %}
+                    Menunggu kandidat mengerjakan tes.
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

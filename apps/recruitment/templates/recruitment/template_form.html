@@ -1,0 +1,127 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit{% else %}Buat{% endif %} Template{% endblock %}
+{% block breadcrumb %}Rekrutmen / Template / {% if instance %}Edit{% else %}Buat{% endif %}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-layer-group me-2 text-primary"></i>
+        {% if instance %}Edit{% else %}Buat{% endif %} Template Offering Letter
+    </h4>
+    <a href="{% url 'template_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="row g-4">
+
+        <!-- Kiri: Info & default -->
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header fw-semibold">Info Template</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nama Template *</label>
+                        <input type="text" name="nama" class="form-control" required
+                               value="{{ instance.nama|default:'' }}"
+                               placeholder="contoh: Template Site Mining">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Deskripsi</label>
+                        <textarea name="deskripsi" class="form-control" rows="3"
+                                  placeholder="Deskripsi singkat template ini">{{ instance.deskripsi|default:'' }}</textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="is_default"
+                               id="isDefault" {% if instance.is_default %}checked{% endif %}>
+                        <label class="form-check-label" for="isDefault">
+                            <strong>Jadikan Default</strong>
+                            <div class="text-muted small">Template ini otomatis dipilih saat membuat Offering Letter baru</div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <button type="submit" class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-save me-1"></i>Simpan Template
+                    </button>
+                    <a href="{% url 'template_list' %}" class="btn btn-outline-secondary w-100">Batal</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kanan: Isi template -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header fw-semibold">Isi Template</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Working Day</label>
+                        <textarea name="working_day_text" class="form-control" rows="3">{{ instance.working_day_text|default:"Roster Working Day, every day working including National Holiday/Red Calendar day, able to take Rest one day after two weeks work at Site, 07.30 – 16.00 (base on field working time)" }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Employment Status</label>
+                        <textarea name="employment_status_text" class="form-control" rows="3">{{ instance.employment_status_text|default:"First Contract (PKWT I) : 6 (Six) months, If your evaluation is good/excellent, company will be consider to extend your working agreement to (PKWT II)" }}</textarea>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Meal Allowance</label>
+                            <input type="text" name="meal_allowance_text" class="form-control"
+                                   value="{{ instance.meal_allowance_text|default:'Provided by Company (breakfast, lunch, & dinner)' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Residence Allowance</label>
+                            <input type="text" name="residence_allowance_text" class="form-control"
+                                   value="{{ instance.residence_allowance_text|default:'Provided by Company (mess/dormitory)' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Roster Leave</label>
+                            <input type="text" name="roster_leave_text" class="form-control"
+                                   value="{{ instance.roster_leave_text|default:'10 : 2 (working 10 weeks)' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Annual Leave</label>
+                            <input type="text" name="annual_leave_text" class="form-control"
+                                   value="{{ instance.annual_leave_text|default:'12 months work continually, 12 working days Leave' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Overtime Policy</label>
+                            <input type="text" name="overtime_text" class="form-control"
+                                   value="{{ instance.overtime_text|default:'Job Position Assignment Responsibility' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">BPJS Kesehatan</label>
+                            <input type="text" name="bpjs_kes_text" class="form-control"
+                                   value="{{ instance.bpjs_kes_text|default:'Health Care (Employee dues obligation by regulation)' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">BPJS Ketenagakerjaan</label>
+                            <input type="text" name="bpjs_tk_text" class="form-control"
+                                   value="{{ instance.bpjs_tk_text|default:'JHT,JKK,JK,JP (JHT&JP; Employee dues obligation by regulation)' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Potongan BPJS Karyawan</label>
+                            <input type="text" name="bpjs_potongan_text" class="form-control"
+                                   value="{{ instance.bpjs_potongan_text|default:'Deducted 2% JHT, 1% JP, 1% Kes From Salary for BPJS TK & Kes.' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">PPh 21</label>
+                            <input type="text" name="pph21_text" class="form-control"
+                                   value="{{ instance.pph21_text|default:'Income Tax is covered by Company' }}">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Footer Text</label>
+                        <textarea name="footer_text" class="form-control" rows="4">{{ instance.footer_text|default:"The mentioned statement above as our agreement previous, so please sign the letter and submit the letter back to us as your acceptance to the term & condition in the agreement as soon as possible.\n\nThanks you for your attention and cooperation." }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</form>
+{% endblock %}

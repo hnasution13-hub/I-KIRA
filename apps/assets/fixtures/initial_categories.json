@@ -1,0 +1,32 @@
+[
+  {
+    "model": "assets.category",
+    "pk": 1,
+    "fields": {
+      "name": "Aset Tidak Bergerak",
+      "code": "01",
+      "parent": null,
+      "asset_type": "Tangible"
+    }
+  },
+  {
+    "model": "assets.category",
+    "pk": 2,
+    "fields": {
+      "name": "Tanah & Bangunan",
+      "code": "0101",
+      "parent": 1,
+      "asset_type": "Tangible"
+    }
+  },
+  {
+    "model": "assets.category",
+    "pk": 3,
+    "fields": {
+      "name": "Tanah",
+      "code": "010101",
+      "parent": 2,
+      "asset_type": "Tangible"
+    }
+  }
+]

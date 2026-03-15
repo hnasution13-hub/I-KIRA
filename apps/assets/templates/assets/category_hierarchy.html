@@ -1,0 +1,31 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Category Hierarchy{% endblock %}
+{% block breadcrumb %}Asset Management / Hierarki Kategori{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h4>Category Hierarchy</h4>
+        </div>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for category in categories %}
+                <li class="list-group-item">
+                    <strong>{{ category.name }}</strong> ({{ category.assets.count }} assets)
+                    {% if category.children.exists %}
+                    <ul>
+                        {% for child in category.children.all %}
+                        <li>{{ child.name }} ({{ child.assets.count }})</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </li>
+                {% empty %}
+                <li class="list-group-item">No categories found.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

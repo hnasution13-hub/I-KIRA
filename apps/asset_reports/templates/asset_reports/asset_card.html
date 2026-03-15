@@ -1,0 +1,66 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Kartu Aset: {{ asset.asset_name }}{% endblock %}
+{% block breadcrumb %}Asset Management / Kartu Asset{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h4>Kartu Aset: {{ asset.asset_code }} - {{ asset.asset_name }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table">
+                        <tr><th>Kategori</th><td>{{ asset.category.get_full_path }}</td></tr>
+                        <tr><th>Tanggal Beli</th><td>{{ asset.purchase_date }}</td></tr>
+                        <tr><th>Harga</th><td>Rp {{ asset.purchase_price|floatformat:0 }}</td></tr>
+                        <tr><th>Nilai Residu</th><td>Rp {{ asset.residual_value|floatformat:0 }}</td></tr>
+                        <tr><th>Masa Manfaat</th><td>{{ asset.useful_life }} tahun</td></tr>
+                        <tr><th>Nilai Buku</th><td>Rp {{ asset.book_value|floatformat:0 }}</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table">
+                        <tr><th>Lokasi</th><td>{{ asset.location.name|default:"-" }}</td></tr>
+                        <tr><th>Penanggung Jawab</th><td>{{ asset.responsible.name|default:"-" }}</td></tr>
+                        <tr><th>Kondisi</th><td>{{ asset.condition }}</td></tr>
+                        <tr><th>Status</th><td>{{ asset.get_status_display }}</td></tr>
+                        <tr><th>Vendor</th><td>{{ asset.vendor.name|default:"-" }}</td></tr>
+                        <tr><th>Serial Number</th><td>{{ asset.serial_number|default:"-" }}</td></tr>
+                    </table>
+                </div>
+            </div>
+            <h5 class="mt-4">Riwayat Mutasi</h5>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Jenis</th>
+                        <th>Dari</th>
+                        <th>Ke</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in movements %}
+                    <tr>
+                        <td>{{ m.movement_date }}</td>
+                        <td>{{ m.get_movement_type_display }}</td>
+                        <td>{{ m.from_pic_name|default:m.from_location_name|default:"-" }}</td>
+                        <td>{{ m.to_pic_name|default:m.to_location_name|default:"-" }}</td>
+                        <td>{{ m.description|truncatechars:30 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">Belum ada mutasi</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <a href="{% url 'asset_reports:dashboard' %}" class="btn btn-secondary">Kembali</a>
+            <a href="{% url 'asset_reports:asset_card_print' asset.pk %}" class="btn btn-primary" target="_blank">
+              🖨 Cetak Kartu Aset
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

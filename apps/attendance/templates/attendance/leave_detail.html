@@ -1,0 +1,151 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Detail Cuti — {{ leave.employee.nama }}{% endblock %}
+{% block breadcrumb %}Administrasi / Cuti &amp; Ijin / Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Detail Pengajuan Cuti</h4>
+        <small class="text-muted">{{ leave.employee.nama }} &nbsp;·&nbsp; {{ leave.tipe_cuti }}</small>
+    </div>
+    <a href="{% url 'leave_list' %}" class="btn btn-outline-secondary btn-sm">← Kembali</a>
+</div>
+
+<div class="row g-4">
+    {# ── Kolom kiri: info cuti ───────────────────────────────────────────── #}
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted fw-normal">Karyawan</dt>
+                    <dd class="col-7 fw-semibold">{{ leave.employee.nama }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Jabatan</dt>
+                    <dd class="col-7">{{ leave.employee.jabatan.nama|default:"—" }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Departemen</dt>
+                    <dd class="col-7">{{ leave.employee.department.nama|default:"—" }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Tipe Cuti</dt>
+                    <dd class="col-7"><span class="badge bg-light text-dark border">{{ leave.tipe_cuti }}</span></dd>
+
+                    <dt class="col-5 text-muted fw-normal">Tanggal Mulai</dt>
+                    <dd class="col-7">{{ leave.tanggal_mulai|date:"d F Y" }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Tanggal Selesai</dt>
+                    <dd class="col-7">{{ leave.tanggal_selesai|date:"d F Y" }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Jumlah Hari</dt>
+                    <dd class="col-7"><strong>{{ leave.jumlah_hari }} hari</strong></dd>
+
+                    <dt class="col-5 text-muted fw-normal">Alasan</dt>
+                    <dd class="col-7">{{ leave.alasan }}</dd>
+
+                    {% if leave.dokumen %}
+                    <dt class="col-5 text-muted fw-normal">Dokumen</dt>
+                    <dd class="col-7"><a href="{{ leave.dokumen.url }}" target="_blank">Lihat Dokumen</a></dd>
+                    {% endif %}
+
+                    <dt class="col-5 text-muted fw-normal">Status</dt>
+                    <dd class="col-7">
+                        <span class="badge {% if leave.status == 'Approved' %}bg-success{% elif leave.status == 'Pending' %}bg-warning text-dark{% elif leave.status == 'Rejected' %}bg-danger{% else %}bg-secondary{% endif %} fs-6">
+                            {{ leave.status }}
+                        </span>
+                    </dd>
+
+                    {% if leave.approved_by %}
+                    <dt class="col-5 text-muted fw-normal">Diproses Oleh</dt>
+                    <dd class="col-7">{{ leave.approved_by.nama }}
+                        {% if leave.approved_at %}<small class="text-muted ms-1">({{ leave.approved_at|date:"d/m/Y H:i" }})</small>{% endif %}
+                    </dd>
+                    {% endif %}
+
+                    {% if leave.catatan_approval %}
+                    <dt class="col-5 text-muted fw-normal">Catatan Approval</dt>
+                    <dd class="col-7">{{ leave.catatan_approval }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        {# ── Aksi approval ──────────────────────────────────────────────── #}
+        {% if leave.status == 'Pending' and can_approve %}
+        <div class="card border-0 shadow-sm border-start border-4 border-warning">
+            <div class="card-body">
+                <h6 class="mb-3">Tindakan Approval</h6>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <form method="post" action="{% url 'leave_approve' leave.pk %}">
+                            {% csrf_token %}
+                            <input type="text" name="catatan_approval" class="form-control form-control-sm mb-2"
+                                   placeholder="Catatan approval (opsional)">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-check me-1"></i> Setujui
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <form method="post" action="{% url 'leave_reject' leave.pk %}">
+                            {% csrf_token %}
+                            <input type="text" name="catatan_approval" class="form-control form-control-sm mb-2"
+                                   placeholder="Alasan penolakan" required>
+                            <button type="submit" class="btn btn-danger w-100">
+                                <i class="fas fa-times me-1"></i> Tolak
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# ── Kolom kanan: approval chain ─────────────────────────────────────── #}
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-bottom py-2 d-flex justify-content-between">
+                <h6 class="mb-0">Alur Approval Cuti</h6>
+                <a href="{% url 'approval_matrix_list' %}" class="small text-muted">Atur →</a>
+            </div>
+            <div class="card-body py-3">
+                {# Pemohon #}
+                <div class="d-flex align-items-center gap-2 p-2 rounded bg-light mb-2">
+                    <span class="badge bg-secondary">L0</span>
+                    <div>
+                        <div class="small fw-semibold">{{ leave.employee.nama }}</div>
+                        <div class="text-muted" style="font-size:11px">{{ leave.employee.jabatan.nama|default:"—" }} · Pemohon</div>
+                    </div>
+                    <span class="ms-auto badge bg-warning text-dark">{{ leave.status }}</span>
+                </div>
+
+                {% for step in approval_chain %}
+                <div class="text-muted text-center small mb-1">↓</div>
+                <div class="d-flex align-items-center gap-2 p-2 rounded border mb-2
+                    {% if leave.status == 'Approved' and forloop.last %}border-success bg-success bg-opacity-10
+                    {% elif leave.status == 'Rejected' and forloop.last %}border-danger bg-danger bg-opacity-10{% endif %}">
+                    <span class="badge bg-primary">L{{ step.level }}</span>
+                    <div>
+                        <div class="small fw-semibold">{{ step.approver_nama }}</div>
+                        <div class="text-muted" style="font-size:11px">{{ step.jabatan_nama }}
+                            {% if step.auto_approve %}<span class="badge bg-warning text-dark ms-1">Auto {{ step.auto_approve }}h</span>{% endif %}
+                        </div>
+                    </div>
+                    {% if leave.status == 'Approved' and forloop.last %}
+                    <span class="ms-auto badge bg-success"><i class="fas fa-check"></i></span>
+                    {% elif leave.status == 'Rejected' and forloop.last %}
+                    <span class="ms-auto badge bg-danger"><i class="fas fa-times"></i></span>
+                    {% else %}
+                    <span class="ms-auto badge bg-light text-muted border">Menunggu</span>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="alert alert-light border small mb-0">
+                    <i class="fas fa-info-circle me-1 text-muted"></i>
+                    Tidak ada rule eksplisit — sistem naik ke atasan jabatan secara otomatis.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

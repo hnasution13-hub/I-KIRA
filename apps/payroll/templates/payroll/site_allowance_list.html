@@ -1,0 +1,77 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Site Allowance Rules{% endblock %}
+{% block breadcrumb %}Payroll / Site Allowance{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-map-marker-alt me-2 text-primary"></i>Aturan Tunjangan Site</h4>
+    <a href="{% url 'site_allowance_add' %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Tambah Aturan
+    </a>
+</div>
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive-wrap">
+<table class="table table-hover datatable mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Job Site</th>
+                    <th>Jabatan</th>
+                    <th>Nama Komponen</th>
+                    <th>Nilai</th>
+                    <th>Jenis</th>
+                    <th>Status</th>
+                    <th class="text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in rules %}
+                <tr>
+                    <td>{{ rule.job_site }}</td>
+                    <td>{{ rule.jabatan|default:"— Semua Jabatan —" }}</td>
+                    <td>{{ rule.nama_komponen }}</td>
+                    <td>
+                        {% if rule.jenis == 'flat' %}
+                            Rp {{ rule.nilai|floatformat:0 }}
+                        {% else %}
+                            {{ rule.nilai }}%
+                        {% endif %}
+                    </td>
+                    <td><span class="badge {% if rule.jenis == 'flat' %}bg-info{% else %}bg-warning text-dark{% endif %}">
+                        {{ rule.get_jenis_display }}</span></td>
+                    <td>
+                        {% if rule.aktif %}
+                            <span class="badge bg-success">Aktif</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Non-aktif</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'site_allowance_edit' rule.pk %}" class="btn btn-sm btn-outline-primary me-1">
+                            <i class="fas fa-edit"></i></a>
+                        <a href="{% url 'site_allowance_delete' rule.pk %}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="dt-empty">
+                    <td colspan="7" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-tags"></i></div>
+                            <div class="empty-state-title">Belum ada site allowance</div>
+                            <div class="empty-state-desc">Tambah aturan tunjangan berdasarkan lokasi kerja.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'site_allowance_add' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Allowance</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                    Belum ada aturan tunjangan site.
+                    <a href="{% url 'site_allowance_add' %}">Tambah sekarang</a>
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+    </div>
+</div>
+{% endblock %}

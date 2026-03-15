@@ -1,0 +1,229 @@
+{% extends 'base_dashboard.html' %}
+{% load attendance_filters %}
+{% block title %}Input Absensi Massal{% endblock %}
+{% block breadcrumb %}Absensi / Input Massal{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0"><i class="fas fa-users-cog me-2 text-success"></i>Input Absensi Massal</h4>
+    <a href="{% url 'attendance_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible py-2 small">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Pilih Tanggal -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small fw-semibold mb-1">Tanggal</label>
+                <input type="date" name="tanggal" class="form-control form-control-sm"
+                       value="{{ tanggal|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-search me-1"></i>Tampilkan
+                </button>
+            </div>
+            <div class="col-auto">
+                {% if is_holiday %}
+                <span class="badge bg-danger ms-2"><i class="fas fa-umbrella-beach me-1"></i>Hari Libur Nasional</span>
+                {% elif is_weekend %}
+                <span class="badge bg-secondary ms-2"><i class="fas fa-calendar-times me-1"></i>Akhir Pekan</span>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toolbar isi cepat -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="fw-semibold small text-muted me-1">Isi cepat semua:</span>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="fillAll('Hadir', '08:00', '17:00')">
+                <i class="fas fa-check me-1"></i>Semua Hadir
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="fillAll('Tidak Hadir', '', '')">
+                <i class="fas fa-times me-1"></i>Semua Tidak Hadir
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info" onclick="fillAll('Libur', '', '')">
+                <i class="fas fa-umbrella-beach me-1"></i>Semua Libur
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-warning" onclick="fillAll('WFH', '08:00', '17:00')">
+                <i class="fas fa-home me-1"></i>Semua WFH
+            </button>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <input type="text" id="inp-search" class="form-control form-control-sm" placeholder="Cari nama..." style="width:160px;" oninput="filterRows()">
+                <span class="small text-muted" id="lbl-count"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Tabel -->
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="tanggal" value="{{ tanggal|date:'Y-m-d' }}">
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="tbl-bulk">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:40px;">
+                                <input type="checkbox" class="form-check-input" id="chk-all" title="Pilih semua" onchange="toggleAll(this)">
+                            </th>
+                            <th>NIK</th>
+                            <th>Nama</th>
+                            <th>Jabatan</th>
+                            <th style="width:150px;">Status *</th>
+                            <th style="width:110px;">Check-In</th>
+                            <th style="width:110px;">Check-Out</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employees %}
+                        {% with att=existing|get_item:emp.pk %}
+                        <tr class="emp-row" data-nama="{{ emp.nama|lower }}">
+                            <td>
+                                <input type="checkbox" class="form-check-input row-check" data-pk="{{ emp.pk }}"
+                                       {% if att %}checked{% endif %} onchange="toggleRow(this)">
+                            </td>
+                            <td><small class="text-muted">{{ emp.nik }}</small></td>
+                            <td class="fw-semibold">{{ emp.nama }}</td>
+                            <td><small class="text-muted">{{ emp.jabatan|default:"—" }}</small></td>
+                            <td>
+                                <select name="status_{{ emp.pk }}" class="form-select form-select-sm status-sel"
+                                        data-pk="{{ emp.pk }}" onchange="onStatusChange(this)">
+                                    <option value="">— skip —</option>
+                                    {% for s in status_choices %}
+                                    <option value="{{ s }}"
+                                        {% if att and att.status == s %}selected
+                                        {% elif not att and is_holiday %}{% if s == 'Libur' %}selected{% endif %}
+                                        {% elif not att and is_weekend %}{% if s == 'Libur' %}selected{% endif %}
+                                        {% endif %}>{{ s }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="time" name="check_in_{{ emp.pk }}" class="form-control form-control-sm ci-input"
+                                       data-pk="{{ emp.pk }}"
+                                       value="{% if att and att.check_in %}{{ att.check_in|time:'H:i' }}{% endif %}">
+                            </td>
+                            <td>
+                                <input type="time" name="check_out_{{ emp.pk }}" class="form-control form-control-sm co-input"
+                                       data-pk="{{ emp.pk }}"
+                                       value="{% if att and att.check_out %}{{ att.check_out|time:'H:i' }}{% endif %}">
+                            </td>
+                            <td>
+                                <input type="text" name="ket_{{ emp.pk }}" class="form-control form-control-sm"
+                                       placeholder="Opsional"
+                                       value="{% if att %}{{ att.keterangan }}{% endif %}"
+                                       maxlength="100">
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% empty %}
+                        <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada karyawan aktif.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Baris yang status-nya <strong>— skip —</strong> tidak akan disimpan.
+            Data existing akan di-<em>overwrite</em>.
+        </small>
+        <button type="submit" class="btn btn-success px-4"
+                id="btnSimpan"
+                data-tanggal="{{ tanggal|date:'d/m/Y' }}"
+                onclick="return confirmSimpan(this)">
+            <i class="fas fa-save me-2"></i>Simpan Semua
+        </button>
+    </div>
+</form>
+
+<script>
+// ── Konfirmasi simpan dengan tanggal dari data attribute ──────────────────────
+function confirmSimpan(btn) {
+    var tanggal = btn.getAttribute('data-tanggal') || '';
+    return confirm('Simpan data absensi ' + tanggal + ' untuk semua karyawan yang dipilih?');
+}
+
+// ── Isi cepat semua baris ────────────────────────────────────────────────────
+function fillAll(status, ci, co) {
+    document.querySelectorAll('.emp-row:not([style*="display:none"]) .status-sel').forEach(sel => {
+        sel.value = status;
+        onStatusChange(sel);
+    });
+    document.querySelectorAll('.emp-row:not([style*="display:none"]) .ci-input').forEach(el => el.value = ci);
+    document.querySelectorAll('.emp-row:not([style*="display:none"]) .co-input').forEach(el => el.value = co);
+    // Centang semua checkbox
+    document.querySelectorAll('.emp-row:not([style*="display:none"]) .row-check').forEach(cb => cb.checked = (status !== ''));
+}
+
+// ── Toggle check-in/out berdasarkan status ───────────────────────────────────
+function onStatusChange(sel) {
+    const pk  = sel.dataset.pk;
+    const ci  = document.querySelector(`.ci-input[data-pk="${pk}"]`);
+    const co  = document.querySelector(`.co-input[data-pk="${pk}"]`);
+    const needTime = ['Hadir', 'WFH'].includes(sel.value);
+    ci.disabled = !needTime;
+    co.disabled = !needTime;
+    if (!needTime) { ci.value = ''; co.value = ''; }
+    else if (!ci.value) { ci.value = '08:00'; co.value = '17:00'; }
+}
+
+// ── Toggle row checkbox ──────────────────────────────────────────────────────
+function toggleRow(cb) {
+    const pk  = cb.dataset.pk;
+    const sel = document.querySelector(`.status-sel[data-pk="${pk}"]`);
+    if (!cb.checked) sel.value = '';
+    else if (!sel.value) sel.value = 'Hadir';
+    onStatusChange(sel);
+}
+
+function toggleAll(master) {
+    document.querySelectorAll('.emp-row:not([style*="display:none"]) .row-check').forEach(cb => {
+        cb.checked = master.checked;
+        toggleRow(cb);
+    });
+}
+
+// ── Filter pencarian ─────────────────────────────────────────────────────────
+function filterRows() {
+    const q    = document.getElementById('inp-search').value.toLowerCase();
+    const rows = document.querySelectorAll('.emp-row');
+    let visible = 0;
+    rows.forEach(row => {
+        const match = row.dataset.nama.includes(q);
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+    document.getElementById('lbl-count').textContent = `${visible} karyawan`;
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    // Init disabled state sesuai status existing
+    document.querySelectorAll('.status-sel').forEach(sel => onStatusChange(sel));
+    filterRows();
+});
+</script>
+
+{% endblock %}

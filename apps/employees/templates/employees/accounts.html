@@ -1,0 +1,197 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Manajemen Akun Portal{% endblock %}
+{% block breadcrumb %}Karyawan / Akun Portal{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold mb-0"><i class="fas fa-user-shield me-2 text-success"></i>Manajemen Akun Portal Karyawan</h4>
+  <form method="post" action="{% url 'employee_account_bulk_create' %}"
+        onsubmit="return confirm('Buat akun untuk semua karyawan aktif yang belum punya akun? Password default = NIK masing-masing.')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success btn-sm">
+      <i class="fas fa-users me-1"></i>Buat Akun Massal
+    </button>
+  </form>
+</div>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-3" id="portalTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="tab-akun-btn" data-bs-toggle="tab"
+            data-bs-target="#panel-akun" type="button" role="tab">
+      <i class="fas fa-user-shield me-1"></i>Manajemen Akun
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-log-btn" data-bs-toggle="tab"
+            data-bs-target="#panel-log" type="button" role="tab">
+      <i class="fas fa-history me-1"></i>Log Perubahan Biodata
+      {% if biodata_logs %}<span class="badge bg-danger ms-1">{{ biodata_logs|length }}</span>{% endif %}
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="portalTabContent">
+
+  <!-- TAB 1: Manajemen Akun -->
+  <div class="tab-pane fade show active" id="panel-akun" role="tabpanel">
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible py-2 small">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="card">
+      <div class="card-body p-0">
+        {% if employees %}
+        <table class="table table-hover datatable mb-0" id="tbl-akun">
+          <thead class="table-light">
+            <tr>
+              <th>NIK</th>
+              <th>Nama</th>
+              <th>Jabatan</th>
+              <th>Departemen</th>
+              <th class="text-center">Status Akun</th>
+              <th class="text-center">Username</th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for emp in employees %}
+            <tr>
+              <td><small class="text-muted">{{ emp.nik }}</small></td>
+              <td class="fw-semibold">{{ emp.nama }}</td>
+              <td><small>{{ emp.jabatan|default:"—" }}</small></td>
+              <td><small>{{ emp.department|default:"—" }}</small></td>
+              <td class="text-center">
+                {% if emp.user %}
+                  <span class="badge bg-success"><i class="fas fa-check me-1"></i>Aktif</span>
+                {% else %}
+                  <span class="badge bg-secondary"><i class="fas fa-times me-1"></i>Belum Ada</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <small class="text-muted">{% if emp.user %}{{ emp.user.username }}{% else %}—{% endif %}</small>
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        onclick="openModal({{ emp.pk }}, '{{ emp.nama|escapejs }}', '{{ emp.nik }}', {{ emp.user|yesno:'true,false' }})">
+                  {% if emp.user %}
+                  <i class="fas fa-key me-1"></i>Reset Password
+                  {% else %}
+                  <i class="fas fa-user-plus me-1"></i>Buat Akun
+                  {% endif %}
+                </button>
+                {% if emp.user %}
+                <form method="post" action="{% url 'employee_account_action' emp.pk %}" class="d-inline"
+                      onsubmit="return confirm('Hapus akun portal {{ emp.nama|escapejs }}? Karyawan tidak bisa login portal.')">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="revoke">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-user-times"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="fas fa-users fa-2x mb-2 d-block opacity-25"></i>
+          Tidak ada karyawan aktif.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div><!-- end panel-akun -->
+
+  <!-- TAB 2: Log Perubahan Biodata
+       PENTING: pakai class "datatable-tab" bukan "datatable"
+       agar tidak diinit saat tersembunyi → cegah error tn/18 -->
+  <div class="tab-pane fade" id="panel-log" role="tabpanel">
+    <div class="card">
+      <div class="card-body p-0">
+        {% if biodata_logs %}
+        <table class="table table-hover datatable-tab mb-0" id="tbl-log">
+          <thead class="table-light">
+            <tr>
+              <th>Waktu</th>
+              <th>Karyawan</th>
+              <th>NIK</th>
+              <th>Field</th>
+              <th>Nilai Lama</th>
+              <th>Nilai Baru</th>
+              <th>Oleh</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in biodata_logs %}
+            <tr>
+              <td><small class="text-muted">{{ log.waktu|date:"d/m/Y H:i" }}</small></td>
+              <td class="fw-semibold">{{ log.employee.nama }}</td>
+              <td><small class="text-muted">{{ log.employee.nik }}</small></td>
+              <td><span class="badge bg-light text-dark border">{{ log.label }}</span></td>
+              <td><small><s class="text-danger">{{ log.nilai_lama|default:"—" }}</s></small></td>
+              <td><small class="text-success fw-semibold">{{ log.nilai_baru|default:"—" }}</small></td>
+              <td><small class="text-muted">{{ log.user|default:"—" }}</small></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="fas fa-history fa-2x mb-2 d-block opacity-25"></i>
+          Belum ada perubahan biodata yang tercatat.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div><!-- end panel-log -->
+
+</div><!-- end tab-content -->
+
+<!-- Modal buat/reset akun -->
+<div class="modal fade" id="modalAkun" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-bold" id="modal-title">Buat Akun</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="form-akun">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create">
+        <div class="modal-body">
+          <p class="small text-muted mb-2" id="modal-desc"></p>
+          <label class="form-label small fw-semibold">Password</label>
+          <input type="text" name="password" id="inp-pw-new" class="form-control form-control-sm"
+                 placeholder="Kosongkan = gunakan NIK sebagai password">
+          <div class="form-text">Default: NIK karyawan</div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-success btn-sm" id="btn-modal-submit">Buat Akun</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(pk, nama, nik, hasAccount) {
+  document.getElementById('form-akun').action = '/employees/' + pk + '/account/';
+  document.getElementById('modal-title').textContent = hasAccount ? 'Reset Password' : 'Buat Akun';
+  document.getElementById('modal-desc').textContent  = hasAccount
+    ? 'Reset password akun portal ' + nama + ' (' + nik + ').'
+    : 'Buat akun portal untuk ' + nama + '. Username = ' + nik + '.';
+  document.getElementById('btn-modal-submit').textContent = hasAccount ? 'Reset Password' : 'Buat Akun';
+  document.getElementById('inp-pw-new').placeholder = 'Kosongkan = gunakan ' + nik;
+  new bootstrap.Modal(document.getElementById('modalAkun')).show();
+}
+</script>
+{% endblock %}

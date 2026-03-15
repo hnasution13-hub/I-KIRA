@@ -1,0 +1,159 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Job Library{% endblock %}
+{% block breadcrumb %}Master Data / Job Library{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold mb-0">
+    <i class="fas fa-briefcase me-2 text-primary"></i>Job Library
+    <small class="text-muted fs-6 fw-normal ms-2">— Standar Kompetensi Jabatan</small>
+  </h4>
+  <a href="{% url 'job_library_add' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i>Tambah Jabatan
+  </a>
+</div>
+
+<div class="alert alert-info py-2 small mb-3">
+  <i class="fas fa-info-circle me-1"></i>
+  Job Library adalah <strong>standar kompetensi default</strong> per jabatan. Saat user membuat MPRF,
+  skill dan kriteria akan otomatis terisi dari sini — dan masih bisa disesuaikan.
+</div>
+
+<!-- Filter -->
+<div class="card border-0 bg-light mb-3">
+  <div class="card-body py-2 px-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <input type="text" name="q" class="form-control form-control-sm"
+               value="{{ q }}" placeholder="Cari nama jabatan...">
+      </div>
+      <div class="col-md-3">
+        <select name="dept" class="form-select form-select-sm">
+          <option value="">-- Semua Departemen --</option>
+          {% for d in departments %}
+            <option value="{{ d.pk }}" {% if dept_filter == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.nama }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="level" class="form-select form-select-sm">
+          <option value="">-- Semua Level --</option>
+          {% for val, label in level_choices %}
+            <option value="{{ val }}" {% if level_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-flex gap-1">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="fas fa-filter me-1"></i>Filter
+        </button>
+        <a href="{% url 'job_library_list' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Grid Kartu Jabatan -->
+<div class="row g-3">
+  {% for pos in positions %}
+  <div class="col-md-6 col-xl-4">
+    <div class="card shadow-sm h-100 border-0" style="border-left: 4px solid #c40000 !important;">
+      <div class="card-body pb-2">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <h6 class="fw-bold mb-0">{{ pos.nama }}</h6>
+            <small class="text-muted">
+              <span class="badge bg-light text-dark border me-1">{{ pos.level }}</span>
+              {% if pos.department %}{{ pos.department.nama }}{% endif %}
+            </small>
+          </div>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-light" data-bs-toggle="dropdown">
+              <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li><a class="dropdown-item" href="{% url 'job_library_detail' pos.pk %}">
+                <i class="fas fa-eye me-2 text-info"></i>Detail
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'job_library_edit' pos.pk %}">
+                <i class="fas fa-edit me-2 text-primary"></i>Edit
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'job_library_delete' pos.pk %}">
+                <i class="fas fa-trash me-2"></i>Nonaktifkan
+              </a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Persyaratan -->
+        <div class="row g-1 mb-2 small">
+          <div class="col-6">
+            <span class="text-muted">Pendidikan</span>
+            <div class="fw-semibold">{{ pos.pendidikan_min|default:"—" }}</div>
+          </div>
+          <div class="col-6">
+            <span class="text-muted">Pengalaman</span>
+            <div class="fw-semibold">{{ pos.pengalaman_min }} tahun</div>
+          </div>
+        </div>
+
+        <!-- Skill Wajib -->
+        {% if pos.skill_wajib %}
+        <div class="mb-2">
+          <span class="small text-danger fw-semibold">Skill Wajib:</span>
+          <div class="d-flex flex-wrap gap-1 mt-1">
+            {% for s in pos.skill_wajib_list|slice:":5" %}
+              <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle" style="font-size:10px;">{{ s }}</span>
+            {% endfor %}
+            {% if pos.skill_wajib_list|length > 5 %}
+              <span class="badge bg-secondary" style="font-size:10px;">+{{ pos.skill_wajib_list|length|add:"-5" }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Skill Diinginkan -->
+        {% if pos.skill_diinginkan %}
+        <div class="mb-2">
+          <span class="small text-success fw-semibold">Nice-to-have:</span>
+          <div class="d-flex flex-wrap gap-1 mt-1">
+            {% for s in pos.skill_diinginkan_list|slice:":4" %}
+              <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle" style="font-size:10px;">{{ s }}</span>
+            {% endfor %}
+            {% if pos.skill_diinginkan_list|length > 4 %}
+              <span class="badge bg-secondary" style="font-size:10px;">+{{ pos.skill_diinginkan_list|length|add:"-4" }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Bobot -->
+        <div class="d-flex gap-2 mt-2 pt-2 border-top small text-muted">
+          <span title="Skill Wajib"><i class="fas fa-tools me-1"></i>{{ pos.bobot_skill_wajib }}%</span>
+          <span title="Pengalaman"><i class="fas fa-briefcase me-1"></i>{{ pos.bobot_pengalaman }}%</span>
+          <span title="Pendidikan"><i class="fas fa-graduation-cap me-1"></i>{{ pos.bobot_pendidikan }}%</span>
+          <span title="Skill Tambahan"><i class="fas fa-star me-1"></i>{{ pos.bobot_skill_tambahan }}%</span>
+          {% if not pos.bobot_valid %}
+            <span class="text-danger ms-auto"><i class="fas fa-exclamation-triangle"></i> Bobot ≠ 100%</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="empty-state">
+        <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></div>
+        <div class="empty-state-title">Belum ada jabatan di Job Library</div>
+        <div class="empty-state-desc">Tambah jabatan beserta deskripsi, level, dan kriteria ATS untuk proses rekrutmen.</div>
+        <a href="{% url 'job_library_add' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Jabatan</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

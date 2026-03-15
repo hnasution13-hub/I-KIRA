@@ -1,0 +1,106 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Sesi Psikotes - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Recruitment / Psikotes{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-brain me-2 text-purple" style="color:#7b1fa2;"></i>Sesi Psikotes</h4>
+    <a href="{% url 'soal_bank_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-database me-1"></i>Bank Soal
+    </a>
+</div>
+
+<!-- Filter -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Semua Status</option>
+                    <option value="pending"   {% if request.GET.status == 'pending' %}selected{% endif %}>Belum Dikerjakan</option>
+                    <option value="started"   {% if request.GET.status == 'started' %}selected{% endif %}>Sedang Dikerjakan</option>
+                    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Selesai</option>
+                    <option value="expired"   {% if request.GET.status == 'expired' %}selected{% endif %}>Kadaluarsa</option>
+                </select>
+            </div>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter me-1"></i>Filter</button>
+                <a href="{% url 'psychotest_session_list' %}" class="btn btn-outline-secondary btn-sm ms-1">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover datatable mb-0" id="tbl-psychotest">
+            <thead class="table-light">
+                <tr>
+                    <th>Kandidat</th>
+                    <th>Paket Tes</th>
+                    <th>Status</th>
+                    <th>Dibuat</th>
+                    <th>Kadaluarsa</th>
+                    <th>Selesai</th>
+                    <th style="width:100px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sessions %}
+                <tr>
+                    <td>
+                        <a href="{% url 'candidate_detail' s.candidate.pk %}" class="fw-semibold text-decoration-none text-dark">
+                            {{ s.candidate.nama }}
+                        </a>
+                        <br><small class="text-muted">{{ s.candidate.posisi_dilamar|default:"-" }}</small>
+                    </td>
+                    <td>
+                        {% for p in s.paket %}
+                            <span class="badge bg-secondary me-1">{{ p }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if s.status == 'completed' %}
+                            <span class="badge bg-success">Selesai</span>
+                        {% elif s.status == 'started' %}
+                            <span class="badge bg-warning text-dark">Sedang Dikerjakan</span>
+                        {% elif s.status == 'expired' %}
+                            <span class="badge bg-danger">Kadaluarsa</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Belum Dikerjakan</span>
+                        {% endif %}
+                    </td>
+                    <td><small>{{ s.created_at|date:"d/m/Y H:i" }}</small></td>
+                    <td>
+                        <small class="{% if s.is_expired and s.status != 'completed' %}text-danger{% else %}text-muted{% endif %}">
+                            {{ s.expired_at|date:"d/m/Y H:i" }}
+                        </small>
+                    </td>
+                    <td><small class="text-muted">{{ s.completed_at|date:"d/m/Y H:i"|default:"-" }}</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'psychotest_session_detail' s.pk %}" class="btn btn-outline-info" title="Detail">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if s.is_accessible %}
+                            <button class="btn btn-outline-secondary" title="Salin Link Tes"
+                                onclick="navigator.clipboard.writeText('{{ request.scheme }}://{{ request.get_host }}{{ s.link }}'); alert('Link disalin!')">
+                                <i class="fas fa-link"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="dt-empty">
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <i class="fas fa-brain fa-2x mb-2 d-block opacity-25"></i>
+                        Belum ada sesi psikotes. Buat sesi dari halaman detail kandidat.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+<title>Surat PHK — {{ surat.snap_nama }}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Times New Roman',serif; font-size:12pt; color:#000; background:#fff; }
+  .page { width:210mm; min-height:297mm; margin:0 auto; padding:25mm 25mm 20mm 30mm; }
+  .header { text-align:center; border-bottom:3px double #000; padding-bottom:8px; margin-bottom:18px; }
+  .header .company-name { font-size:16pt; font-weight:bold; text-transform:uppercase; }
+  .header .company-sub  { font-size:10pt; margin-top:3px; }
+  .title-box { text-align:center; margin:20px 0 18px; }
+  .title-box .surat-title { font-size:14pt; font-weight:bold; text-decoration:underline; text-transform:uppercase; }
+  .title-box .nomor { font-size:11pt; margin-top:4px; }
+  .body-text { font-size:11pt; line-height:1.8; margin-bottom:10px; text-align:justify; }
+  .body-text p { margin-bottom:10px; }
+  .id-table { width:100%; border-collapse:collapse; font-size:11pt; margin-bottom:12px; }
+  .id-table td { padding:3px 6px; vertical-align:top; }
+  .id-table td:first-child { width:140px; }
+  .id-table td:nth-child(2){ width:12px; text-align:center; }
+  .info-box { border:1px solid #000; padding:10px 14px; margin:10px 0; font-size:11pt; line-height:1.8; }
+  .ttd-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:50px; }
+  .ttd-block { text-align:center; }
+  .ttd-block .ttd-title { margin-bottom:70px; font-size:11pt; }
+  .ttd-block .ttd-name  { font-weight:bold; border-top:1px solid #000; padding-top:4px; font-size:11pt; }
+  .ttd-block .ttd-jabatan { font-size:10pt; }
+  @media print { .no-print { display:none!important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="company-name">{{ surat.company.nama }}</div>
+    <div class="company-sub">{{ surat.company.alamat }}</div>
+  </div>
+
+  <div class="title-box">
+    <div class="surat-title">Surat Pemutusan Hubungan Kerja</div>
+    <div class="nomor">Nomor: {{ surat.nomor_surat|default:"___/PHK/HRD/___/____" }}</div>
+  </div>
+
+  <div class="body-text">
+    <p>Yang bertanda tangan di bawah ini:</p>
+  </div>
+
+  <table class="id-table">
+    <tr><td>Nama</td><td>:</td><td><strong>{{ surat.nama_penandatangan }}</strong></td></tr>
+    <tr><td>Jabatan</td><td>:</td><td>{{ surat.jabatan_penandatangan }}</td></tr>
+    <tr><td>Perusahaan</td><td>:</td><td>{{ surat.company.nama }}</td></tr>
+  </table>
+
+  <div class="body-text">
+    <p>Dengan ini memberitahukan Pemutusan Hubungan Kerja (PHK) kepada:</p>
+  </div>
+
+  <table class="id-table">
+    <tr><td>Nama</td><td>:</td><td><strong>{{ surat.snap_nama }}</strong></td></tr>
+    <tr><td>NIK</td><td>:</td><td>{{ surat.snap_nik }}</td></tr>
+    <tr><td>Jabatan</td><td>:</td><td>{{ surat.snap_jabatan }}</td></tr>
+    <tr><td>Departemen</td><td>:</td><td>{{ surat.snap_departemen }}</td></tr>
+    <tr><td>Tgl. Masuk</td><td>:</td><td>{{ surat.snap_tanggal_masuk|date:"d F Y" }}</td></tr>
+    <tr><td>Tgl. Berakhir</td><td>:</td><td><strong>{{ surat.snap_tanggal_phk|date:"d F Y" }}</strong></td></tr>
+  </table>
+
+  {% if surat.dasar_hukum %}
+  <div class="body-text" style="margin-top:12px;">
+    <p><strong>Dasar Hukum:</strong></p>
+    <p>{{ surat.dasar_hukum }}</p>
+  </div>
+  {% endif %}
+
+  <div class="body-text">
+    <p><strong>Alasan Pemutusan Hubungan Kerja:</strong></p>
+  </div>
+  <div class="info-box">{{ surat.alasan_phk|linebreaksbr }}</div>
+
+  {% if surat.keterangan_kompensasi %}
+  <div class="body-text" style="margin-top:12px;">
+    <p><strong>Hak dan Kompensasi:</strong></p>
+  </div>
+  <div class="info-box">{{ surat.keterangan_kompensasi|linebreaksbr }}</div>
+  {% endif %}
+
+  <div class="body-text" style="margin-top:12px;">
+    <p>
+      Demikian surat ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.
+    </p>
+  </div>
+
+  <div class="ttd-grid">
+    <div class="ttd-block">
+      <div class="ttd-title">Pihak Kedua (Karyawan),</div>
+      <div class="ttd-name">{{ surat.snap_nama }}</div>
+      <div class="ttd-jabatan">{{ surat.snap_jabatan }}</div>
+    </div>
+    <div class="ttd-block">
+      <div class="ttd-title">{{ surat.tempat_surat|default:surat.company.nama }},<br>{{ surat.tanggal_surat|date:"d F Y" }}</div>
+      <div class="ttd-name">{{ surat.nama_penandatangan }}</div>
+      <div class="ttd-jabatan">{{ surat.jabatan_penandatangan }}</div>
+    </div>
+  </div>
+
+</div>
+<div class="no-print" style="text-align:center;padding:16px;">
+  <button onclick="window.print()" style="padding:8px 24px;background:#0d6efd;color:#fff;border:none;border-radius:4px;cursor:pointer;">
+    🖨️ Cetak Surat
+  </button>
+  <a href="{% url 'surat_phk_detail' surat.pk %}" style="margin-left:12px;color:#666;text-decoration:none;">← Kembali</a>
+</div>
+</body>
+</html>

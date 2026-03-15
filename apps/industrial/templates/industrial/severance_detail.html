@@ -1,0 +1,144 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Detail Pesangon — {{ severance.employee.nama }}{% endblock %}
+{% block breadcrumb %}Industrial Relation / Data Pesangon / Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0">
+    <i class="fas fa-receipt me-2 text-danger"></i>Detail Pesangon — {{ severance.employee.nama }}
+  </h4>
+  <a href="{% url 'severance_list' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="fas fa-arrow-left me-1"></i>Kembali
+  </a>
+</div>
+
+<div class="row g-4">
+  <!-- Info Karyawan -->
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header bg-light"><h6 class="mb-0 fw-bold">Data Karyawan</h6></div>
+      <div class="card-body">
+        <table class="table table-borderless table-sm mb-0">
+          <tr><td class="text-muted">Nama</td><td class="fw-semibold">{{ severance.employee.nama }}</td></tr>
+          <tr><td class="text-muted">NIK</td><td>{{ severance.employee.nik }}</td></tr>
+          <tr><td class="text-muted">Status</td>
+            <td>
+              {{ severance.employee.status_karyawan }}
+              {% if severance.employee.status_karyawan == 'PKWT' %}
+                <span class="badge bg-warning text-dark ms-1">PKWT</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr><td class="text-muted">Tgl Masuk</td><td>{{ severance.employee.join_date|date:"d F Y" }}</td></tr>
+          <tr><td class="text-muted">Tgl PHK</td><td>{{ severance.tanggal_phk|date:"d F Y" }}</td></tr>
+          <tr><td class="text-muted">Alasan PHK</td><td><span class="badge bg-secondary">{{ severance.alasan_phk }}</span></td></tr>
+          <tr><td class="text-muted">Dasar Pasal</td>
+            <td>
+              {% if severance.dasar_pasal == '61A' %}
+                <span class="badge bg-warning text-dark">PKWT Ps.61A</span>
+              {% elif severance.dasar_pasal %}
+                <span class="badge bg-light text-dark border">{{ severance.dasar_pasal }}</span>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          <tr><td class="text-muted">Masa Kerja</td>
+            <td class="fw-semibold">{{ severance.masa_kerja_tahun }} tahun {{ severance.masa_kerja_bulan }} bulan</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rincian Pesangon -->
+  <div class="col-md-7">
+    <div class="card border-danger">
+      <div class="card-header bg-danger text-white">
+        <h6 class="mb-0"><i class="fas fa-calculator me-1"></i>Rincian Perhitungan</h6>
+      </div>
+      <div class="card-body">
+        <table class="table table-bordered mb-3">
+          <tbody>
+            <tr class="table-light">
+              <td>Gaji Pokok</td>
+              <td class="text-end">Rp {{ severance.gaji_pokok|floatformat:"0g" }}</td>
+            </tr>
+            <tr class="table-light">
+              <td>Tunjangan Tetap</td>
+              <td class="text-end">Rp {{ severance.tunjangan_tetap|floatformat:"0g" }}</td>
+            </tr>
+            <tr>
+              <td><strong>Dasar Upah</strong></td>
+              <td class="text-end fw-bold">Rp {{ severance.total_upah|floatformat:"0g" }}</td>
+            </tr>
+            <tr>
+              <td>Pengali Pesangon</td>
+              <td class="text-end">{{ severance.pengali_pesangon }}×</td>
+            </tr>
+
+            {% if severance.pesangon > 0 %}
+            <tr>
+              <td><strong>Uang Pesangon (UP)</strong></td>
+              <td class="text-end fw-bold text-primary">Rp {{ severance.pesangon|floatformat:"0g" }}</td>
+            </tr>
+            {% endif %}
+
+            {% if severance.upmk > 0 %}
+            <tr>
+              <td><strong>UPMK</strong></td>
+              <td class="text-end fw-bold text-info">Rp {{ severance.upmk|floatformat:"0g" }}</td>
+            </tr>
+            {% endif %}
+
+            {% if severance.uang_pisah > 0 %}
+            <tr class="table-info">
+              <td>
+                <strong>Uang Pisah</strong>
+                <span class="badge bg-info text-dark ms-1">Kebijakan Perusahaan</span>
+              </td>
+              <td class="text-end fw-bold text-info">Rp {{ severance.uang_pisah|floatformat:"0g" }}</td>
+            </tr>
+            {% endif %}
+
+            {% if severance.kompensasi_pkwt > 0 %}
+            <tr class="table-warning">
+              <td>
+                <strong>Kompensasi PKWT</strong>
+                <span class="badge bg-warning text-dark ms-1">Ps. 61A</span>
+              </td>
+              <td class="text-end fw-bold text-warning">Rp {{ severance.kompensasi_pkwt|floatformat:"0g" }}</td>
+            </tr>
+            {% endif %}
+
+            <tr class="table-danger">
+              <td><strong>TOTAL PESANGON</strong></td>
+              <td class="text-end fw-bold fs-5 text-danger">Rp {{ severance.total_pesangon|floatformat:"0g" }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="alert alert-warning py-2 mb-0" style="font-size:.8rem;">
+          <i class="fas fa-info-circle me-1"></i>
+          Perhitungan mengacu <strong>PP No. 35 Tahun 2021</strong> &amp; <strong>UU No.11/2020</strong>.
+          <strong class="text-danger">UPH 15% tidak berlaku.</strong>
+          {% if severance.uang_pisah > 0 %}
+          <br><span class="badge bg-info text-dark">Kebijakan Perusahaan</span>
+          Uang Pisah adalah estimasi kebijakan perusahaan, bukan ketetapan UU.
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if severance.keterangan %}
+    <div class="card mt-3">
+      <div class="card-body">
+        <strong>Keterangan:</strong><br>{{ severance.keterangan }}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="text-muted mt-2" style="font-size:.78rem;">
+      Dibuat: {{ severance.created_at|date:"d F Y H:i" }}
+    </div>
+  </div>
+</div>
+{% endblock %}

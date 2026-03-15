@@ -1,0 +1,80 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Surat Keterangan Kerja{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">Industrial Relation</li>
+      <li class="breadcrumb-item active">Surat Keterangan Kerja</li>
+    </ol>
+  </nav>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <span class="fs-4">📄</span>
+      <h4 class="mb-0 fw-bold">Surat Keterangan Kerja</h4>
+    </div>
+    <a href="{% url 'skk_create' %}" class="btn btn-success btn-sm">
+      <i class="bi bi-plus-circle me-1"></i>Buat SKK
+    </a>
+  </div>
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">{{ msg|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    {% endfor %}
+  {% endif %}
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <div class="table-responsive-wrap">
+<table class="table table-hover table-sm align-middle mb-0 datatable">
+          <thead class="table-light">
+            <tr>
+              <th>Karyawan</th><th>Nomor SKK</th><th>Tgl Surat</th>
+              <th>Tujuan</th><th>Masa Kerja</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for skk in skk_list %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ skk.snap_nama }}</div>
+                <div class="text-muted small">{{ skk.snap_nik }}</div>
+              </td>
+              <td class="small">{{ skk.nomor_surat|default:"-" }}</td>
+              <td class="small">{{ skk.tanggal_surat|date:"d/m/Y" }}</td>
+              <td class="small">{{ skk.tujuan_surat|default:"-"|truncatechars:40 }}</td>
+              <td class="small">{{ skk.masa_kerja_keterangan|default:"-" }}</td>
+              <td>
+                <div class="d-flex gap-1 justify-content-end">
+                  <a href="{% url 'skk_detail' skk.pk %}" class="btn btn-xs btn-outline-secondary">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{% url 'skk_print' skk.pk %}" target="_blank" class="btn btn-xs btn-outline-success">
+                    <i class="bi bi-printer"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr class="dt-empty">
+                    <td colspan="6" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-id-card"></i></div>
+                            <div class="empty-state-title">Belum ada Surat Keterangan Kerja</div>
+                            <div class="empty-state-desc">Buat SKK untuk karyawan yang membutuhkan surat keterangan bekerja.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'skk_create' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Buat SKK</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

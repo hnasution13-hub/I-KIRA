@@ -1,0 +1,77 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{% if instance %}Edit{% else %}Tambah{% endif %} Approval Matrix{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">{% if instance %}Edit{% else %}Tambah{% endif %} Approval Rule</h4>
+  <a href="{% url 'approval_matrix_list' %}" class="btn btn-outline-secondary btn-sm">← Kembali</a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:560px">
+  <div class="card-body">
+    <p class="text-muted small mb-4">
+      Jika <strong>Jabatan Approver</strong> dikosongkan, sistem otomatis pakai atasan jabatan dari hierarki.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Modul</label>
+        <select name="modul" class="form-select" required>
+          {% for val, label in modul_choices %}
+          <option value="{{ val }}" {% if instance.modul == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Jabatan Pemohon</label>
+        <select name="jabatan_pemohon" class="form-select" required>
+          <option value="">— Pilih jabatan —</option>
+          {% for pos in positions %}
+          <option value="{{ pos.pk }}" {% if instance.jabatan_pemohon_id == pos.pk %}selected{% endif %}>
+            {{ pos.nama }} ({{ pos.level }}){% if pos.department %} · {{ pos.department.nama }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">Level Approval</label>
+          <input type="number" name="level_approval" class="form-control" min="1" max="5"
+                 value="{{ instance.level_approval|default:1 }}" required>
+          <div class="form-text">1 = pertama, 2 = kedua, dst.</div>
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Auto-Approve (hari)</label>
+          <input type="number" name="auto_approve_hari" class="form-control" min="0"
+                 value="{{ instance.auto_approve_hari|default:0 }}">
+          <div class="form-text">0 = tidak auto.</div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Jabatan Approver <small class="text-muted">(kosong = auto dari hierarki)</small></label>
+        <select name="jabatan_approver" class="form-select">
+          <option value="">— Auto dari hierarki jabatan —</option>
+          {% for pos in positions %}
+          <option value="{{ pos.pk }}" {% if instance.jabatan_approver_id == pos.pk %}selected{% endif %}>
+            {{ pos.nama }} ({{ pos.level }}){% if pos.department %} · {{ pos.department.nama }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-4 d-flex gap-4">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="notif_email" id="notif_email"
+                 {% if instance.notif_email|default:True %}checked{% endif %}>
+          <label class="form-check-label" for="notif_email">Kirim notifikasi email</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="aktif" id="aktif"
+                 {% if instance.aktif|default:True %}checked{% endif %}>
+          <label class="form-check-label" for="aktif">Aktif</label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Simpan</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

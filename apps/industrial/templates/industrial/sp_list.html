@@ -1,0 +1,157 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Surat Peringatan{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">Industrial Relation</li>
+      <li class="breadcrumb-item active">Surat Peringatan</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <span class="fs-4">⚠️</span>
+      <h4 class="mb-0 fw-bold">Surat Peringatan</h4>
+    </div>
+    <a href="{% url 'sp_create' %}" class="btn btn-danger btn-sm">
+      <i class="bi bi-plus-circle me-1"></i>Buat SP Baru
+    </a>
+  </div>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+        {{ msg|safe }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {# Filter bar #}
+  <div class="card shadow-sm mb-3">
+    <div class="card-body py-2">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm"
+                 placeholder="Cari nama karyawan...">
+        </div>
+        <div class="col-md-2">
+          <select name="level" class="form-select form-select-sm">
+            <option value="">Semua Level</option>
+            <option value="1" {% if level_filter == '1' %}selected{% endif %}>SP I</option>
+            <option value="2" {% if level_filter == '2' %}selected{% endif %}>SP II</option>
+            <option value="3" {% if level_filter == '3' %}selected{% endif %}>SP III</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select name="status" class="form-select form-select-sm">
+            <option value="">Semua Status</option>
+            <option value="aktif"   {% if status_filter == 'aktif' %}selected{% endif %}>Aktif</option>
+            <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+            <option value="dicabut" {% if status_filter == 'dicabut' %}selected{% endif %}>Dicabut</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-sm btn-outline-secondary">Filter</button>
+          <a href="{% url 'sp_list' %}" class="btn btn-sm btn-outline-danger">Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <div class="table-responsive-wrap">
+<table class="table table-hover table-sm align-middle mb-0 datatable">
+          <thead class="table-light">
+            <tr>
+              <th>Karyawan</th>
+              <th class="text-center">Level</th>
+              <th>Nomor SP</th>
+              <th>Pelanggaran</th>
+              <th>Tgl SP</th>
+              <th>Berlaku s/d</th>
+              <th class="text-center">Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sp in surat_peringatan %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ sp.employee.nama }}</div>
+                <div class="text-muted small">{{ sp.employee.nik }}</div>
+              </td>
+              <td class="text-center">
+                <span class="badge
+                  {% if sp.level == 1 %}bg-warning text-dark
+                  {% elif sp.level == 2 %}bg-orange text-white
+                  {% else %}bg-danger{% endif %}"
+                  style="{% if sp.level == 2 %}background:#e8590c!important{% endif %}">
+                  SP {{ sp.level }}
+                </span>
+                {% if sp.is_eskalasi %}
+                  <span class="badge bg-secondary ms-1" title="Hasil eskalasi dari SP sebelumnya">↑</span>
+                {% endif %}
+              </td>
+              <td class="small">{{ sp.nomor_sp|default:"-" }}</td>
+              <td>
+                <div class="small fw-semibold">{{ sp.label_pelanggaran|truncatechars:50 }}</div>
+                <div class="text-muted" style="font-size:11px;">
+                  {{ sp.kategori_pelanggaran }}
+                  {% if sp.tingkat_pelanggaran %}· <span class="
+                    {% if sp.tingkat_pelanggaran == 'Berat' %}text-danger
+                    {% elif sp.tingkat_pelanggaran == 'Sedang' %}text-warning
+                    {% else %}text-info{% endif %}">{{ sp.tingkat_pelanggaran }}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="small">{{ sp.tanggal_sp|date:"d/m/Y" }}</td>
+              <td class="small">{{ sp.tanggal_berlaku_sampai|date:"d/m/Y" }}</td>
+              <td class="text-center">
+                <span class="badge
+                  {% if sp.status == 'aktif' %}bg-success
+                  {% elif sp.status == 'expired' %}bg-secondary
+                  {% else %}bg-light text-dark border{% endif %}">
+                  {{ sp.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <div class="d-flex gap-1 justify-content-end">
+                  <a href="{% url 'sp_detail' sp.pk %}" class="btn btn-xs btn-outline-secondary">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{% url 'sp_print' sp.pk %}" target="_blank" class="btn btn-xs btn-outline-primary">
+                    <i class="bi bi-printer"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <tr class="dt-empty">
+                    <td colspan="8" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-triangle-exclamation"></i></div>
+                            <div class="empty-state-title">Belum ada surat peringatan</div>
+                            <div class="empty-state-desc">Surat peringatan akan muncul setelah dibuat dari data pelanggaran.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'sp_create' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Buat SP</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                Belum ada surat peringatan.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Offering Templates{% endblock %}
+{% block breadcrumb %}Rekrutmen / Offering Letter / Template{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-layer-group me-2 text-primary"></i>Offering Templates
+    </h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'offering_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Kembali
+        </a>
+        <a href="{% url 'template_add' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>Buat Template
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info py-2 small">
+    <i class="fas fa-info-circle me-1"></i>
+    Template menentukan isi teks pada Offering Letter (working day, BPJS, dsb).
+    Template yang ditandai <strong>★ Default</strong> akan otomatis digunakan jika tidak dipilih secara manual.
+</div>
+
+<div class="row g-3">
+    {% for tpl in templates %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100 {% if tpl.is_default %}border-primary{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center
+                        {% if tpl.is_default %}bg-primary text-white{% endif %}">
+                <span class="fw-semibold">
+                    {{ tpl.nama }}
+                    {% if tpl.is_default %}<span class="badge bg-warning text-dark ms-1">★ Default</span>{% endif %}
+                </span>
+                <div class="d-flex gap-1">
+                    <a href="{% url 'template_edit' tpl.pk %}" class="btn btn-sm
+                       {% if tpl.is_default %}btn-light{% else %}btn-outline-primary{% endif %}">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <form method="post" action="{% url 'template_delete' tpl.pk %}"
+                          onsubmit="return confirm('Hapus template {{ tpl.nama }}?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body small">
+                {% if tpl.deskripsi %}
+                <p class="text-muted mb-2">{{ tpl.deskripsi }}</p>
+                {% endif %}
+                <div class="mb-1"><strong>Working Day:</strong>
+                    {{ tpl.working_day_text|truncatechars:60 }}
+                </div>
+                <div class="mb-1"><strong>Employment Status:</strong>
+                    {{ tpl.employment_status_text|truncatechars:60 }}
+                </div>
+                <div class="text-muted">
+                    <i class="fas fa-clock me-1"></i>Diupdate: {{ tpl.updated_at|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center text-muted py-5">
+                <i class="fas fa-layer-group fa-3x mb-3 opacity-25"></i>
+                <p>Belum ada template. Buat template pertama Anda!</p>
+                <a href="{% url 'template_add' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Buat Template
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

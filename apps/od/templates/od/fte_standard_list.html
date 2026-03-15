@@ -1,0 +1,61 @@
+{% extends "base_dashboard.html" %}
+{% block title %}FTE Standard{% endblock %}
+{% block breadcrumb %}OD — FTE Standard{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="fas fa-sliders me-2" style="color:#818cf8;"></i>FTE Standard</h4>
+    <small class="text-muted">Standar kebutuhan headcount ideal per departemen & jabatan</small>
+  </div>
+  <a href="{% url 'od:fte_standard_create' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i> Tambah FTE Standard
+  </a>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table datatable table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Departemen</th>
+            <th>Jabatan</th>
+            <th class="text-center">FTE Ideal</th>
+            <th class="text-center">FTE Minimum</th>
+            <th class="text-center">Tahun</th>
+            <th>Dasar Perhitungan</th>
+            <th class="text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fs in fte_standards %}
+          <tr>
+            <td class="fw-medium">{{ fs.department.nama }}</td>
+            <td>{{ fs.jabatan.nama|default:"<span class='text-muted'>Semua Jabatan</span>" }}</td>
+            <td class="text-center fw-bold">{{ fs.fte_ideal }}</td>
+            <td class="text-center text-muted">{{ fs.fte_minimum }}</td>
+            <td class="text-center"><span class="badge bg-light text-dark border">{{ fs.tahun }}</span></td>
+            <td class="text-muted small">{{ fs.dasar_perhitungan|truncatechars:60|default:"—" }}</td>
+            <td class="text-center">
+              <a href="{% url 'od:fte_standard_edit' fs.pk %}" class="btn btn-sm btn-outline-secondary me-1">
+                <i class="fas fa-pen"></i>
+              </a>
+              <form method="post" action="{% url 'od:fte_standard_delete' fs.pk %}" class="d-inline"
+                    onsubmit="return confirm('Hapus FTE Standard ini?')">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-5">
+            Belum ada FTE Standard. <a href="{% url 'od:fte_standard_create' %}">Tambah sekarang</a>.
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

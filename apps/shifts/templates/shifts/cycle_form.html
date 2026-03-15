@@ -1,0 +1,351 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit{% else %}Buat{% endif %} Pola Shift Cyclic{% endblock %}
+{% block breadcrumb %}Shift / Pola Cyclic / {% if instance %}Edit{% else %}Buat Baru{% endif %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-sync-alt me-2 text-warning"></i>
+        {% if instance %}Edit Pola: {{ instance.nama }}{% else %}Buat Pola Shift Cyclic{% endif %}
+    </h4>
+    <a href="{% url 'cycle_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+
+<form method="post" id="cycleForm">
+{% csrf_token %}
+<input type="hidden" name="pola_json" id="polaJsonInput" value="{{ pola_json_init }}">
+
+<div class="row g-4">
+
+    <!-- Kiri: Info dasar -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-light fw-semibold">Informasi Pola</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nama Pola <span class="text-danger">*</span></label>
+                    <input type="text" name="nama" class="form-control"
+                           placeholder="cth: Security 4-3 Pagi, Guard 12Jam"
+                           value="{{ instance.nama|default:'' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Keterangan</label>
+                    <textarea name="keterangan" class="form-control" rows="3"
+                              placeholder="Penjelasan pola, untuk departemen mana, dll">{{ instance.keterangan|default:'' }}</textarea>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="aktif" id="aktif"
+                           {% if not instance or instance.aktif %}checked{% endif %}>
+                    <label class="form-check-label" for="aktif">Pola Aktif</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template pola cepat -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light fw-semibold">Template Cepat</div>
+            <div class="card-body">
+                <small class="text-muted d-block mb-2">Pilih template lalu sesuaikan:</small>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start"
+                            onclick="loadTemplate('4-3')">
+                        <i class="fas fa-shield-alt me-2 text-warning"></i>Security 4 Kerja 3 Off
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start"
+                            onclick="loadTemplate('3shift-pagi-sore-malam')">
+                        <i class="fas fa-exchange-alt me-2 text-info"></i>Rotasi 3 Shift (P→S→M)
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start"
+                            onclick="loadTemplate('12jam-2shift')">
+                        <i class="fas fa-clock me-2 text-danger"></i>12 Jam (2 Shift)
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start"
+                            onclick="loadTemplate('5-2')">
+                        <i class="fas fa-briefcase me-2 text-success"></i>Standar 5 Kerja 2 Off
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start"
+                            onclick="loadTemplate('6-1')">
+                        <i class="fas fa-hard-hat me-2 text-primary"></i>Konstruksi 6 Kerja 1 Off
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanan: Visual builder -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Visual Builder Pola</span>
+                <span class="badge bg-primary" id="cycleLength">0 hari/siklus</span>
+            </div>
+            <div class="card-body">
+
+                <!-- Shift palette -->
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted">PALETTE SHIFT (klik untuk tambah ke pola):</label>
+                    <div class="d-flex gap-2 flex-wrap" id="shiftPalette">
+                        {% for s in shifts %}
+                        <button type="button"
+                                class="btn btn-sm text-white shift-palette-btn"
+                                style="background:{{ s.warna }};border-color:{{ s.warna }}"
+                                data-id="{{ s.id }}"
+                                data-kode="{{ s.kode }}"
+                                data-warna="{{ s.warna }}"
+                                data-nama="{{ s.nama }}"
+                                onclick="addSlot({{ s.id }}, '{{ s.kode }}', '{{ s.warna }}')">
+                            {{ s.kode }}
+                            {% if s.jam_masuk %}<small class="opacity-75"> {{ s.jam_masuk|time:"H:i" }}</small>{% endif %}
+                        </button>
+                        {% endfor %}
+                        <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="addSlot(null, 'OFF', '#6c757d')">
+                            OFF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pola builder -->
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted">POLA (drag untuk urut ulang, klik ✕ untuk hapus):</label>
+                    <div id="polaBuilder" class="d-flex gap-2 flex-wrap p-3 rounded border bg-light"
+                         style="min-height:80px">
+                        <!-- Slots rendered by JS -->
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Siklus akan berulang terus dari hari 1 → {{ cycleLength }} → hari 1 → dst
+                    </small>
+                </div>
+
+                <!-- Preview grid -->
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted">PREVIEW 3 SIKLUS:</label>
+                    <div id="previewGrid" class="d-flex gap-1 flex-wrap p-2 rounded border"
+                         style="background:#f8f9fa;min-height:50px">
+                    </div>
+                </div>
+
+                <!-- Statistik pola -->
+                <div id="polaStats" class="row g-2">
+                    <div class="col-4">
+                        <div class="text-center p-2 rounded bg-success bg-opacity-10">
+                            <div class="fw-bold text-success fs-5" id="statKerja">0</div>
+                            <small class="text-muted">Hari Kerja</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center p-2 rounded bg-secondary bg-opacity-10">
+                            <div class="fw-bold text-secondary fs-5" id="statOff">0</div>
+                            <small class="text-muted">Hari Off</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center p-2 rounded bg-primary bg-opacity-10">
+                            <div class="fw-bold text-primary fs-5" id="statRatio">-</div>
+                            <small class="text-muted">Rasio Kerja:Off</small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4 d-flex gap-2">
+    <button type="submit" class="btn btn-warning px-4 text-dark" onclick="return prepareSave()">
+        <i class="fas fa-save me-1"></i>Simpan Pola
+    </button>
+    <a href="{% url 'cycle_list' %}" class="btn btn-outline-secondary px-4">Batal</a>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// State pola: array of {id: int|null, kode: str, warna: str}
+var polaCurrent = [];
+
+// Inisialisasi dari data existing
+var initPola = {{ pola_json_init|safe }};
+var allShifts = {
+    {% for s in shifts %}
+    {{ s.id }}: {kode: '{{ s.kode }}', warna: '{{ s.warna }}', nama: '{{ s.nama }}'},
+    {% endfor %}
+    'null': {kode: 'OFF', warna: '#6c757d', nama: 'Hari Off'}
+};
+
+// Load existing pola on init
+(function() {
+    if (initPola && initPola.length > 0) {
+        initPola.forEach(function(sid) {
+            var s = sid ? allShifts[sid] : {kode:'OFF', warna:'#6c757d'};
+            if (s) polaCurrent.push({id: sid, kode: s.kode, warna: s.warna});
+        });
+        renderPola();
+    }
+})();
+
+function addSlot(shiftId, kode, warna) {
+    polaCurrent.push({id: shiftId, kode: kode, warna: warna});
+    renderPola();
+}
+
+function removeSlot(idx) {
+    polaCurrent.splice(idx, 1);
+    renderPola();
+}
+
+function renderPola() {
+    var container = document.getElementById('polaBuilder');
+    container.innerHTML = '';
+
+    polaCurrent.forEach(function(slot, idx) {
+        var div = document.createElement('div');
+        div.className = 'text-center';
+        div.draggable = true;
+        div.dataset.idx = idx;
+        div.innerHTML = `
+            <div class="rounded text-white px-2 py-1 position-relative"
+                 style="background:${slot.warna};min-width:44px;cursor:grab">
+                <span style="font-size:0.75rem;font-weight:600">${slot.kode}</span>
+                <button type="button" onclick="removeSlot(${idx})"
+                        class="position-absolute top-0 end-0 btn btn-sm p-0 text-white opacity-75"
+                        style="font-size:0.6rem;line-height:1;background:none;border:none;transform:translate(3px,-3px)">✕</button>
+            </div>
+            <div style="font-size:0.55rem;color:#999">${idx+1}</div>
+        `;
+        // Drag events
+        div.addEventListener('dragstart', function(e) { e.dataTransfer.setData('text/plain', idx); });
+        div.addEventListener('dragover',  function(e) { e.preventDefault(); div.style.opacity='0.5'; });
+        div.addEventListener('dragleave', function()  { div.style.opacity='1'; });
+        div.addEventListener('drop', function(e) {
+            e.preventDefault();
+            div.style.opacity = '1';
+            var from = parseInt(e.dataTransfer.getData('text/plain'));
+            var to   = idx;
+            if (from !== to) {
+                var item = polaCurrent.splice(from, 1)[0];
+                polaCurrent.splice(to, 0, item);
+                renderPola();
+            }
+        });
+        container.appendChild(div);
+    });
+
+    updateStats();
+    renderPreview();
+}
+
+function updateStats() {
+    var total  = polaCurrent.length;
+    var kerja  = polaCurrent.filter(s => s.id !== null).length;
+    var off    = total - kerja;
+    document.getElementById('statKerja').textContent  = kerja;
+    document.getElementById('statOff').textContent    = off;
+    document.getElementById('statRatio').textContent  = kerja > 0 ? kerja + ':' + off : '-';
+    document.getElementById('cycleLength').textContent = total + ' hari/siklus';
+}
+
+function renderPreview() {
+    var grid = document.getElementById('previewGrid');
+    grid.innerHTML = '';
+    if (polaCurrent.length === 0) return;
+
+    // Show 3 cycles
+    var total = polaCurrent.length * 3;
+    for (var i = 0; i < total; i++) {
+        var slot = polaCurrent[i % polaCurrent.length];
+        var isFirst = (i % polaCurrent.length === 0 && i > 0);
+        if (isFirst) {
+            var sep = document.createElement('div');
+            sep.style.cssText = 'width:2px;background:#dee2e6;margin:0 2px;align-self:stretch';
+            grid.appendChild(sep);
+        }
+        var d = document.createElement('div');
+        d.className = 'text-center';
+        d.innerHTML = `
+            <div class="rounded text-white" style="background:${slot.warna};font-size:0.6rem;padding:2px 4px;min-width:28px">${slot.kode}</div>
+            <div style="font-size:0.5rem;color:#ccc">${i+1}</div>
+        `;
+        grid.appendChild(d);
+    }
+}
+
+// Templates
+var TEMPLATES = {
+    '4-3': function() {
+        // Need at least Pagi shift — use first available or placeholder
+        var firstShift = Object.keys(allShifts).filter(k => k !== 'null')[0];
+        var s = firstShift ? allShifts[firstShift] : {kode:'KERJA', warna:'#0d6efd'};
+        polaCurrent = [];
+        for(var i=0;i<4;i++) polaCurrent.push({id:parseInt(firstShift)||null, kode:s.kode, warna:s.warna});
+        for(var i=0;i<3;i++) polaCurrent.push({id:null, kode:'OFF', warna:'#6c757d'});
+        renderPola();
+        alert('Template 4-3 dimuat. Ganti shift "KERJA" dengan shift yang sesuai dari palette di atas.');
+    },
+    '3shift-pagi-sore-malam': function() {
+        var sArr = Object.keys(allShifts).filter(k=>k!=='null').slice(0,3);
+        polaCurrent = [];
+        if (sArr.length >= 3) {
+            sArr.forEach(function(sid) {
+                var s = allShifts[sid];
+                polaCurrent.push({id:parseInt(sid), kode:s.kode, warna:s.warna});
+            });
+        } else {
+            alert('Perlu minimal 3 shift aktif (Pagi, Sore, Malam) di master shift dulu.');
+            return;
+        }
+        renderPola();
+    },
+    '12jam-2shift': function() {
+        var sArr = Object.keys(allShifts).filter(k=>k!=='null').slice(0,2);
+        polaCurrent = [];
+        if (sArr.length >= 2) {
+            for(var i=0;i<2;i++) { var s=allShifts[sArr[0]]; polaCurrent.push({id:parseInt(sArr[0]),kode:s.kode,warna:s.warna}); }
+            polaCurrent.push({id:null,kode:'OFF',warna:'#6c757d'});
+            polaCurrent.push({id:null,kode:'OFF',warna:'#6c757d'});
+            for(var i=0;i<2;i++) { var s=allShifts[sArr[1]]; polaCurrent.push({id:parseInt(sArr[1]),kode:s.kode,warna:s.warna}); }
+            polaCurrent.push({id:null,kode:'OFF',warna:'#6c757d'});
+            polaCurrent.push({id:null,kode:'OFF',warna:'#6c757d'});
+        } else {
+            alert('Perlu minimal 2 shift (misal Siang 12Jam dan Malam 12Jam).');
+            return;
+        }
+        renderPola();
+    },
+    '5-2': function() {
+        var firstShift = Object.keys(allShifts).filter(k=>k!=='null')[0];
+        var s = firstShift ? allShifts[firstShift] : {kode:'KERJA',warna:'#0d6efd'};
+        polaCurrent = [];
+        for(var i=0;i<5;i++) polaCurrent.push({id:parseInt(firstShift)||null,kode:s.kode,warna:s.warna});
+        for(var i=0;i<2;i++) polaCurrent.push({id:null,kode:'OFF',warna:'#6c757d'});
+        renderPola();
+    },
+    '6-1': function() {
+        var firstShift = Object.keys(allShifts).filter(k=>k!=='null')[0];
+        var s = firstShift ? allShifts[firstShift] : {kode:'KERJA',warna:'#0d6efd'};
+        polaCurrent = [];
+        for(var i=0;i<6;i++) polaCurrent.push({id:parseInt(firstShift)||null,kode:s.kode,warna:s.warna});
+        polaCurrent.push({id:null,kode:'OFF',warna:'#6c757d'});
+        renderPola();
+    },
+};
+function loadTemplate(name) {
+    if (polaCurrent.length > 0 && !confirm('Reset pola saat ini?')) return;
+    if (TEMPLATES[name]) TEMPLATES[name]();
+}
+
+function prepareSave() {
+    if (polaCurrent.length === 0) {
+        alert('Pola tidak boleh kosong. Tambahkan minimal 1 slot.');
+        return false;
+    }
+    var arr = polaCurrent.map(s => s.id);
+    document.getElementById('polaJsonInput').value = JSON.stringify(arr);
+    return true;
+}
+</script>
+{% endblock %}

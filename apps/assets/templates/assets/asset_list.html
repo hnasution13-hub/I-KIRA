@@ -1,0 +1,218 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Daftar Aset{% endblock %}
+{% block breadcrumb %}Asset Management / Daftar Aset{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 gap-3 flex-wrap">
+  <div>
+    <h4 class="fw-bold mb-0">Daftar Aset</h4>
+    <p class="text-muted mb-0" style="font-size:.85rem">Kelola semua aset perusahaan</p>
+  </div>
+  <a href="{% url 'assets:asset_import' %}" class="btn btn-outline-success d-flex align-items-center gap-2">
+    <i class="fas fa-file-import"></i> Import Excel
+  </a>
+  <a href="{% url 'assets:asset_create' %}" class="btn btn-primary d-flex align-items-center gap-2">
+    <i class="fas fa-plus"></i> Tambah Aset
+  </a>
+</div>
+
+<!-- Filter Card -->
+<div class="card mb-4">
+  <div class="card-header d-flex align-items-center gap-2" style="cursor:pointer;" onclick="toggleFilter()">
+    <i class="fas fa-filter" style="font-size:.85rem;color:var(--muted);"></i>
+    <span style="font-size:.85rem;font-weight:600;">Filter Aset</span>
+    <i class="fas fa-chevron-down ms-auto" id="filterChevron" style="font-size:.7rem;color:var(--muted);transition:transform .2s;"></i>
+  </div>
+  <div id="filterBody" class="card-body">
+    <form method="get" id="filterForm">
+      <div class="row g-3">
+
+        <div class="col-md-3">
+          <label class="form-label form-label-sm">Nama Aset</label>
+          <input type="text" name="asset_name" value="{{ filter.form.asset_name.value|default:'' }}"
+                 class="form-control form-control-sm" placeholder="Cari nama aset...">
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label form-label-sm">Kode Aset</label>
+          <input type="text" name="asset_code" value="{{ filter.form.asset_code.value|default:'' }}"
+                 class="form-control form-control-sm" placeholder="AST-001...">
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label form-label-sm">Kategori</label>
+          <select name="category" class="form-select form-select-sm">
+            <option value="">Semua Kategori</option>
+            {% for val, label in filter.form.category.field.choices %}
+              {% if val %}<option value="{{ val }}" {% if filter.form.category.value == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>{% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label form-label-sm">Status</label>
+          <select name="status" class="form-select form-select-sm">
+            <option value="">Semua Status</option>
+            {% for val, label in filter.form.status.field.choices %}
+              {% if val %}<option value="{{ val }}" {% if filter.form.status.value == val %}selected{% endif %}>{{ label }}</option>{% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label form-label-sm">Lokasi</label>
+          <select name="location" class="form-select form-select-sm">
+            <option value="">Semua Lokasi</option>
+            {% for val, label in filter.form.location.field.choices %}
+              {% if val %}<option value="{{ val }}" {% if filter.form.location.value == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>{% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label form-label-sm">Vendor</label>
+          <select name="vendor" class="form-select form-select-sm">
+            <option value="">Semua Vendor</option>
+            {% for val, label in filter.form.vendor.field.choices %}
+              {% if val %}<option value="{{ val }}" {% if filter.form.vendor.value == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>{% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label form-label-sm">Penanggung Jawab</label>
+          <select name="responsible" class="form-select form-select-sm">
+            <option value="">Semua PIC</option>
+            {% for val, label in filter.form.responsible.field.choices %}
+              {% if val %}<option value="{{ val }}" {% if filter.form.responsible.value == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>{% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label form-label-sm">Tanggal Beli (dari)</label>
+          <input type="date" name="purchase_date_after"
+                 value="{{ filter.form.purchase_date_after.value|default:'' }}"
+                 class="form-control form-control-sm">
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label form-label-sm">Tanggal Beli (sampai)</label>
+          <input type="date" name="purchase_date_before"
+                 value="{{ filter.form.purchase_date_before.value|default:'' }}"
+                 class="form-control form-control-sm">
+        </div>
+
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary btn-sm px-3">
+          <i class="fas fa-search me-1"></i> Filter
+        </button>
+        <a href="{% url 'assets:asset_list' %}" class="btn btn-secondary btn-sm px-3">
+          <i class="fas fa-times me-1"></i> Reset
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabel -->
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table datatable mb-0" id="tbl-asset">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Kode</th>
+            <th>Nama Aset</th>
+            <th>Kategori</th>
+            <th>Lokasi</th>
+            <th>Status</th>
+            <th>Harga Beli</th>
+            <th>Nilai Buku</th>
+            <th class="text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for asset in assets %}
+          <tr>
+            <td class="text-muted" style="font-size:.8rem;">{{ forloop.counter }}</td>
+            <td><code style="font-size:.78rem;">{{ asset.asset_code }}</code></td>
+            <td>
+              <a href="{% url 'assets:asset_detail' asset.pk %}" class="fw-semibold text-decoration-none">
+                {{ asset.asset_name }}
+              </a>
+            </td>
+            <td style="font-size:.83rem;">{{ asset.category.get_full_path|default:"-"|truncatechars:28 }}</td>
+            <td style="font-size:.83rem;">{{ asset.location.name|default:"-" }}</td>
+            <td>
+              {% if asset.status == 'ACTIVE' %}
+                <span class="badge badge-green">Aktif</span>
+              {% elif asset.status == 'MAINTENANCE' %}
+                <span class="badge badge-yellow">Maintenance</span>
+              {% elif asset.status == 'RETIRED' %}
+                <span class="badge badge-gray">Pensiun</span>
+              {% elif asset.status == 'BROKEN' %}
+                <span class="badge badge-red">Rusak</span>
+              {% else %}
+                <span class="badge badge-gray">{{ asset.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td style="font-size:.83rem;">Rp {{ asset.purchase_price|floatformat:0 }}</td>
+            <td style="font-size:.83rem;">Rp {{ asset.book_value|floatformat:0 }}</td>
+            <td class="text-center">
+              <div class="d-flex gap-1 justify-content-center">
+                <a href="{% url 'assets:asset_detail' asset.pk %}" class="btn btn-xs" title="Detail">
+                  <i class="fas fa-eye"></i>
+                </a>
+                <a href="{% url 'assets:asset_update' asset.pk %}" class="btn btn-xs btn-warning" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'assets:asset_delete' asset.pk %}" class="btn btn-xs btn-danger"
+                   onclick="return confirm('Yakin hapus aset ini?')" title="Hapus">
+                  <i class="fas fa-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" style="padding:0;border:none;">
+              <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-boxes-stacked"></i></div>
+                <div class="empty-state-title">Belum ada data aset</div>
+                <div class="empty-state-desc">Tambah aset perusahaan seperti laptop, kendaraan, atau peralatan.</div>
+                <a href="{% url 'assets:asset_create' %}" class="btn btn-primary mt-2">
+                  <i class="fas fa-plus me-1"></i> Tambah Aset
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% include 'includes/pagination.html' %}
+
+<style>
+.btn-xs { padding:3px 8px; font-size:.75rem; border-radius:5px; }
+.form-label-sm { font-size:.78rem; font-weight:600; color:var(--muted); margin-bottom:4px; }
+</style>
+
+<script>
+function toggleFilter() {
+  const body = document.getElementById('filterBody');
+  const chev = document.getElementById('filterChevron');
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  chev.style.transform = hidden ? '' : 'rotate(-90deg)';
+}
+</script>
+
+{% endblock %}

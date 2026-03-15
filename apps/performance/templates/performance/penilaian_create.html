@@ -1,0 +1,73 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Buat Penilaian{% endblock %}
+{% block breadcrumb %}Performance / Buat Penilaian{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h5 class="fw-bold mb-0">Buat Penilaian Baru</h5>
+  <a href="{% url 'penilaian_list' %}" class="btn btn-sm btn-outline-secondary">← Kembali</a>
+</div>
+{% if messages %}{% for msg in messages %}<div class="alert alert-danger mb-3">{{ msg }}</div>{% endfor %}{% endif %}
+
+<form method="post">{% csrf_token %}
+<div class="row g-3">
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0">Data Penilaian</h6></div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label" style="font-size:.82rem;">Karyawan *</label>
+          <select name="employee_id" class="form-select" required style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            <option value="">-- Pilih Karyawan --</option>
+            {% for e in employees %}
+            <option value="{{ e.pk }}">{{ e.nama }} — {{ e.jabatan }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" style="font-size:.82rem;">Periode Penilaian *</label>
+          <select name="periode_id" class="form-select" required style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            <option value="">-- Pilih Periode --</option>
+            {% for p in periodes %}<option value="{{ p.pk }}">{{ p.nama }} ({{ p.get_tipe_display }})</option>{% endfor %}
+          </select>
+          {% if not periodes %}<small class="text-danger">Belum ada periode aktif. <a href="{% url 'periode_create' %}">Buat periode</a> terlebih dahulu.</small>{% endif %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label" style="font-size:.82rem;">Penilai / Atasan</label>
+          <select name="atasan_id" class="form-select" style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            <option value="">-- Pilih Atasan (opsional) --</option>
+            {% for e in atasan_list %}<option value="{{ e.pk }}">{{ e.nama }} — {{ e.jabatan }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0">Pilih Template KPI</h6></div>
+      <div class="card-body">
+        {% if kpi_templates %}
+        <small class="text-muted d-block mb-2">Centang KPI yang ingin dimasukkan (bobot akan dibagi rata otomatis)</small>
+        {% for t in kpi_templates %}
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="template_ids" value="{{ t.pk }}" id="tmpl_{{ t.pk }}">
+          <label class="form-check-label" for="tmpl_{{ t.pk }}" style="font-size:.84rem;">
+            <strong>{{ t.nama }}</strong>
+            <span class="text-muted ms-1">({{ t.satuan }} | {{ t.get_arah_display }})</span>
+            {% if t.kategori %}<span class="badge bg-secondary ms-1" style="font-size:.65rem;">{{ t.kategori }}</span>{% endif %}
+          </label>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-muted text-center py-3">
+          Belum ada template KPI. <a href="{% url 'kpi_template_create' %}">Buat template</a> terlebih dahulu, atau tambah KPI manual setelah penilaian dibuat.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-12">
+    <button type="submit" class="btn btn-danger"><i class="fas fa-plus me-1"></i>Buat Penilaian</button>
+  </div>
+</div>
+</form>
+{% endblock %}

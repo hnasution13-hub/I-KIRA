@@ -1,0 +1,106 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Master Shift{% endblock %}
+{% block breadcrumb %}Shift / Master Shift{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-layer-group me-2 text-primary"></i>Master Shift</h4>
+    <a href="{% url 'shift_add' %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Tambah Shift
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    {% for s in shifts %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header py-2 text-white fw-bold" style="background:{{ s.warna }}">
+                <span class="fs-5">{{ s.kode }}</span>
+                <span class="float-end badge bg-white text-dark">{{ s.get_tipe_display }}</span>
+            </div>
+            <div class="card-body py-3">
+                <div class="fw-semibold mb-2">{{ s.nama }}</div>
+                {% if s.tipe == 'flexible' %}
+                    <small class="text-muted"><i class="fas fa-clock me-1"></i>Min. {{ s.minimal_jam_kerja }} jam/hari</small>
+                {% elif s.tipe == 'split' %}
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        {{ s.jam_masuk|default:"-" }}–{{ s.jam_keluar|default:"-" }}<br>
+                        {{ s.jam_masuk_2|default:"-" }}–{{ s.jam_keluar_2|default:"-" }}
+                    </small>
+                {% else %}
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        {{ s.jam_masuk|default:"-" }} – {{ s.jam_keluar|default:"-" }}
+                        ({{ s.durasi_jam }} jam)
+                    </small>
+                {% endif %}
+                <div class="mt-2">
+                    {% for h in s.hari_kerja_list %}
+                        <span class="badge bg-light text-dark border me-1" style="font-size:0.65rem">
+                            {% if h == 0 %}Sen{% elif h == 1 %}Sel{% elif h == 2 %}Rab{% elif h == 3 %}Kam{% elif h == 4 %}Jum{% elif h == 5 %}Sab{% else %}Min{% endif %}
+                        </span>
+                    {% endfor %}
+                </div>
+                {% if s.toleransi_telat > 0 %}
+                    <div class="mt-1"><small class="text-success"><i class="fas fa-check-circle me-1"></i>Toleransi {{ s.toleransi_telat }} menit</small></div>
+                {% endif %}
+                {% if s.keterangan %}
+                    <div class="mt-1"><small class="text-muted fst-italic">{{ s.keterangan }}</small></div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0 pb-2 d-flex gap-2">
+                <a href="{% url 'shift_edit' s.pk %}" class="btn btn-outline-primary btn-sm flex-fill">
+                    <i class="fas fa-edit me-1"></i>Edit
+                </a>
+                <a href="{% url 'shift_delete' s.pk %}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-trash"></i>
+                </a>
+                {% if not s.aktif %}
+                    <span class="badge bg-secondary align-self-center">Nonaktif</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card"><div class="card-body" style="padding:0;">
+            <div class="empty-state">
+                <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-business-time"></i></div>
+                <div class="empty-state-title">Belum ada shift</div>
+                <div class="empty-state-desc">Buat shift kerja pertama seperti Shift Pagi, Siang, atau Malam.</div>
+                <a href="{% url 'shift_add' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Tambah Shift</a>
+            </div>
+        </div></div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <a href="{% url 'assignment_list' %}" class="card text-decoration-none border-0 shadow-sm">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                    <i class="fas fa-user-clock text-success fa-lg"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold">Assignment Shift</div>
+                    <small class="text-muted">Atur shift per karyawan / departemen</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'roster_view' %}" class="card text-decoration-none border-0 shadow-sm">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                    <i class="fas fa-calendar-alt text-primary fa-lg"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold">Roster Bulanan</div>
+                    <small class="text-muted">Jadwal shift harian semua karyawan</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

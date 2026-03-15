@@ -1,0 +1,87 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}ATS CV Scanner{% endblock %}
+{% block breadcrumb %}Rekrutmen / ATS CV Scanner{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-robot me-2 text-primary"></i>ATS CV Scanner</h4>
+  <a href="{% url 'candidate_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
+</div>
+
+<div class="row justify-content-center"><div class="col-lg-7">
+
+  <div class="alert alert-warning d-flex gap-2 align-items-start mb-4">
+    <i class="fas fa-exclamation-triangle mt-1 flex-shrink-0"></i>
+    <div>
+      <strong>Format yang Diterima:</strong>
+      <span class="badge bg-danger ms-1">PDF (.pdf)</span>
+      <span class="badge bg-primary ms-1">Word (.docx)</span><br>
+      <small class="text-muted">Format lain (jpg, png, doc lama) tidak didukung.</small>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white py-2 px-3">
+      <i class="fas fa-upload me-2"></i><strong>Step 1 — Upload File CV</strong>
+    </div>
+    <div class="card-body p-4">
+      <form method="post" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+        <div id="dropZone" onclick="document.getElementById('cv_file').click()"
+             class="rounded-3 text-center p-5 mb-3"
+             style="border:2px dashed #dee2e6;cursor:pointer;transition:all .2s;">
+          <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3 d-block"></i>
+          <p class="fw-semibold mb-1" id="dropText">Klik atau seret file CV ke sini</p>
+          <small class="text-muted">PDF atau DOCX • Maks. 10 MB</small>
+        </div>
+        <input type="file" id="cv_file" name="cv_file" accept=".pdf,.docx" class="d-none" required>
+        <div id="filePreview" class="alert alert-success py-2 d-none mb-3">
+          <i class="fas fa-file-alt me-2"></i><span id="fileName"></span>
+          <button type="button" class="btn-close float-end btn-sm" onclick="clearFile()"></button>
+        </div>
+        <button type="submit" id="btnSubmit" class="btn btn-primary w-100 py-2 fw-semibold">
+          <i class="fas fa-arrow-right me-2"></i>Lanjut &rarr; Pilih Kriteria Analisis
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card mt-3 border-0 bg-light">
+    <div class="card-body py-3">
+      <p class="fw-semibold small mb-2"><i class="fas fa-info-circle me-1 text-info"></i>Alur ATS Scanner:</p>
+      <div class="d-flex gap-2 align-items-center flex-wrap small">
+        <span class="badge bg-primary px-3 py-2">1. Upload CV</span>
+        <i class="fas fa-arrow-right text-muted"></i>
+        <span class="badge bg-info px-3 py-2">2. Pilih Kriteria</span>
+        <i class="fas fa-arrow-right text-muted"></i>
+        <span class="badge bg-warning text-dark px-3 py-2">3. Analisis ATS</span>
+        <i class="fas fa-arrow-right text-muted"></i>
+        <span class="badge bg-success px-3 py-2">4. Simpan Kandidat</span>
+      </div>
+    </div>
+  </div>
+
+</div></div>
+
+<script>
+const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('cv_file'),
+      filePreview=document.getElementById('filePreview'),fileName=document.getElementById('fileName'),
+      dropText=document.getElementById('dropText'),btnSubmit=document.getElementById('btnSubmit');
+fileInput.addEventListener('change',()=>{if(fileInput.files[0])showFile(fileInput.files[0]);});
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.style.borderColor='#0d6efd';dropZone.style.background='#f0f5ff';});
+dropZone.addEventListener('dragleave',()=>{dropZone.style.borderColor='#dee2e6';dropZone.style.background='';});
+dropZone.addEventListener('drop',e=>{
+  e.preventDefault();dropZone.style.borderColor='#dee2e6';dropZone.style.background='';
+  const file=e.dataTransfer.files[0];
+  if(!file)return;
+  if(!file.name.toLowerCase().match(/\.(pdf|docx)$/)){alert('Hanya PDF dan DOCX yang diterima.');return;}
+  const dt=new DataTransfer();dt.items.add(file);fileInput.files=dt.files;showFile(file);
+});
+function showFile(file){
+  if(!file.name.toLowerCase().match(/\.(pdf|docx)$/)){alert('Hanya PDF dan DOCX yang diterima.');fileInput.value='';return;}
+  fileName.textContent=(file.name.endsWith('.pdf')?'📄':'📝')+' '+file.name+' ('+(file.size/1024).toFixed(1)+' KB)';
+  filePreview.classList.remove('d-none');dropText.textContent='File dipilih ✓';dropZone.style.borderColor='#198754';
+}
+function clearFile(){fileInput.value='';filePreview.classList.add('d-none');dropText.textContent='Klik atau seret file CV ke sini';dropZone.style.borderColor='#dee2e6';}
+document.getElementById('uploadForm').addEventListener('submit',()=>{btnSubmit.disabled=true;btnSubmit.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Membaca CV...';});
+</script>
+{% endblock %}

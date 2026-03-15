@@ -1,0 +1,41 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% block title %}Laporan Maintenance{% endblock %}
+{% block breadcrumb %}Asset Management / Laporan Maintenance{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="text-white mb-1"><i class="fas fa-tools me-2 text-primary"></i>Laporan Maintenance</h4>
+        <p class="text-secondary mb-0">Riwayat lengkap pemeliharaan aset</p>
+    </div>
+    <a href="?export=excel" class="btn btn-success btn-sm"><i class="fas fa-file-excel me-1"></i>Export Excel</a>
+</div>
+<div class="card bg-dark border-secondary"><div class="card-body p-0">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+            <thead><tr class="border-secondary">
+                <th class="text-secondary fw-normal ps-3 small">Aset</th>
+                <th class="text-secondary fw-normal small">Tipe</th>
+                <th class="text-secondary fw-normal small">Tanggal</th>
+                <th class="text-secondary fw-normal small">Teknisi</th>
+                <th class="text-secondary fw-normal small">Biaya</th>
+                <th class="text-secondary fw-normal small">Status</th>
+            </tr></thead>
+            <tbody>
+            {% for m in maintenances %}
+            <tr class="border-secondary">
+                <td class="ps-3"><a href="{% url 'assets:asset_detail' m.asset.pk %}" class="text-info text-decoration-none font-monospace small">{{ m.asset }}</a></td>
+                <td><span class="badge {% if m.maintenance_type == 'Darurat' %}bg-danger{% elif m.maintenance_type == 'Perbaikan' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ m.maintenance_type }}</span></td>
+                <td class="text-secondary small">{{ m.maintenance_date|date:"d M Y" }}</td>
+                <td class="text-secondary small">{{ m.technician|default:"-" }}</td>
+                <td class="text-white small">{% if m.cost %}Rp {{ m.cost|floatformat:0 }}{% else %}-{% endif %}</td>
+                <td>{% if m.status == 'Completed' %}<span class="badge bg-success">Selesai</span>{% elif m.status == 'In Progress' %}<span class="badge bg-info text-dark">Proses</span>{% else %}<span class="badge bg-warning text-dark">{{ m.status }}</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-secondary py-5">Tidak ada data</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div></div>
+{% endblock %}

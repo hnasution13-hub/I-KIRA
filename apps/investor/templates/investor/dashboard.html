@@ -1,0 +1,400 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investor Dashboard — Ikira</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#e63329;--red-d:#b01f17;
+  --bg:#080808;--bg2:#0e0e0e;--bg3:#141414;
+  --surface:#1a1a1a;--surface2:#202020;
+  --border:#252525;--border2:#303030;
+  --text:#f0f0f0;--muted:#777;--muted2:#aaa;
+  --green:#22c55e;--amber:#f59e0b;--blue:#3b82f6;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-left{display:flex;align-items:center;gap:10px}
+.nav-logo{width:32px;height:32px;background:var(--red);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-logo img{width:24px;height:24px;object-fit:contain}
+.nav-brand{font-size:15px;font-weight:600;color:var(--text)}
+.nav-brand span{color:var(--red)}
+.nav-badge{font-size:10px;background:rgba(230,51,41,.15);color:var(--red);border:1px solid rgba(230,51,41,.2);border-radius:20px;padding:2px 8px;margin-left:6px}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-user{font-size:12px;color:var(--muted)}
+.nav-logout{font-size:12px;color:var(--red);text-decoration:none;padding:5px 12px;border:1px solid rgba(230,51,41,.3);border-radius:6px;transition:background .2s}
+.nav-logout:hover{background:rgba(230,51,41,.1)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* LAYOUT */
+.container{max-width:1100px;margin:0 auto;padding:24px 20px}
+.page-title{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:20px}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi-label{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+.kpi-val{font-size:28px;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px}
+.kpi-val.red{color:var(--red)}
+.kpi-val.green{color:var(--green)}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.kpi-sub.up{color:var(--green)}
+.kpi-sub.neutral{color:var(--muted)}
+
+/* GRID 2 COL */
+.row2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:16px}
+.row2b{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:12px;font-weight:600;color:var(--muted2);letter-spacing:.5px;text-transform:uppercase}
+.card-badge{font-size:10px;padding:2px 8px;border-radius:20px}
+.cb-green{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.cb-red{background:rgba(230,51,41,.1);color:var(--red);border:1px solid rgba(230,51,41,.2)}
+.cb-amber{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+
+/* CHART */
+.chart-wrap{position:relative;width:100%}
+
+/* CLIENT STATUS */
+.status-list{display:flex;flex-direction:column;gap:10px}
+.status-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)}
+.status-left{display:flex;align-items:center;gap:8px}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sd-green{background:var(--green)}
+.sd-amber{background:var(--amber)}
+.sd-blue{background:var(--blue)}
+.sd-red{background:var(--red)}
+.sd-gray{background:#444}
+.status-label{font-size:13px;color:var(--text)}
+.status-count{font-size:18px;font-weight:700;color:var(--text)}
+
+/* MILESTONES */
+.milestone-list{display:flex;flex-direction:column;gap:8px}
+.ms-item{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)}
+.ms-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px}
+.ms-done{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.ms-ongoing{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.ms-planned{background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.2)}
+.ms-body{flex:1}
+.ms-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.ms-desc{font-size:11px;color:var(--muted);line-height:1.4}
+.ms-date{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* SYSTEM STATUS */
+.sys-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sys-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px}
+.sys-label{font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.sys-val{font-size:16px;font-weight:600;color:var(--text)}
+.sys-val.green{color:var(--green)}
+
+/* REVENUE TABLE */
+.rev-table{width:100%;font-size:12px;border-collapse:collapse}
+.rev-table th{text-align:left;color:var(--muted);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px;font-size:10px}
+.rev-table td{padding:8px 8px;border-bottom:1px solid var(--border);color:var(--muted2)}
+.rev-table tr:last-child td{border:none}
+.rev-table .val{font-family:'JetBrains Mono',monospace;color:var(--text);font-weight:500}
+.rev-table .proj{color:var(--muted);font-style:italic}
+
+/* FOOTER */
+.dash-footer{text-align:center;padding:20px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);margin-top:8px}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px;color:var(--muted);font-size:13px}
+
+/* LOADING */
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+
+@media(max-width:768px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .row2,.row2b{grid-template-columns:1fr}
+  .sys-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo">
+      <img src="{% static 'images/Logo.png' %}" alt="I" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=color:#fff;font-weight:700;font-size:14px>I</span>'">
+    </div>
+    <span class="nav-brand"><span>I</span>KIRA</span>
+    <span class="nav-badge">Investor Portal</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user"><span class="live-dot"></span>{{ nama }}</span>
+    <a href="{% url 'investor:profil' %}" style="font-size:12px;color:var(--muted2);text-decoration:none;padding:5px 10px;border-radius:6px;background:var(--surface);margin-right:4px">Profil Saya</a>
+    <a href="{% url 'investor:logout' %}" class="nav-logout">Keluar</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-title">Dashboard Transparansi Investor</div>
+
+  <div id="loading" class="loading">Memuat data...</div>
+  <div id="content" style="display:none">
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Client Aktif</div>
+        <div class="kpi-val green" id="k-aktif">—</div>
+        <div class="kpi-sub neutral" id="k-aktif-sub">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">MRR Saat Ini</div>
+        <div class="kpi-val red" id="k-mrr">—</div>
+        <div class="kpi-sub neutral">Monthly Recurring Revenue</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">ARR Proyeksi</div>
+        <div class="kpi-val" id="k-arr">—</div>
+        <div class="kpi-sub neutral">Annualized Run Rate</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sistem Online</div>
+        <div class="kpi-val green" id="k-hari">—</div>
+        <div class="kpi-sub neutral" id="k-status">—</div>
+      </div>
+    </div>
+
+    <!-- Row 1: Revenue Chart + Client Status -->
+    <div class="row2">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Revenue & Proyeksi 6 Bulan</span>
+          <span class="card-badge cb-green">Live</span>
+        </div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Status Client</span>
+        </div>
+        <div class="status-list" id="status-list">
+          <div class="empty">Memuat...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Milestones + System -->
+    <div class="row2b">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Milestone & Roadmap</span>
+        </div>
+        <div class="milestone-list" id="milestone-list">
+          <div class="empty">Memuat...</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">System Health</span>
+          <span class="card-badge cb-green" id="sys-badge">Operasional</span>
+        </div>
+        <div class="sys-grid" id="sys-grid">
+          <div class="empty" style="grid-column:span 2">Memuat...</div>
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="card-head" style="margin-bottom:10px">
+            <span class="card-title">Histori Revenue</span>
+          </div>
+          <table class="rev-table" id="rev-table">
+            <thead><tr><th>Bulan</th><th>MRR</th><th>Client Baru</th></tr></thead>
+            <tbody id="rev-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end #content -->
+</div>
+
+<div class="dash-footer">
+  Data diperbarui secara real-time dari sistem Ikira &bull; Konfidensial &bull; &copy; 2026 Ikira v2.0
+</div>
+
+<script>
+const fmt = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+const fmtShort = (n) => {
+  if (n >= 1000000) return 'Rp ' + (n/1000000).toFixed(1) + 'jt';
+  if (n >= 1000) return 'Rp ' + (n/1000).toFixed(0) + 'rb';
+  return 'Rp ' + Math.round(n);
+};
+
+async function loadData() {
+  try {
+    const res = await fetch('{% url "investor:api_stats" %}');
+    const d   = await res.json();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+
+    // KPI
+    const c = d.clients;
+    document.getElementById('k-aktif').textContent     = c.aktif;
+    document.getElementById('k-aktif-sub').textContent = c.baru_bulan_ini > 0
+      ? `+${c.baru_bulan_ini} bulan ini` : 'Belum ada bulan ini';
+    document.getElementById('k-mrr').textContent  = fmtShort(d.revenue.mrr_saat_ini);
+    document.getElementById('k-arr').textContent  = fmtShort(d.revenue.arr_proyeksi);
+    document.getElementById('k-hari').textContent = d.system.hari_online + ' hari';
+    document.getElementById('k-status').textContent = d.system.status;
+
+    // Status client
+    const statusMap = [
+      {key:'aktif',  label:'Client Aktif',   dot:'sd-green'},
+      {key:'trial',  label:'Trial Berjalan', dot:'sd-amber'},
+      {key:'demo',   label:'Demo Aktif',     dot:'sd-blue'},
+      {key:'suspend',label:'Suspend',        dot:'sd-red'},
+    ];
+    const sl = document.getElementById('status-list');
+    sl.innerHTML = statusMap.map(s => `
+      <div class="status-row">
+        <div class="status-left">
+          <div class="status-dot ${s.dot}"></div>
+          <span class="status-label">${s.label}</span>
+        </div>
+        <span class="status-count">${c[s.key] || 0}</span>
+      </div>
+    `).join('');
+
+    // Revenue chart
+    const hist    = d.revenue.chart;
+    const proj    = d.revenue.proyeksi;
+    const labels  = [...hist.map(h=>h.bulan), ...proj.map(p=>p.bulan)];
+    const histData = [...hist.map(h=>h.mrr), ...new Array(proj.length).fill(null)];
+    const projData = [...new Array(hist.length > 0 ? hist.length-1 : 0).fill(null),
+                      hist.length > 0 ? hist[hist.length-1].mrr : 0,
+                      ...proj.map(p=>p.mrr)];
+
+    new Chart(document.getElementById('revenueChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Revenue Aktual',
+            data: histData,
+            borderColor: '#e63329',
+            backgroundColor: 'rgba(230,51,41,.08)',
+            borderWidth: 2,
+            pointBackgroundColor: '#e63329',
+            pointRadius: 4,
+            fill: true,
+            tension: 0.3,
+          },
+          {
+            label: 'Proyeksi',
+            data: projData,
+            borderColor: '#444',
+            borderDash: [5,4],
+            borderWidth: 1.5,
+            pointBackgroundColor: '#555',
+            pointRadius: 3,
+            fill: false,
+            tension: 0.3,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => fmtShort(ctx.raw || 0)
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color:'#666', font:{size:9}, maxRotation:45 },
+            grid:  { color:'#1a1a1a' }
+          },
+          y: {
+            ticks: { color:'#666', font:{size:9}, callback: v => fmtShort(v) },
+            grid:  { color:'#1a1a1a' }
+          }
+        }
+      }
+    });
+
+    // Milestone
+    const ml = document.getElementById('milestone-list');
+    if (d.milestones.length === 0) {
+      ml.innerHTML = '<div class="empty">Belum ada milestone</div>';
+    } else {
+      ml.innerHTML = d.milestones.map(m => {
+        const cls  = m.status === 'done' ? 'ms-done' : m.status === 'ongoing' ? 'ms-ongoing' : 'ms-planned';
+        const icon = m.status === 'done' ? '✓' : m.status === 'ongoing' ? '◎' : '○';
+        return `
+        <div class="ms-item">
+          <div class="ms-icon ${cls}">${icon}</div>
+          <div class="ms-body">
+            <div class="ms-title">${m.judul}</div>
+            ${m.deskripsi ? `<div class="ms-desc">${m.deskripsi}</div>` : ''}
+            ${m.target_date ? `<div class="ms-date">Target: ${m.target_date}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // System health
+    document.getElementById('sys-grid').innerHTML = `
+      <div class="sys-item">
+        <div class="sys-label">Status</div>
+        <div class="sys-val green">${d.system.status}</div>
+      </div>
+      <div class="sys-item">
+        <div class="sys-label">Versi</div>
+        <div class="sys-val">${d.system.versi}</div>
+      </div>
+      <div class="sys-item">
+        <div class="sys-label">Hari Online</div>
+        <div class="sys-val">${d.system.hari_online}</div>
+      </div>
+      <div class="sys-item">
+        <div class="sys-label">Total Tenant</div>
+        <div class="sys-val">${c.aktif + c.trial + c.demo}</div>
+      </div>
+    `;
+
+    // Revenue table
+    const tbody = document.getElementById('rev-tbody');
+    if (hist.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty">Belum ada data revenue</td></tr>';
+    } else {
+      tbody.innerHTML = [...hist].reverse().slice(0,6).map(h => `
+        <tr>
+          <td>${h.bulan}</td>
+          <td class="val">${fmtShort(h.mrr)}</td>
+          <td class="val">—</td>
+        </tr>`).join('');
+    }
+
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      '<div style="color:#e63329">Gagal memuat data. Refresh halaman.</div>';
+  }
+}
+
+loadData();
+// Auto refresh tiap 5 menit
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>

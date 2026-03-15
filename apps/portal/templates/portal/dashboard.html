@@ -1,0 +1,220 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+<link rel="manifest" href="/static/manifest.json">
+<title>Absensi — {{ emp.nama }}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{--red:#e63329;--red-dk:#b01f17;--bg:#0d0d0d;--bg2:#141414;--bg3:#1a1a1a;
+  --surface:#202020;--border:#2a2a2a;--border2:#333;--text:#f0f0f0;--muted:#888;
+  --green:#22c55e;--yellow:#f59e0b;--blue:#60a5fa;--white:#fff;}
+*{box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;padding-bottom:5.5rem;margin:0;}
+.topbar{background:linear-gradient(135deg,var(--red-dk),var(--red));color:var(--white);
+  padding:.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;}
+.topbar-left{display:flex;align-items:center;gap:.75rem;}
+.topbar-logo{width:28px;height:28px;border-radius:7px;object-fit:contain;display:none;flex-shrink:0;}
+.topbar-logo-fb{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:var(--white);flex-shrink:0;}
+.topbar .emp-name{font-weight:700;font-size:.95rem;}
+.topbar .emp-nik{font-size:.74rem;opacity:.8;}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;background:var(--bg3);
+  border-top:1px solid var(--border);display:flex;padding:.5rem 0;
+  box-shadow:0 -4px 16px rgba(0,0,0,.5);z-index:100;}
+.bottomnav a{flex:1;text-align:center;text-decoration:none;color:var(--muted);
+  font-size:.66rem;padding:.3rem 0;transition:color .2s;}
+.bottomnav a.active{color:var(--red);}
+.bottomnav a i{display:block;font-size:1.1rem;margin-bottom:.12rem;}
+.network-banner{background:#d97706;color:var(--white);text-align:center;padding:.4rem;
+  font-size:.82rem;font-weight:600;display:none;position:sticky;top:56px;z-index:40;}
+.offline-badge{background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);
+  color:#ff6b6b;text-align:center;padding:.5rem 1rem;font-size:.82rem;
+  border-radius:10px;margin:.5rem 1rem;display:none;}
+.clock-card{background:linear-gradient(135deg,var(--red-dk),var(--red));color:var(--white);
+  border-radius:20px;padding:1.5rem;margin:1rem;text-align:center;}
+.clock-time{font-size:3rem;font-weight:700;letter-spacing:3px;line-height:1;font-variant-numeric:tabular-nums;}
+.clock-date{font-size:.88rem;opacity:.85;margin-top:.35rem;}
+.status-pill{display:inline-block;padding:.3rem .9rem;border-radius:20px;font-size:.8rem;font-weight:600;margin-top:.7rem;}
+.pill-belum{background:rgba(255,255,255,.2);color:var(--white);}
+.pill-in{background:rgba(34,197,94,.25);color:#86efac;}
+.pill-selesai{background:rgba(34,197,94,.25);color:#86efac;}
+#location-status{font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:.6rem;}
+.btn-checkin{border-radius:14px;padding:1.1rem;font-size:1.1rem;font-weight:700;
+  background:var(--green);border:none;color:var(--white);width:100%;
+  box-shadow:0 6px 20px rgba(34,197,94,.3);transition:transform .1s;cursor:pointer;}
+.btn-checkout{border-radius:14px;padding:1.1rem;font-size:1.1rem;font-weight:700;
+  background:var(--red);border:none;color:var(--white);width:100%;
+  box-shadow:0 6px 20px rgba(230,51,41,.3);transition:transform .1s;cursor:pointer;}
+.btn-checkin:active,.btn-checkout:active{transform:scale(.97);}
+.section-title{font-weight:700;font-size:.76rem;text-transform:uppercase;
+  color:var(--muted);letter-spacing:.8px;padding:0 1rem;margin:1.2rem 0 .5rem;}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:.85rem .5rem;text-align:center;}
+.stat-num{font-size:1.7rem;font-weight:700;line-height:1;}
+.stat-lbl{font-size:.7rem;color:var(--muted);margin-top:.2rem;}
+.record-row{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  margin:0 1rem .5rem;padding:.8rem 1rem;display:flex;align-items:center;gap:.8rem;}
+.record-date{font-size:.82rem;color:var(--muted);min-width:40px;text-align:center;flex-shrink:0;}
+.rd-day{font-size:1.1rem;font-weight:700;color:var(--text);line-height:1;}
+.record-times{font-size:.88rem;font-weight:500;flex:1;color:var(--text);}
+.record-times small{font-weight:400;color:var(--muted);display:block;font-size:.74rem;}
+.badge-hadir{background:rgba(34,197,94,.15);color:var(--green);font-size:.7rem;padding:.2rem .6rem;border-radius:20px;font-weight:600;}
+.badge-absen{background:rgba(230,51,41,.15);color:#ff6b6b;font-size:.7rem;padding:.2rem .6rem;border-radius:20px;font-weight:600;}
+.badge-izin{background:rgba(245,158,11,.15);color:var(--yellow);font-size:.7rem;padding:.2rem .6rem;border-radius:20px;font-weight:600;}
+.badge-libur{background:rgba(136,136,136,.15);color:var(--muted);font-size:.7rem;padding:.2rem .6rem;border-radius:20px;font-weight:600;}
+.badge-status{font-size:.7rem;padding:.2rem .6rem;border-radius:20px;font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <img id="topbarLogo" class="topbar-logo" alt="Logo">
+    <div class="topbar-logo-fb" id="topbarLogoFb">H</div>
+    <div>
+      <div class="emp-name">{{ emp.nama|default:"—" }}</div>
+      <div class="emp-nik">{{ emp.nik|default:"—" }}{% if emp.jabatan %} · {{ emp.jabatan }}{% endif %}</div>
+    </div>
+  </div>
+  <a href="{% url 'portal_logout' %}" class="text-white opacity-75" title="Keluar">
+    <i class="fas fa-sign-out-alt fa-lg"></i>
+  </a>
+</div>
+
+<div class="network-banner" id="network-banner">
+  <i class="fas fa-wifi me-1"></i>Offline — data akan disinkron otomatis saat online
+</div>
+
+{% if messages %}
+<div class="px-3 pt-2">
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible py-2 small mb-1">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<div class="clock-card">
+  <div class="clock-time" id="live-clock">{{ now|time:"H:i:s" }}</div>
+  <div class="clock-date">{{ today|date:"l, d F Y" }}</div>
+  {% if att_today %}
+    {% if att_today.check_in and att_today.check_out %}
+      <span class="status-pill pill-selesai"><i class="fas fa-check-circle me-1"></i>Masuk {{ att_today.check_in|time:"H:i" }} · Keluar {{ att_today.check_out|time:"H:i" }}</span>
+    {% elif att_today.check_in %}
+      <span class="status-pill pill-in"><i class="fas fa-sign-in-alt me-1"></i>Check-in {{ att_today.check_in|time:"H:i" }}</span>
+    {% endif %}
+  {% else %}
+    <span class="status-pill pill-belum"><i class="fas fa-clock me-1"></i>Belum Check-In</span>
+  {% endif %}
+</div>
+
+<div class="px-3 mb-3">
+  <div id="location-status"><i class="fas fa-spinner fa-spin me-1"></i>Mendeteksi lokasi & perangkat...</div>
+  {% if can_checkin %}
+  <form method="post" action="{% url 'portal_checkin' %}" id="checkin-form">
+    {% csrf_token %}
+    <input type="hidden" name="mac_address" id="f-mac">
+    <input type="hidden" name="latitude" id="f-lat">
+    <input type="hidden" name="longitude" id="f-lng">
+    <input type="hidden" name="gps_accuracy" id="f-acc">
+    <input type="hidden" name="gps_denied" id="f-denied" value="0">
+    <button type="button" class="btn-checkin" onclick="doCheckin()">
+      <i class="fas fa-sign-in-alt me-2"></i>CHECK-IN SEKARANG
+    </button>
+  </form>
+  {% elif can_checkout %}
+  <form method="post" action="{% url 'portal_checkin' %}" id="checkout-form">
+    {% csrf_token %}
+    <input type="hidden" name="mac_address" id="f-mac-out">
+    <input type="hidden" name="latitude" id="f-lat-out">
+    <input type="hidden" name="longitude" id="f-lng-out">
+    <input type="hidden" name="gps_accuracy" id="f-acc-out">
+    <input type="hidden" name="gps_denied" id="f-denied-out" value="0">
+    <button type="button" class="btn-checkout" onclick="doCheckout()">
+      <i class="fas fa-sign-out-alt me-2"></i>CHECK-OUT SEKARANG
+    </button>
+  </form>
+  {% else %}
+  <div style="display:flex;gap:.75rem;">
+    <button class="btn-checkin" style="opacity:.35;cursor:not-allowed;flex:1;" disabled><i class="fas fa-sign-in-alt me-2"></i>CHECK-IN</button>
+    <button class="btn-checkout" style="opacity:.35;cursor:not-allowed;flex:1;" disabled><i class="fas fa-sign-out-alt me-2"></i>CHECK-OUT</button>
+  </div>
+  <div class="text-center mt-2">
+    <span style="background:rgba(34,197,94,.15);color:var(--green);border-radius:20px;padding:.35rem 1rem;font-size:.8rem;font-weight:600;display:inline-block;">
+      <i class="fas fa-check-circle me-1"></i>Sudah Check-In &amp; Check-Out Hari Ini
+    </span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="offline-badge" id="offline-pending-badge"></div>
+
+<div class="section-title">Bulan Ini</div>
+<div class="px-3 mb-3">
+  <div class="row g-2">
+    <div class="col-3"><div class="stat-card"><div class="stat-num" style="color:var(--green);">{{ total_hadir }}</div><div class="stat-lbl">Hadir</div></div></div>
+    <div class="col-3"><div class="stat-card"><div class="stat-num" style="color:var(--yellow);">{{ total_izin }}</div><div class="stat-lbl">Izin/Sakit</div></div></div>
+    <div class="col-3"><div class="stat-card"><div class="stat-num" style="color:#ff6b6b;">{{ total_absen }}</div><div class="stat-lbl">Absen</div></div></div>
+    <div class="col-3"><div class="stat-card"><div class="stat-num" style="color:var(--blue);">{{ total_lembur|floatformat:1 }}</div><div class="stat-lbl">Jam Lembur</div></div></div>
+  </div>
+</div>
+
+<div class="section-title">Riwayat Terbaru</div>
+{% for r in month_records %}
+<div class="record-row">
+  <div class="record-date">
+    <div class="rd-day">{{ r.tanggal|date:"d" }}</div>
+    <div style="font-size:.7rem;color:var(--muted);">{{ r.tanggal|date:"M" }}</div>
+  </div>
+  <div class="record-times">
+    {% if r.check_in %}{{ r.check_in|time:"H:i" }}{% else %}—{% endif %} → {% if r.check_out %}{{ r.check_out|time:"H:i" }}{% else %}—{% endif %}
+    <small>{% if r.keterlambatan > 0 %}Telat {{ r.keterlambatan }}m {% endif %}{% if r.lembur_jam > 0 %}Lembur {{ r.lembur_jam }}j{% endif %}</small>
+  </div>
+  <span class="badge-status {% if r.status == 'Hadir' %}badge-hadir{% elif r.status == 'Tidak Hadir' %}badge-absen{% elif r.status == 'Libur' %}badge-libur{% else %}badge-izin{% endif %}">{{ r.status }}</span>
+</div>
+{% empty %}
+<div class="text-center py-4" style="color:var(--muted);font-size:.9rem;">Belum ada data bulan ini</div>
+{% endfor %}
+{% if month_records %}
+<div class="text-center mb-4"><a href="{% url 'portal_riwayat' %}" style="color:var(--green);font-size:.85rem;font-weight:600;text-decoration:none;">Lihat semua riwayat →</a></div>
+{% endif %}
+
+<nav class="bottomnav">
+  <a href="{% url 'portal_dashboard' %}" class="active"><i class="fas fa-home"></i>Beranda</a>
+  <a href="{% url 'portal_riwayat' %}"><i class="fas fa-history"></i>Riwayat</a>
+  <a href="{% url 'portal_slip_gaji' %}"><i class="fas fa-file-invoice-dollar"></i>Slip Gaji</a>
+  <a href="{% url 'portal_cuti' %}"><i class="fas fa-calendar-minus"></i>Cuti</a>
+  <a href="{% url 'portal_jadwal' %}"><i class="fas fa-calendar-alt"></i>Jadwal</a>
+  <a href="{% url 'portal_profile' %}"><i class="fas fa-user"></i>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/static/js/portal-offline.js"></script>
+<script>
+function updateClock(){const n=new Date(),h=String(n.getHours()).padStart(2,'0'),m=String(n.getMinutes()).padStart(2,'0'),s=String(n.getSeconds()).padStart(2,'0');const el=document.getElementById('live-clock');if(el)el.textContent=h+':'+m+':'+s;}
+setInterval(updateClock,1000);updateClock();
+function getDeviceFingerprint(){const nav=window.navigator,sc=window.screen;const raw=[nav.userAgent,nav.language,sc.colorDepth,sc.width+'x'+sc.height,nav.hardwareConcurrency||0,nav.deviceMemory||0,Intl.DateTimeFormat().resolvedOptions().timeZone].join('|');let hash=0;for(let i=0;i<raw.length;i++){hash=((hash<<5)-hash)+raw.charCodeAt(i);hash|=0;}const hex=Math.abs(hash).toString(16).padStart(12,'0').toUpperCase();return[hex.slice(0,2),hex.slice(2,4),hex.slice(4,6),hex.slice(6,8),hex.slice(8,10),hex.slice(10,12)].join(':');}
+const statusEl=document.getElementById('location-status');
+let gpsReady=false,gpsLat=null,gpsLng=null,gpsAcc=null,gpsDenied=false;
+const fingerprint=getDeviceFingerprint();
+document.querySelectorAll('[id^="f-mac"]').forEach(el=>el.value=fingerprint);
+function updateStatus(){if(!statusEl)return;const ms=fingerprint.slice(-8);if(gpsDenied){statusEl.innerHTML=`<span style="color:var(--red)"><i class="fas fa-map-marker-slash me-1"></i>GPS ditolak ⚠</span> <small style="color:var(--muted)">ID: ${ms}</small>`;}else if(gpsReady){statusEl.innerHTML=`<span style="color:var(--green)"><i class="fas fa-map-marker-alt me-1"></i>GPS aktif ✓</span> · <small>±${Math.round(gpsAcc||0)}m</small> <small style="color:var(--muted)">ID: ${ms}</small>`;}else{statusEl.innerHTML=`<i class="fas fa-spinner fa-spin me-1"></i>Mendeteksi... <small style="color:var(--muted)">ID: ${ms}</small>`;}}
+updateStatus();
+if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(pos){gpsLat=pos.coords.latitude;gpsLng=pos.coords.longitude;gpsAcc=pos.coords.accuracy;gpsReady=true;gpsDenied=false;document.querySelectorAll('[id^="f-lat"]').forEach(el=>el.value=gpsLat);document.querySelectorAll('[id^="f-lng"]').forEach(el=>el.value=gpsLng);document.querySelectorAll('[id^="f-acc"]').forEach(el=>el.value=gpsAcc);document.querySelectorAll('[id^="f-denied"]').forEach(el=>el.value='0');updateStatus();},function(){gpsDenied=true;document.querySelectorAll('[id^="f-denied"]').forEach(el=>el.value='1');updateStatus();},{enableHighAccuracy:true,timeout:10000,maximumAge:0});}else{gpsDenied=true;document.querySelectorAll('[id^="f-denied"]').forEach(el=>el.value='1');updateStatus();}
+function getNow(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')+':'+d.getSeconds().toString().padStart(2,'0');}
+function getCsrf(){const el=document.querySelector('[name=csrfmiddlewaretoken]');return el?el.value:'';}
+async function saveOffline(type){const data={offline_time:getNow(),offline_type:type,csrf:getCsrf(),mac_address:document.getElementById(type==='checkin'?'f-mac':'f-mac-out')?.value||'',latitude:document.getElementById(type==='checkin'?'f-lat':'f-lat-out')?.value||'',longitude:document.getElementById(type==='checkin'?'f-lng':'f-lng-out')?.value||'',gps_accuracy:document.getElementById(type==='checkin'?'f-acc':'f-acc-out')?.value||'',gps_denied:document.getElementById(type==='checkin'?'f-denied':'f-denied-out')?.value||'0'};await PORTAL_OFFLINE.queueCheckin(data);if('serviceWorker' in navigator&&'SyncManager' in window){const sw=await navigator.serviceWorker.ready;await sw.sync.register('sync-checkin').catch(()=>{});}const count=await PORTAL_OFFLINE.getPendingCount();const badge=document.getElementById('offline-pending-badge');if(badge){badge.textContent=`⏳ ${count} data offline menunggu sinkron`;badge.style.display='block';}alert(`✓ ${type==='checkin'?'Check-in':'Check-out'} disimpan offline (${data.offline_time})\nAkan disinkron otomatis saat online.`);}
+function doCheckin(){if(!gpsReady&&!gpsDenied){if(!confirm('GPS belum siap. Lanjutkan?\n⚠ Akan dicatat sebagai mencurigakan.'))return;}if(!navigator.onLine){saveOffline('checkin');return;}document.getElementById('checkin-form').submit();}
+function doCheckout(){if(!gpsReady&&!gpsDenied){if(!confirm('GPS belum siap. Lanjutkan?\n⚠ Akan dicatat sebagai mencurigakan.'))return;}if(!navigator.onLine){saveOffline('checkout');return;}document.getElementById('checkout-form').submit();}
+(function(){var img=document.getElementById('topbarLogo'),fb=document.getElementById('topbarLogoFb');if(!img)return;img.src='{% static "images/Logo.png" %}';img.onload=function(){img.style.display='block';if(fb)fb.style.display='none';};img.onerror=function(){img.style.display='none';if(fb)fb.style.display='flex';};})();
+</script>
+</body>
+</html>

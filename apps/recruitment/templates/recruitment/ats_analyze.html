@@ -1,0 +1,239 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Pilih Kriteria Analisis{% endblock %}
+{% block breadcrumb %}Rekrutmen / ATS CV Scanner / Pilih Kriteria{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-sliders-h me-2 text-info"></i>Step 2 — Pilih Kriteria Analisis</h4>
+  <a href="{% url 'ats_scan' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Upload Ulang</a>
+</div>
+
+<div class="row g-4">
+
+  <!-- Ringkasan CV -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-secondary text-white py-2 px-3">
+        <i class="fas fa-file-alt me-2"></i><strong>Ringkasan CV</strong>
+        <small class="ms-1 opacity-75">{{ cv_data.cv_filename }}</small>
+      </div>
+      <div class="card-body">
+        <table class="table table-sm table-borderless mb-0 small">
+          <tr><td class="text-muted">Nama</td><td class="fw-semibold">{{ cv_data.nama|default:"-" }}</td></tr>
+          <tr><td class="text-muted">Email</td><td>{{ cv_data.email|default:"-" }}</td></tr>
+          <tr><td class="text-muted">Pendidikan</td><td>{{ cv_data.pendidikan|default:"-" }}</td></tr>
+          <tr><td class="text-muted">Pengalaman</td><td>{{ cv_data.pengalaman_tahun|default:0 }} tahun</td></tr>
+        </table>
+        {% if cv_data.skill_list %}
+        <hr class="my-2">
+        <p class="small text-muted mb-1">Skill Terdeteksi:</p>
+        <div class="d-flex flex-wrap gap-1">
+          {% for s in cv_data.skill_list|slice:":10" %}
+            <span class="badge bg-light text-dark border" style="font-size:10px;">{{ s }}</span>
+          {% endfor %}
+          {% if cv_data.skill_list|length > 10 %}
+            <span class="badge bg-secondary" style="font-size:10px;">+{{ cv_data.skill_list|length|add:"-10" }}</span>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Kriteria -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-info text-white py-2 px-3">
+        <i class="fas fa-clipboard-check me-2"></i><strong>Kriteria Posisi</strong>
+      </div>
+      <div class="card-body p-4">
+        <form method="post">
+          {% csrf_token %}
+
+          <!-- Mode pilihan -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Sumber Kriteria:</label>
+            <div class="d-flex gap-3 flex-wrap">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="mode" id="modeLib" value="library"
+                       onchange="toggleMode('library')" checked>
+                <label class="form-check-label fw-semibold" for="modeLib">
+                  <i class="fas fa-briefcase me-1 text-primary"></i>Job Library
+                  <span class="badge bg-primary ms-1">Rekomendasi</span>
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="mode" id="modeMprf" value="mprf"
+                       onchange="toggleMode('mprf')" {% if not mprfs %}disabled{% endif %}>
+                <label class="form-check-label" for="modeMprf">
+                  <i class="fas fa-file-signature me-1 text-success"></i>Dari MPRF
+                  {% if not mprfs %}<small class="text-danger">(tidak ada MPRF aktif)</small>{% endif %}
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="mode" id="modeManual" value="manual"
+                       onchange="toggleMode('manual')">
+                <label class="form-check-label" for="modeManual">
+                  <i class="fas fa-pencil-alt me-1 text-warning"></i>Input Manual
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODE JOB LIBRARY -->
+          <div id="sectionLibrary">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Pilih Jabatan dari Job Library <span class="text-danger">*</span></label>
+              <select name="position_id" id="positionSelect" class="form-select" onchange="loadPositionData(this.value)">
+                <option value="">-- Pilih Jabatan --</option>
+                {% for pos in positions %}
+                  <option value="{{ pos.pk }}">{{ pos.nama }} ({{ pos.level }})</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Kriteria akan otomatis terisi dari standar Job Library.
+                <a href="{% url 'job_library_list' %}" target="_blank" class="ms-1">
+                  <i class="fas fa-external-link-alt"></i> Kelola Job Library
+                </a>
+              </div>
+            </div>
+            <!-- Preview kriteria dari Job Library -->
+            <div id="libPreview" class="d-none">
+              <div class="alert alert-primary py-2 small">
+                <strong id="libNama"></strong><br>
+                <span id="libInfo"></span>
+              </div>
+              <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                  <p class="small fw-semibold text-danger mb-1">Skill Wajib:</p>
+                  <div id="libSkillWajib" class="d-flex flex-wrap gap-1"></div>
+                </div>
+                <div class="col-md-6">
+                  <p class="small fw-semibold text-success mb-1">Skill Diinginkan:</p>
+                  <div id="libSkillNice" class="d-flex flex-wrap gap-1"></div>
+                </div>
+              </div>
+              <p class="small text-muted fst-italic">
+                <i class="fas fa-info-circle me-1"></i>
+                Jika perlu penyesuaian, pilih mode "Input Manual" dan isi sendiri.
+              </p>
+            </div>
+          </div>
+
+          <!-- MODE MPRF -->
+          <div id="sectionMprf" class="d-none">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Pilih MPRF <span class="text-danger">*</span></label>
+              <select name="mprf_id" id="mprf_id" class="form-select">
+                <option value="">-- Pilih MPRF --</option>
+                {% for mprf in mprfs %}
+                  <option value="{{ mprf.pk }}">{{ mprf.nomor_mprf }} — {{ mprf.nama_jabatan }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Kriteria akan diambil dari kualifikasi MPRF yang dipilih.</div>
+            </div>
+          </div>
+
+          <!-- MODE MANUAL -->
+          <div id="sectionManual" class="d-none">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label fw-semibold">Nama Posisi <span class="text-danger">*</span></label>
+                <input type="text" name="jabatan" id="jabatanInput" class="form-control"
+                       placeholder="cth: Staff IT, HR Manager...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Pendidikan Minimum</label>
+                <select name="pendidikan_min" class="form-select">
+                  <option value="">-- Tidak ada syarat --</option>
+                  <option value="SMA/SMK">SMA/SMK</option>
+                  <option value="D3">D3</option>
+                  <option value="S1" selected>S1</option>
+                  <option value="S2">S2</option>
+                  <option value="S3">S3</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Pengalaman Minimum (tahun)</label>
+                <input type="number" name="pengalaman_min" class="form-control" min="0" value="2">
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">
+                  Skill Wajib <span class="text-danger">*</span>
+                  <span class="badge bg-danger ms-1">Bobot 40%</span>
+                </label>
+                <textarea name="skill_wajib" class="form-control" rows="3"
+                          placeholder="Pisahkan dengan koma&#10;cth: Python, Django, PostgreSQL, Git"></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">
+                  Skill Diinginkan
+                  <span class="badge bg-success ms-1">Bobot 15%</span>
+                </label>
+                <textarea name="skill_diinginkan" class="form-control" rows="2"
+                          placeholder="cth: Docker, Redis, AWS"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info bobot -->
+          <div class="alert alert-light border mt-4 mb-3 py-2 small">
+            <i class="fas fa-chart-pie me-1 text-muted"></i>
+            <strong>Bobot Default:</strong> Skill Wajib 40% | Pengalaman 25% | Pendidikan 20% | Skill Tambahan 15%
+            <span class="text-muted ms-1">(dapat dikustom di Job Library per jabatan)</span>
+          </div>
+
+          <button type="submit" class="btn btn-warning w-100 py-2 fw-semibold text-dark">
+            <i class="fas fa-search me-2"></i>Analisis Sekarang
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleMode(mode) {
+  ['library','mprf','manual'].forEach(m => {
+    document.getElementById('section' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('d-none');
+  });
+  document.getElementById('section' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.remove('d-none');
+
+  // required attributes
+  document.getElementById('positionSelect').required = (mode === 'library');
+  document.getElementById('mprf_id').required        = (mode === 'mprf');
+  const jabInput = document.getElementById('jabatanInput');
+  if (jabInput) jabInput.required = (mode === 'manual');
+}
+
+function loadPositionData(pk) {
+  const preview = document.getElementById('libPreview');
+  if (!pk) { preview.classList.add('d-none'); return; }
+
+  fetch(`/api/position/${pk}/`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) return;
+      document.getElementById('libNama').textContent = data.nama;
+      document.getElementById('libInfo').textContent =
+        `Pendidikan Min: ${data.pendidikan_min||'—'} | Pengalaman Min: ${data.pengalaman_min} thn`;
+
+      const skillToBadges = (str, cls) => {
+        if (!str) return '<span class="text-muted small">—</span>';
+        return str.split(',').map(s => s.trim()).filter(Boolean)
+          .map(s => `<span class="badge ${cls}" style="font-size:10px;">${s}</span>`).join(' ');
+      };
+      document.getElementById('libSkillWajib').innerHTML =
+        skillToBadges(data.skill_wajib, 'bg-danger bg-opacity-15 text-danger border border-danger-subtle');
+      document.getElementById('libSkillNice').innerHTML =
+        skillToBadges(data.skill_diinginkan, 'bg-success bg-opacity-15 text-success border border-success-subtle');
+
+      preview.classList.remove('d-none');
+    });
+}
+
+// Init
+toggleMode('library');
+</script>
+{% endblock %}

@@ -1,0 +1,216 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registrasi Berhasil — HRIS SmartDesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red:     #e63329;
+      --red-dark:#b01f17;
+      --bg:      #080808;
+      --bg2:     #101010;
+      --bg3:     #161616;
+      --surface: #1c1c1c;
+      --border:  #2a2a2a;
+      --border2: #333;
+      --text:    #f0f0f0;
+      --muted:   #888;
+      --green:   #22c55e;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; opacity: .4;
+    }
+    nav {
+      display: flex; align-items: center; padding: 0 48px; height: 64px;
+      background: rgba(8,8,8,.9); border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-icon {
+      width: 32px; height: 32px; background: var(--red); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue'; font-size: 1.2rem; color: #fff;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .nav-logo-icon img { width: 32px; height: 32px; object-fit: contain; display: none; }
+    .nav-logo-icon span { line-height: 1; }
+    .nav-logo-text { font-weight: 600; font-size: .88rem; color: var(--text); line-height: 1.2; }
+    .nav-logo-text span { display: block; font-size: .68rem; color: var(--muted); font-weight: 400; }
+
+    .page-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 48px 24px; position: relative; overflow: hidden;
+    }
+    .page-wrap::before {
+      content: '';
+      position: absolute; width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(34,197,94,.07) 0%, transparent 65%);
+      top: -150px; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .success-card {
+      background: var(--bg3); border: 1px solid var(--green);
+      border-radius: 16px; width: 100%; max-width: 520px;
+      overflow: hidden;
+    }
+
+    .success-header {
+      padding: 32px; text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .success-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(34,197,94,.15); border: 2px solid rgba(34,197,94,.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; margin: 0 auto 16px;
+    }
+    .success-header h2 {
+      font-family: 'Bebas Neue'; font-size: 2rem; letter-spacing: 2px;
+      color: var(--green); margin-bottom: 6px;
+    }
+    .success-header p { font-size: .88rem; color: var(--muted); }
+    .paket-badge {
+      display: inline-block; font-size: .68rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 4px; margin-top: 8px;
+    }
+    .paket-demo  { background: rgba(230,51,41,.15); color: var(--red); border: 1px solid rgba(230,51,41,.2); }
+    .paket-trial { background: rgba(34,197,94,.1); color: var(--green); border: 1px solid rgba(34,197,94,.2); }
+
+    .cred-section { padding: 24px 32px; border-bottom: 1px solid var(--border); }
+    .cred-title {
+      font-size: .72rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
+    }
+    .cred-box {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 10px; overflow: hidden;
+    }
+    .cred-row {
+      display: flex; align-items: center;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+    }
+    .cred-row:last-child { border: none; }
+    .cred-key {
+      font-size: .78rem; color: var(--muted); width: 100px; flex-shrink: 0;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    .cred-val {
+      font-family: 'DM Mono'; font-size: .9rem; color: var(--text); font-weight: 500;
+    }
+    .cred-val a { color: var(--red); text-decoration: none; }
+    .cred-val.highlight { color: var(--green); }
+
+    .alert-section { padding: 16px 32px; border-bottom: 1px solid var(--border); }
+    .alert-warn {
+      background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.2);
+      border-radius: 8px; padding: 12px 16px;
+      font-size: .84rem; color: #fbbf24; line-height: 1.5;
+    }
+    .alert-warn strong { color: #fde68a; }
+
+    .action-section { padding: 24px 32px; }
+    .btn-login {
+      display: block; width: 100%; text-align: center;
+      padding: 14px; background: var(--red); color: #fff;
+      border-radius: 8px; font-weight: 600; font-size: .95rem;
+      text-decoration: none; letter-spacing: .5px; transition: background .2s;
+    }
+    .btn-login:hover { background: var(--red-dark); }
+    .action-footer {
+      text-align: center; margin-top: 14px;
+      font-size: .82rem; color: var(--muted);
+    }
+    .action-footer a { color: var(--red); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="nav-logo-icon"><img class="reg-logo-img" alt="Logo"><span class="reg-logo-fb">H</span></div>
+    <div class="nav-logo-text">
+      HRIS SmartDesk
+      <span>Human Resource Information System</span>
+    </div>
+  </a>
+</nav>
+
+<div class="page-wrap">
+  <div class="success-card">
+
+    <div class="success-header">
+      <div class="success-icon">🎉</div>
+      <h2>AKUN SIAP!</h2>
+      <p>{{ info.nama_company }}</p>
+      <span class="paket-badge paket-{{ info.paket }}">{{ info.paket|upper }}</span>
+    </div>
+
+    <div class="cred-section">
+      <div class="cred-title">Kredensial Login</div>
+      <div class="cred-box">
+        <div class="cred-row">
+          <div class="cred-key">URL Login</div>
+          <div class="cred-val"><a href="/login/">/login/</a></div>
+        </div>
+        <div class="cred-row">
+          <div class="cred-key">Username</div>
+          <div class="cred-val">{{ info.username }}</div>
+        </div>
+        <div class="cred-row">
+          <div class="cred-key">Password</div>
+          <div class="cred-val">{{ info.password }}</div>
+        </div>
+        {% if info.trial_sampai %}
+        <div class="cred-row">
+          <div class="cred-key">Trial s.d.</div>
+          <div class="cred-val highlight">{{ info.trial_sampai }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="alert-section">
+      <div class="alert-warn">
+        📧 Kredensial juga telah dikirim ke <strong>{{ info.email }}</strong>.<br>
+        Simpan informasi di atas sebelum meninggalkan halaman ini.
+      </div>
+    </div>
+
+    <div class="action-section">
+      <a href="/" class="btn-login">Masuk ke Dashboard →</a>
+      <div class="action-footer">
+        <a href="{% url 'registration:landing' %}">← Daftar akun lain</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  var logoUrl="/static/images/Logo.png";
+  document.querySelectorAll(".reg-logo-img").forEach(function(img){
+    var fb=img.nextElementSibling;
+    img.src=logoUrl;
+    img.onload=function(){img.style.display="block";if(fb)fb.style.display="none";};
+    img.onerror=function(){img.style.display="none";if(fb)fb.style.display="";};
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Advanced Psychometric Test - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Recruitment / Advanced Psychometric Test{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="fas fa-flask me-2" style="color:#7b1fa2;"></i>Advanced Psychometric Test</h4>
+        <small class="text-muted">Add-On — 5 tipe tes ilmiah untuk rekrutmen</small>
+    </div>
+    <a href="{% url 'adv_soal_bank' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-database me-1"></i>Bank Soal
+    </a>
+</div>
+
+<!-- Tipe Tes Card -->
+<div class="row g-3 mb-4">
+    {% for card in stats_cards %}
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="card border-0 shadow-sm h-100 {% if test_filter == card.ttype %}border-primary border-2{% endif %}"
+            style="cursor:pointer;" onclick="window.location='?test_type={{ card.ttype }}'">
+            <div class="card-body text-center py-3">
+                {% if card.ttype == 'raven' %}<i class="fas fa-th fa-2x mb-2 d-block" style="color:#1976d2;"></i>
+                {% elif card.ttype == 'cogspeed' %}<i class="fas fa-bolt fa-2x mb-2 d-block" style="color:#f57c00;"></i>
+                {% elif card.ttype == 'bigfive' %}<i class="fas fa-star fa-2x mb-2 d-block" style="color:#388e3c;"></i>
+                {% elif card.ttype == 'sjt' %}<i class="fas fa-balance-scale fa-2x mb-2 d-block" style="color:#c62828;"></i>
+                {% elif card.ttype == 'cfit' %}<i class="fas fa-globe fa-2x mb-2 d-block" style="color:#00838f;"></i>
+                {% endif %}
+                <div class="fw-semibold" style="font-size:0.8rem;">{{ card.tlabel }}</div>
+                <div class="text-muted mt-1" style="font-size:0.75rem;">
+                    {% if card.total %}{{ card.selesai }}/{{ card.total }} selesai{% else %}Belum ada sesi{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Filter -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <select name="test_type" class="form-select form-select-sm">
+                    <option value="">Semua Tipe Tes</option>
+                    {% for val, label in test_type_choices %}
+                    <option value="{{ val }}" {% if test_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Semua Status</option>
+                    <option value="pending"   {% if status_filter == 'pending' %}selected{% endif %}>Belum Dikerjakan</option>
+                    <option value="started"   {% if status_filter == 'started' %}selected{% endif %}>Sedang Dikerjakan</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Selesai</option>
+                    <option value="expired"   {% if status_filter == 'expired' %}selected{% endif %}>Kadaluarsa</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="tujuan" class="form-select form-select-sm">
+                    <option value="">Semua Tujuan</option>
+                    <option value="recruitment" {% if tujuan_filter == 'recruitment' %}selected{% endif %}>Rekrutmen</option>
+                    <option value="berkala"     {% if tujuan_filter == 'berkala' %}selected{% endif %}>Evaluasi Berkala</option>
+                    <option value="promosi"     {% if tujuan_filter == 'promosi' %}selected{% endif %}>Promosi</option>
+                    <option value="evaluasi"    {% if tujuan_filter == 'evaluasi' %}selected{% endif %}>Evaluasi Kinerja</option>
+                    <option value="lainnya"     {% if tujuan_filter == 'lainnya' %}selected{% endif %}>Lainnya</option>
+                </select>
+            </div>
+            <div class="col-md-auto">
+                <button class="btn btn-primary btn-sm"><i class="fas fa-filter me-1"></i>Filter</button>
+                <a href="{% url 'adv_session_list' %}" class="btn btn-outline-secondary btn-sm ms-1">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Kandidat</th>
+                    <th>Tipe Tes</th>
+                    <th>Status</th>
+                    <th>Skor</th>
+                    <th>Grade</th>
+                    <th>Dibuat</th>
+                    <th>Kadaluarsa</th>
+                    <th style="width:80px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sessions %}
+                <tr>
+                    <td>
+                        <a href="{{ s.get_peserta_url }}" class="fw-semibold text-decoration-none text-dark">
+                            {{ s.get_peserta_nama }}
+                        </a>
+                        <br>
+                        {% if s.candidate %}
+                        <small class="text-muted">{{ s.candidate.posisi_dilamar|default:"-" }}</small>
+                        {% elif s.employee %}
+                        <small class="text-muted">{{ s.employee.jabatan|default:"-" }} · {{ s.tujuan }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for tipe in s.get_paket %}
+                        {% if tipe == 'raven' %}<span class="badge" style="background:#1976d2;">Raven's</span>
+                        {% elif tipe == 'cogspeed' %}<span class="badge" style="background:#f57c00;">Cognitive Speed</span>
+                        {% elif tipe == 'bigfive' %}<span class="badge" style="background:#388e3c;">Big Five</span>
+                        {% elif tipe == 'sjt' %}<span class="badge" style="background:#c62828;">SJT</span>
+                        {% elif tipe == 'cfit' %}<span class="badge" style="background:#00838f;">CFIT</span>
+                        {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if s.status == 'completed' %}<span class="badge bg-success">Selesai</span>
+                        {% elif s.status == 'started' %}<span class="badge bg-warning text-dark">Berjalan</span>
+                        {% elif s.status == 'expired' %}<span class="badge bg-danger">Expired</span>
+                        {% else %}<span class="badge bg-secondary">Pending</span>{% endif %}
+                    </td>
+                    <td>
+                        {% with r=s.results.first %}
+                        {% if r %}
+                            <span class="fw-semibold">{{ r.skor_total }}%</span>
+                        {% else %}-{% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% with r=s.results.first %}
+                        {% if r and r.grade %}
+                            <span class="badge {% if r.grade == 'A' %}bg-success{% elif r.grade == 'B' %}bg-primary{% elif r.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ r.grade }}
+                            </span>
+                        {% else %}-{% endif %}
+                        {% endwith %}
+                    </td>
+                    <td><small>{{ s.created_at|date:"d/m/Y" }}</small></td>
+                    <td>
+                        <small class="{% if s.is_expired and s.status != 'completed' %}text-danger{% else %}text-muted{% endif %}">
+                            {{ s.expired_at|date:"d/m/Y" }}
+                        </small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'adv_session_detail' s.pk %}" class="btn btn-outline-info" title="Detail">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if s.is_accessible %}
+                            <button class="btn btn-outline-secondary" title="Salin Link"
+                                onclick="navigator.clipboard.writeText('{{ request.scheme }}://{{ request.get_host }}/advanced-test/tes/{{ s.token }}/'); alert('Link disalin!')">
+                                <i class="fas fa-link"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-5">
+                        <i class="fas fa-flask fa-2x mb-2 d-block opacity-25"></i>
+                        Belum ada sesi advanced test. Buat sesi dari halaman detail kandidat.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if sessions.has_other_pages %}
+<nav class="mt-3 d-flex justify-content-between align-items-center">
+    <small class="text-muted">
+        Menampilkan {{ sessions.start_index }}–{{ sessions.end_index }}
+        dari {{ sessions.paginator.count }} sesi
+    </small>
+    <ul class="pagination pagination-sm mb-0">
+        {% if sessions.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ sessions.previous_page_number }}&test_type={{ test_filter }}&status={{ status_filter }}&tujuan={{ tujuan_filter }}">
+                &laquo;
+            </a>
+        </li>
+        {% endif %}
+        {% for num in sessions.paginator.page_range %}
+        {% if sessions.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > sessions.number|add:'-3' and num < sessions.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}&test_type={{ test_filter }}&status={{ status_filter }}&tujuan={{ tujuan_filter }}">
+                {{ num }}
+            </a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% if sessions.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ sessions.next_page_number }}&test_type={{ test_filter }}&status={{ status_filter }}&tujuan={{ tujuan_filter }}">
+                &raquo;
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Export button -->
+<div class="mt-3 text-end">
+    <a href="{% url 'adv_export_excel' %}{% if test_filter %}?tipe={{ test_filter }}{% endif %}"
+       class="btn btn-outline-success btn-sm">
+        <i class="fas fa-file-excel me-1"></i>Export Excel
+    </a>
+</div>
+{% endblock %}

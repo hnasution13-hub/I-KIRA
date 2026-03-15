@@ -1,0 +1,219 @@
+{% extends "base_dashboard.html" %}
+{% block title %}OD Dashboard{% endblock %}
+{% block breadcrumb %}Organisation Development{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <h4 class="fw-bold mb-1"><i class="fas fa-sitemap me-2" style="color:#818cf8;"></i>OD Dashboard</h4>
+  <small class="text-muted">Ringkasan Organisation Development — Headcount, FTE Gap & Kinerja</small>
+</div>
+
+<!-- STAT CARDS -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="rounded-3 p-3" style="background:#ede9fe;">
+          <i class="fas fa-users fa-lg" style="color:#818cf8;"></i>
+        </div>
+        <div>
+          <div class="fs-4 fw-bold">{{ total_karyawan }}</div>
+          <div class="text-muted small">Total Karyawan Aktif</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="rounded-3 p-3" style="background:#fef9c3;">
+          <i class="fas fa-arrow-up fa-lg" style="color:#ca8a04;"></i>
+        </div>
+        <div>
+          <div class="fs-4 fw-bold">{{ fte_over }}</div>
+          <div class="text-muted small">Dept Over-staffed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="rounded-3 p-3" style="background:#fee2e2;">
+          <i class="fas fa-arrow-down fa-lg" style="color:#dc2626;"></i>
+        </div>
+        <div>
+          <div class="fs-4 fw-bold">{{ fte_under }}</div>
+          <div class="text-muted small">Dept Under-staffed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="rounded-3 p-3" style="background:#dcfce7;">
+          <i class="fas fa-check-circle fa-lg" style="color:#16a34a;"></i>
+        </div>
+        <div>
+          <div class="fs-4 fw-bold">{{ fte_ideal }}</div>
+          <div class="text-muted small">Dept Ideal</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHARTS ROW -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h6 class="fw-semibold mb-3">Distribusi Karyawan per Departemen</h6>
+        <canvas id="chartDept" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h6 class="fw-semibold mb-3">Distribusi per Level Jabatan</h6>
+        <canvas id="chartLevel" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PERFORMANCE SUMMARY (jika ada) -->
+{% if perf_summary %}
+<div class="card border-0 shadow-sm mb-4" style="border-left:4px solid #818cf8 !important;">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h6 class="fw-semibold mb-0"><i class="fas fa-chart-line me-2" style="color:#818cf8;"></i>Performance — Periode Aktif: {{ perf_summary.periode.nama }}</h6>
+      <a href="{% url 'perf_dashboard' %}" class="btn btn-sm btn-outline-secondary">Lihat Detail →</a>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-3 text-center">
+        <div class="fs-4 fw-bold">{{ perf_summary.total }}</div>
+        <div class="text-muted small">Total Penilaian</div>
+      </div>
+      <div class="col-md-3 text-center">
+        <div class="fs-4 fw-bold">{{ perf_summary.rata_skor|floatformat:1 }}%</div>
+        <div class="text-muted small">Rata-rata Skor</div>
+      </div>
+      <div class="col-md-3 text-center">
+        <div class="fs-4 fw-bold" style="color:#22c55e;">{{ perf_summary.istimewa }}</div>
+        <div class="text-muted small">Predikat Istimewa</div>
+      </div>
+      <div class="col-md-3 text-center">
+        <div class="fs-4 fw-bold" style="color:#ef4444;">{{ perf_summary.perlu_perbaikan }}</div>
+        <div class="text-muted small">Perlu Perbaikan</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- HEADCOUNT TABLE -->
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h6 class="fw-semibold mb-0"><i class="fas fa-table me-2"></i>Headcount vs FTE Ideal per Departemen</h6>
+      <a href="{% url 'od:fte_planning' %}" class="btn btn-sm btn-outline-primary">FTE Planning Lengkap →</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Departemen</th>
+            <th class="text-center">Headcount</th>
+            <th class="text-center">FTE Ideal</th>
+            <th class="text-center">Gap</th>
+            <th class="text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in dept_headcount %}
+          <tr>
+            <td class="fw-medium">{{ row.dept.nama }}</td>
+            <td class="text-center">{{ row.headcount }}</td>
+            <td class="text-center">{{ row.fte_ideal|default:"—" }}</td>
+            <td class="text-center">
+              {% if row.gap is not None %}
+                <span class="fw-semibold {% if row.gap > 0 %}text-warning{% elif row.gap < 0 %}text-danger{% else %}text-success{% endif %}">
+                  {% if row.gap > 0 %}+{% endif %}{{ row.gap|floatformat:1 }}
+                </span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="text-center">
+              {% if row.gap is None %}
+                <span class="badge bg-secondary">Belum Ada Std</span>
+              {% elif row.gap > 0.5 %}
+                <span class="badge" style="background:#fef3c7;color:#92400e;">Over-staffed</span>
+              {% elif row.gap < -0.5 %}
+                <span class="badge" style="background:#fee2e2;color:#991b1b;">Under-staffed</span>
+              {% else %}
+                <span class="badge" style="background:#dcfce7;color:#166534;">Ideal</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-4">Belum ada data departemen.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+
+// Chart Dept
+new Chart(document.getElementById('chartDept'), {
+  type: 'bar',
+  data: {
+    labels: {{ chart_dept_labels|safe }},
+    datasets: [{
+      label: 'Jumlah Karyawan',
+      data: {{ chart_dept_data|safe }},
+      backgroundColor: '#818cf8',
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0 } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Chart Level
+const levelColors = ['#818cf8','#34d399','#fbbf24','#f87171','#60a5fa','#a78bfa','#fb923c'];
+new Chart(document.getElementById('chartLevel'), {
+  type: 'doughnut',
+  data: {
+    labels: {{ chart_level_labels|safe }},
+    datasets: [{
+      data: {{ chart_level_data|safe }},
+      backgroundColor: levelColors,
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'right', labels: { boxWidth: 12, padding: 12 } }
+    },
+    cutout: '60%'
+  }
+});
+</script>
+{% endblock %}

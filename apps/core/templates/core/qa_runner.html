@@ -1,0 +1,27 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}QA Runner — Developer Tools{% endblock %}
+{% block breadcrumb %}Developer / QA Runner{% endblock %}
+{% block content %}
+<div style="margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem;">
+  <div style="width:36px;height:36px;border-radius:10px;background:rgba(230,51,41,.12);
+    display:flex;align-items:center;justify-content:center;color:var(--red);">
+    <i class="fas fa-flask"></i>
+  </div>
+  <div>
+    <h4 style="margin:0;font-size:1.05rem;font-weight:600;">QA Runner</h4>
+    <div style="font-size:.78rem;color:var(--muted);">End-to-end test simulator — Developer only</div>
+  </div>
+  <span style="margin-left:auto;background:rgba(230,51,41,.12);color:var(--red);
+    font-size:.72rem;font-weight:700;padding:.3rem .8rem;border-radius:20px;">
+    SUPERUSER ONLY
+  </span>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <iframe
+    src="/static/qa/hris_qa_simulator.html"
+    style="width:100%;height:calc(100vh - 220px);border:none;display:block;"
+    title="QA Simulator">
+  </iframe>
+</div>
+{% endblock %}

@@ -1,0 +1,364 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profil Investasi — Ikira</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#e63329;--red-d:#b01f17;
+  --bg:#080808;--bg2:#0e0e0e;--bg3:#141414;
+  --surface:#1a1a1a;--surface2:#202020;
+  --border:#252525;--border2:#303030;
+  --text:#f0f0f0;--muted:#777;--muted2:#aaa;
+  --green:#22c55e;--amber:#f59e0b;--blue:#3b82f6;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-left{display:flex;align-items:center;gap:10px}
+.nav-logo{width:32px;height:32px;background:var(--red);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.nav-logo img{width:24px;height:24px;object-fit:contain}
+.nav-brand{font-size:15px;font-weight:600;color:var(--text)}
+.nav-brand span{color:var(--red)}
+.nav-badge{font-size:10px;background:rgba(230,51,41,.15);color:var(--red);border:1px solid rgba(230,51,41,.2);border-radius:20px;padding:2px 8px;margin-left:6px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-link{font-size:12px;color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:6px;transition:color .2s}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--text);background:var(--surface)}
+.nav-logout{font-size:12px;color:var(--red);text-decoration:none;padding:5px 12px;border:1px solid rgba(230,51,41,.3);border-radius:6px}
+
+.container{max-width:900px;margin:0 auto;padding:24px 20px}
+.page-title{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.page-name{font-size:22px;font-weight:700;color:var(--text);margin-bottom:20px}
+.page-name span{color:var(--red)}
+
+/* Hero card */
+.hero{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(230,51,41,.08) 0%,transparent 70%);pointer-events:none}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.hero-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.hero-modal{font-size:32px;font-weight:700;color:var(--text)}
+.hero-modal sub{font-size:13px;font-weight:400;color:var(--muted);margin-left:4px}
+.hero-since{font-size:12px;color:var(--muted);margin-top:4px}
+.hero-badge{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.hb-active{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.hb-done{background:rgba(230,51,41,.1);color:var(--red);border:1px solid rgba(230,51,41,.25)}
+
+/* Progress bar */
+.progress-section{margin-top:4px}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.progress-title{font-size:12px;color:var(--muted2)}
+.progress-pct{font-size:13px;font-weight:600;color:var(--green)}
+.progress-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--red),#ff6b35);border-radius:4px;transition:width .8s ease}
+.progress-labels{display:flex;justify-content:space-between;margin-top:6px}
+.progress-labels span{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+/* KPI row */
+.kpi-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi-label{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+.kpi-val{font-size:22px;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px;font-family:'JetBrains Mono',monospace}
+.kpi-val.green{color:var(--green)}
+.kpi-val.red{color:var(--red)}
+.kpi-val.amber{color:var(--amber)}
+.kpi-sub{font-size:11px;color:var(--muted)}
+
+/* Grid 2 col */
+.row2{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:16px}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:12px;font-weight:600;color:var(--muted2);letter-spacing:.5px;text-transform:uppercase}
+
+/* Simulasi perhitungan */
+.calc-box{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:16px}
+.calc-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.calc-row:last-child{border:none}
+.calc-label{font-size:12px;color:var(--muted2)}
+.calc-val{font-size:13px;font-weight:500;color:var(--text);font-family:'JetBrains Mono',monospace}
+.calc-val.green{color:var(--green)}
+.calc-val.muted{color:var(--muted)}
+.calc-divider{height:1px;background:var(--border2);margin:6px 0}
+.calc-total{display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:8px;margin-top:10px}
+.calc-total-label{font-size:13px;font-weight:600;color:var(--green)}
+.calc-total-val{font-size:18px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace}
+
+/* Partner list */
+.partner-list{display:flex;flex-direction:column;gap:8px}
+.partner-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px}
+.partner-avatar{width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--red);flex-shrink:0}
+.partner-name{font-size:13px;color:var(--text)}
+.partner-badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--surface2);color:var(--muted);border:1px solid var(--border2)}
+
+/* Payout history */
+.payout-table{width:100%;font-size:12px;border-collapse:collapse}
+.payout-table th{text-align:left;color:var(--muted);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px;font-size:10px}
+.payout-table td{padding:9px 8px;border-bottom:1px solid var(--border);color:var(--muted2)}
+.payout-table tr:last-child td{border:none}
+.payout-table .val{font-family:'JetBrains Mono',monospace;color:var(--text);font-weight:500}
+.payout-empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+
+/* Info box */
+.info-box{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:12px 14px;font-size:12px;color:#93c5fd;line-height:1.6;margin-top:10px}
+
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+
+@media(max-width:700px){
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .row2{grid-template-columns:1fr}
+  .hero-top{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo">
+      <img src="{% static 'images/Logo.png' %}" alt="I" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=color:#fff;font-weight:700;font-size:14px>I</span>'">
+    </div>
+    <span class="nav-brand"><span>I</span>KIRA</span>
+    <span class="nav-badge">Investor Portal</span>
+  </div>
+  <div class="nav-right">
+    <a href="{% url 'investor:dashboard' %}" class="nav-link">Dashboard</a>
+    <a href="{% url 'investor:profil' %}" class="nav-link active">Profil Saya</a>
+    <a href="{% url 'investor:logout' %}" class="nav-logout">Keluar</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-title">Profil Investasi</div>
+  <div class="page-name" id="page-name">Selamat datang, <span>{{ nama }}</span></div>
+
+  <div id="loading" class="loading">Memuat data investasi kamu...</div>
+  <div id="content" style="display:none">
+
+    <!-- Hero Card -->
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-label">Modal yang kamu investasikan</div>
+          <div class="hero-modal" id="h-modal">—</div>
+          <div class="hero-since" id="h-since">—</div>
+        </div>
+        <div id="h-badge" class="hero-badge hb-active">Berjalan</div>
+      </div>
+      <div class="progress-section">
+        <div class="progress-header">
+          <span class="progress-title">Progress menuju target return</span>
+          <span class="progress-pct" id="h-pct">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="h-bar" style="width:0%"></div>
+        </div>
+        <div class="progress-labels">
+          <span>Rp 0</span>
+          <span id="h-diterima-label">Sudah diterima: Rp 0</span>
+          <span id="h-target-label">Target: Rp 0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Estimasi Bulan Ini</div>
+        <div class="kpi-val green" id="k-estimasi">—</div>
+        <div class="kpi-sub">Berdasarkan revenue terakhir</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total Sudah Diterima</div>
+        <div class="kpi-val" id="k-diterima">—</div>
+        <div class="kpi-sub">Akumulasi bagi hasil</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sisa Menuju Target</div>
+        <div class="kpi-val amber" id="k-sisa">—</div>
+        <div class="kpi-sub" id="k-porsi">Porsi kamu: —%</div>
+      </div>
+    </div>
+
+    <!-- Row 2: Simulasi + Partner -->
+    <div class="row2">
+
+      <!-- Simulasi Perhitungan -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Simulasi Perhitungan Bagi Hasil</span>
+        </div>
+        <div id="simulasi-content">
+          <div class="payout-empty">Belum ada data revenue bulan ini</div>
+        </div>
+        <div class="info-box">
+          Perhitungan didasarkan pada revenue bulan terakhir yang tercatat. Angka estimasi akan berubah sesuai revenue aktual setiap bulan.
+        </div>
+      </div>
+
+      <!-- Partner & Riwayat -->
+      <div>
+        <!-- Partner Investor -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-head">
+            <span class="card-title">Partner Investor</span>
+          </div>
+          <div class="partner-list" id="partner-list">
+            <div class="payout-empty">Memuat...</div>
+          </div>
+          <div class="info-box" style="margin-top:12px">
+            Nama partner ditampilkan untuk transparansi. Detail investasi masing-masing bersifat rahasia.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Riwayat Payout -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Riwayat Penerimaan Bagi Hasil</span>
+      </div>
+      <table class="payout-table">
+        <thead>
+          <tr>
+            <th>Bulan</th>
+            <th>Jumlah Diterima</th>
+            <th>Keterangan</th>
+          </tr>
+        </thead>
+        <tbody id="payout-tbody">
+          <tr><td colspan="3" class="payout-empty">Memuat...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- end #content -->
+</div>
+
+<script>
+const fmt = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+const fmtS = n => {
+  if(n >= 1000000) return 'Rp ' + (n/1000000).toFixed(1) + ' jt';
+  if(n >= 1000)    return 'Rp ' + (n/1000).toFixed(0) + ' rb';
+  return 'Rp ' + Math.round(n);
+};
+
+async function loadProfil() {
+  try {
+    const res = await fetch('{% url "investor:api_profil" %}');
+    const d = await res.json();
+    const inv = d.investor;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+
+    // Hero
+    document.getElementById('h-modal').innerHTML =
+      fmt(inv.modal) + '<sub>modal kamu</sub>';
+    document.getElementById('h-since').textContent =
+      inv.tanggal_mulai ? 'Sejak ' + inv.tanggal_mulai : 'Tanggal investasi belum diset';
+
+    const badge = document.getElementById('h-badge');
+    if (inv.status_return === 'lunas') {
+      badge.textContent = 'Target Tercapai ✓';
+      badge.className = 'hero-badge hb-done';
+    } else {
+      badge.textContent = 'Berjalan';
+      badge.className = 'hero-badge hb-active';
+    }
+
+    // Progress
+    const pct = Math.round(inv.progress_persen * 10) / 10;
+    document.getElementById('h-pct').textContent = pct + '%';
+    document.getElementById('h-bar').style.width = pct + '%';
+    document.getElementById('h-diterima-label').textContent =
+      'Sudah diterima: ' + fmtS(inv.total_diterima);
+    document.getElementById('h-target-label').textContent =
+      'Target: ' + fmtS(inv.target_return);
+
+    // KPI
+    document.getElementById('k-estimasi').textContent = fmtS(inv.estimasi_bulan_ini);
+    document.getElementById('k-diterima').textContent = fmtS(inv.total_diterima);
+    document.getElementById('k-sisa').textContent = fmtS(inv.sisa_target);
+    document.getElementById('k-porsi').textContent =
+      'Porsi kamu: ' + inv.porsi_persen + '% dari pool investor';
+
+    // Simulasi perhitungan
+    const sc = document.getElementById('simulasi-content');
+    if (d.simulasi) {
+      const s = d.simulasi;
+      sc.innerHTML = `
+        <div class="calc-box">
+          <div class="calc-row">
+            <span class="calc-label">Revenue bersih (nett)</span>
+            <span class="calc-val">${fmt(s.nett_revenue)}</span>
+          </div>
+          <div class="calc-row">
+            <span class="calc-label">Bagian semua investor (${s.persen_investor_pool}%)</span>
+            <span class="calc-val">${fmt(s.bagian_semua_investor)}</span>
+          </div>
+          <div class="calc-row">
+            <span class="calc-label">Bagian founder (${100-s.persen_investor_pool}%)</span>
+            <span class="calc-val muted">${fmt(s.bagian_founder)}</span>
+          </div>
+          <div class="calc-divider"></div>
+          <div class="calc-row">
+            <span class="calc-label">Porsi kamu dari pool investor</span>
+            <span class="calc-val">${inv.porsi_persen}%</span>
+          </div>
+          <div class="calc-total">
+            <span class="calc-total-label">Estimasi yang kamu terima bulan ini</span>
+            <span class="calc-total-val">${fmt(s.bagian_kamu)}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      sc.innerHTML = '<div class="payout-empty">Belum ada data revenue bulan ini.<br>Estimasi akan muncul setelah ada revenue tercatat.</div>';
+    }
+
+    // Partner
+    const pl = document.getElementById('partner-list');
+    if (d.partner_names.length === 0) {
+      pl.innerHTML = '<div class="payout-empty">Kamu adalah investor pertama.</div>';
+    } else {
+      pl.innerHTML = d.partner_names.map((nama, i) => {
+        const initials = nama.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+        return `
+          <div class="partner-item">
+            <div class="partner-avatar">${initials}</div>
+            <span class="partner-name">${nama}</span>
+            <span class="partner-badge">Investor</span>
+          </div>`;
+      }).join('');
+    }
+
+    // Riwayat payout
+    const tbody = document.getElementById('payout-tbody');
+    if (d.payouts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="payout-empty">Belum ada riwayat penerimaan.<br>Akan muncul setelah pembayaran pertama.</td></tr>';
+    } else {
+      tbody.innerHTML = d.payouts.map(p => `
+        <tr>
+          <td>${p.bulan}</td>
+          <td class="val">${fmt(p.jumlah)}</td>
+          <td>${p.keterangan || '—'}</td>
+        </tr>`).join('');
+    }
+
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      '<div style="color:#e63329">Gagal memuat data. Refresh halaman.</div>';
+  }
+}
+
+loadProfil();
+</script>
+</body>
+</html>

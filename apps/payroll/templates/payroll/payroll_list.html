@@ -1,0 +1,50 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Payroll - HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Payroll{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-calculator me-2 text-primary"></i>Daftar Payroll</h4>
+    <a href="{% url 'payroll_generate' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Generate Payroll</a>
+</div>
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive-wrap">
+<table class="table table-hover datatable mb-0" id="tbl-payroll">
+            <thead class="table-light">
+                <tr><th class="col-hide-mobile">Periode</th><th class="text-center">Karyawan</th><th class="text-end">Total Kotor</th><th class="text-end">Total Potongan</th><th class="text-end">Total Bersih</th><th>Status</th><th>Aksi</th></tr>
+            </thead>
+            <tbody>
+                {% for p in payrolls %}
+                <tr>
+                    <td class="fw-semibold">{{ p.periode }}</td>
+                    <td class="text-center">{{ p.jumlah_karyawan }} orang</td>
+                    <td class="text-end">Rp {{ p.total_gaji_kotor|floatformat:"0g" }}</td>
+                    <td class="text-end text-danger">Rp {{ p.total_potongan|floatformat:"0g" }}</td>
+                    <td class="text-end fw-bold text-success">Rp {{ p.total_gaji_bersih|floatformat:"0g" }}</td>
+                    <td>
+                        <span class="badge {% if p.status == 'PAID' %}bg-success{% elif p.status == 'APPROVED' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                            {{ p.get_status_display }}
+                        </span>
+                    </td>
+                    <td><a href="{% url 'payroll_detail' p.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a></td>
+                </tr>
+                {% empty %}
+                <tr class="dt-empty">
+                    <td colspan="7" style="padding:0;border:none;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon" aria-hidden="true"><i class="fas fa-calculator"></i></div>
+                            <div class="empty-state-title">Belum ada data payroll</div>
+                            <div class="empty-state-desc">Generate payroll bulanan untuk menghitung gaji seluruh karyawan.</div>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <a href="{% url 'payroll_generate' %}" class="btn btn-red"><i class="fas fa-plus" aria-hidden="true"></i> Generate Payroll</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+    </div>
+</div>
+{% endblock %}

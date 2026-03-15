@@ -1,0 +1,78 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Workload Analysis{% endblock %}
+{% block breadcrumb %}OD — Workload Analysis{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="fas fa-scale-balanced me-2" style="color:#818cf8;"></i>Workload Analysis</h4>
+    <small class="text-muted">Standar beban kerja per jabatan & departemen</small>
+  </div>
+  <a href="{% url 'od:workload_create' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i> Tambah Standar
+  </a>
+</div>
+
+<!-- Filter -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
+      <select name="dept" class="form-select form-select-sm" style="width:200px;" onchange="this.form.submit()">
+        <option value="">Semua Departemen</option>
+        {% for dept in depts %}
+        <option value="{{ dept.id }}" {% if selected_dept == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.nama }}</option>
+        {% endfor %}
+      </select>
+      {% if selected_dept %}
+      <a href="{% url 'od:workload_list' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table datatable table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Jabatan</th>
+            <th>Departemen</th>
+            <th>Aktivitas / Beban Kerja</th>
+            <th class="text-center">Standar Output</th>
+            <th>Satuan</th>
+            <th>Deskripsi</th>
+            <th class="text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for wl in workloads %}
+          <tr>
+            <td class="fw-medium">{{ wl.jabatan.nama }}</td>
+            <td>{{ wl.department.nama|default:"—" }}</td>
+            <td>{{ wl.nama_aktivitas }}</td>
+            <td class="text-center fw-semibold">{{ wl.standar_output }}</td>
+            <td><span class="badge bg-light text-dark border">{{ wl.satuan }}</span></td>
+            <td class="text-muted small">{{ wl.deskripsi|truncatechars:60|default:"—" }}</td>
+            <td class="text-center">
+              <a href="{% url 'od:workload_edit' wl.pk %}" class="btn btn-sm btn-outline-secondary me-1">
+                <i class="fas fa-pen"></i>
+              </a>
+              <form method="post" action="{% url 'od:workload_delete' wl.pk %}" class="d-inline"
+                    onsubmit="return confirm('Hapus standar workload ini?')">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-5">
+            Belum ada data workload standard. <a href="{% url 'od:workload_create' %}">Tambah sekarang</a>.
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
