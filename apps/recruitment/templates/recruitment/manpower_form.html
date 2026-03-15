@@ -18,7 +18,7 @@
             </div>
             <div class="col-md-6"><label class="form-label fw-semibold">Jabatan (Job Library)</label>
                 <select name="jabatan" class="form-select" id="selectJabatan">
-                    <option value="">-- Pilih departemen dulu --</option>
+                    <option value="">-- Pilih dari Job Library (opsional) --</option>
                     {% for pos in positions %}<option value="{{ pos.id }}"
                         data-nama="{{ pos.nama }}"
                         data-dept="{{ pos.department_id|default:'' }}"
@@ -27,7 +27,7 @@
                         {{ pos.nama }} — {{ pos.level }}
                     </option>{% endfor %}
                 </select>
-                <small class="text-muted">Otomatis filter sesuai departemen. Pilih untuk auto-isi nama jabatan & kualifikasi.</small>
+                <small class="text-muted">Filter otomatis sesuai departemen. Pilih untuk auto-isi nama jabatan & kualifikasi.</small>
             </div>
             <div class="col-md-6"><label class="form-label fw-semibold">Nama Jabatan *</label>
                 <input type="text" name="nama_jabatan" id="inputNamaJabatan" class="form-control" value="{{ instance.nama_jabatan|default:'' }}" required></div>
@@ -63,17 +63,16 @@
 </div></div>
 
 <script>
-// Kumpulkan semua option jabatan beserta dept-nya
+// Simpan semua option jabatan dari DOM
 const allJabatan = [];
-document.querySelectorAll('#selectJabatan option[value]').forEach(opt => {
+document.querySelectorAll('#selectJabatan option').forEach(opt => {
     if (opt.value) {
         allJabatan.push({
-            value: opt.value,
-            text: opt.textContent.trim(),
-            dept: opt.dataset.dept || '',
-            nama: opt.dataset.nama || '',
+            value:       opt.value,
+            text:        opt.textContent.trim(),
+            dept:        opt.dataset.dept || '',   // kosong = jabatan tanpa dept (tampil semua)
+            nama:        opt.dataset.nama || '',
             kualifikasi: opt.dataset.kualifikasi || '',
-            selected: opt.hasAttribute('selected'),
         });
     }
 });
@@ -81,21 +80,13 @@ document.querySelectorAll('#selectJabatan option[value]').forEach(opt => {
 function filterJabatan(deptId) {
     const sel = document.getElementById('selectJabatan');
     const currentVal = sel.value;
-    sel.innerHTML = '';
+    sel.innerHTML = '<option value="">-- Pilih dari Job Library (opsional) --</option>';
 
-    if (!deptId) {
-        sel.innerHTML = '<option value="">-- Pilih departemen dulu --</option>';
-        return;
-    }
+    // Kalau dept belum dipilih, tampilkan semua
+    const filtered = deptId
+        ? allJabatan.filter(j => !j.dept || j.dept == deptId)
+        : allJabatan;
 
-    const filtered = allJabatan.filter(j => !j.dept || j.dept == deptId);
-
-    if (filtered.length === 0) {
-        sel.innerHTML = '<option value="">-- Tidak ada jabatan di departemen ini --</option>';
-        return;
-    }
-
-    sel.innerHTML = '<option value="">-- Pilih Jabatan (opsional) --</option>';
     filtered.forEach(j => {
         const opt = document.createElement('option');
         opt.value = j.value;
@@ -107,30 +98,25 @@ function filterJabatan(deptId) {
     });
 }
 
-// Trigger cascade saat departemen berubah
+// Cascade saat departemen berubah
 document.getElementById('selectDepartemen').addEventListener('change', function() {
     filterJabatan(this.value);
-    // Reset jabatan & nama jabatan saat ganti dept
-    document.getElementById('inputNamaJabatan').value = '';
-    document.querySelector('textarea[name="kualifikasi"]').value = '';
 });
 
 // Auto-isi nama jabatan & kualifikasi saat jabatan dipilih
 document.getElementById('selectJabatan').addEventListener('change', function() {
     const opt = this.options[this.selectedIndex];
-    if (opt.value) {
+    if (opt && opt.value) {
         document.getElementById('inputNamaJabatan').value = opt.dataset.nama || '';
         const ta = document.querySelector('textarea[name="kualifikasi"]');
         if (ta && !ta.value.trim()) ta.value = opt.dataset.kualifikasi || '';
     }
 });
 
-// Init — kalau edit (ada departemen terpilih), langsung filter
+// Init — kalau edit (dept sudah terpilih), langsung filter
 (function() {
-    const deptSel = document.getElementById('selectDepartemen');
-    if (deptSel.value) {
-        filterJabatan(deptSel.value);
-    }
+    const deptVal = document.getElementById('selectDepartemen').value;
+    if (deptVal) filterJabatan(deptVal);
 })();
 </script>
 {% endblock %}
