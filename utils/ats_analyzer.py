@@ -58,6 +58,17 @@ class Kriteria:
         return k
 
     @classmethod
+    def from_position(cls, pos) -> 'Kriteria':
+        """Buat Kriteria dari objek Position (Job Library) Django."""
+        k = cls()
+        k.jabatan          = pos.nama
+        k.pendidikan_min   = pos.pendidikan_min or ''
+        k.pengalaman_min   = pos.pengalaman_min or 0
+        k.skill_wajib      = _parse_skill_str(pos.skill_wajib or '')
+        k.skill_diinginkan = _parse_skill_str(pos.skill_diinginkan or '')
+        return k
+
+    @classmethod
     def from_manual(cls, jabatan: str, pendidikan_min: str,
                     pengalaman_min: int, skill_wajib_str: str,
                     skill_diinginkan_str: str = '') -> 'Kriteria':

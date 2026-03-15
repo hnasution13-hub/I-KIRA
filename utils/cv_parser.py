@@ -76,6 +76,59 @@ def extract_text_from_docx(filepath: str) -> str:
         )
 
 
+def extract_text_from_pdf_bytes(data: bytes) -> str:
+    """Ekstrak teks dari PDF bytes (in-memory, tanpa simpan ke disk)."""
+    try:
+        import fitz
+        doc = fitz.open(stream=data, filetype='pdf')
+        text = "\n".join(page.get_text() for page in doc)
+        doc.close()
+        return text
+    except ImportError:
+        pass
+    try:
+        import pdfplumber
+        import io
+        with pdfplumber.open(io.BytesIO(data)) as pdf:
+            return "\n".join(p.extract_text() for p in pdf.pages if p.extract_text())
+    except ImportError:
+        pass
+    try:
+        import pypdf, io
+        reader = pypdf.PdfReader(io.BytesIO(data))
+        return "\n".join(p.extract_text() for p in reader.pages if p.extract_text())
+    except ImportError:
+        pass
+    raise ImportError("Tidak ada library PDF yang tersedia.")
+
+
+def extract_text_from_docx_bytes(data: bytes) -> str:
+    """Ekstrak teks dari DOCX bytes (in-memory, tanpa simpan ke disk)."""
+    try:
+        from docx import Document
+        import io
+        doc = Document(io.BytesIO(data))
+        lines = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    if cell.text.strip():
+                        lines.append(cell.text.strip())
+        return "\n".join(lines)
+    except ImportError:
+        raise ImportError("Library python-docx tidak tersedia.")
+
+
+def extract_text_from_bytes(data: bytes, ext: str) -> str:
+    """Auto-detect format dari extension dan ekstrak teks dari bytes."""
+    if ext.lower() == '.pdf':
+        return extract_text_from_pdf_bytes(data)
+    elif ext.lower() == '.docx':
+        return extract_text_from_docx_bytes(data)
+    else:
+        raise ValueError(f"Format tidak didukung: {ext}")
+
+
 def extract_text(filepath: str) -> str:
     """Auto-detect format dan ekstrak teks."""
     lower = filepath.lower()

@@ -470,31 +470,113 @@ def ats_scan(request):
             messages.error(request, 'Format tidak didukung. Harap upload PDF atau DOCX.')
             return redirect('ats_scan')
 
-        from django.conf import settings
-        import tempfile, os
-        suffix = '.pdf' if filename.endswith('.pdf') else '.docx'
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix,
-                                         dir=settings.MEDIA_ROOT) as tmp:
-            for chunk in cv_file.chunks():
-                tmp.write(chunk)
-            tmp_path = tmp.name
+        import base64
+        cv_bytes = cv_file.read()
+        ext      = '.pdf' if filename.endswith('.pdf') else '.docx'
 
-        request.session['ats_cv_path']     = tmp_path
+        # Simpan bytes ke session (bekerja di semua environment)
+        request.session['ats_cv_b64']      = base64.b64encode(cv_bytes).decode('utf-8')
         request.session['ats_cv_filename'] = cv_file.name
+        request.session['ats_cv_ext']      = ext
+
+        # Juga coba simpan ke disk (untuk localhost / server dengan persistent storage)
+        try:
+            from django.conf import settings
+            import tempfile, os
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext,
+                                             dir=settings.MEDIA_ROOT) as tmp:
+                tmp.write(cv_bytes)
+                request.session['ats_cv_path'] = tmp.name
+        except Exception:
+            request.session.pop('ats_cv_path', None)
+
         return redirect('ats_analyze')
     return render(request, 'recruitment/ats_scan.html', {
-        'positions': Position.objects.all(),
+        'positions': get_company_qs(Position, request, aktif=True),
     })
 
 
 @login_required
 def ats_analyze(request):
+    import os, base64
+    cv_b64  = request.session.get('ats_cv_b64')
     cv_path = request.session.get('ats_cv_path')
-    if not cv_path:
+    cv_ext  = request.session.get('ats_cv_ext', '.pdf')
+
+    if not cv_b64 and not cv_path:
         return redirect('ats_scan')
+
+    # Validasi path masih ada
+    if cv_path and not os.path.exists(cv_path):
+        cv_path = None
+        request.session.pop('ats_cv_path', None)
+
+    # Parse CV → cv_data
+    cv_data = {}
+    try:
+        from utils.cv_parser import CVParser, extract_text, extract_text_from_bytes
+        if cv_path:
+            text = extract_text(cv_path)
+        elif cv_b64:
+            raw  = base64.b64decode(cv_b64.encode('utf-8'))
+            text = extract_text_from_bytes(raw, cv_ext)
+        else:
+            text = ''
+        if text:
+            cv_data = CVParser().parse(text)
+            cv_data['cv_filename'] = request.session.get('ats_cv_filename', '')
+    except Exception:
+        cv_data = {'cv_filename': request.session.get('ats_cv_filename', '')}
+
+    # Handle POST — jalankan analisis ATS
+    if request.method == 'POST':
+        mode = request.POST.get('mode', 'library')
+        try:
+            from utils.ats_analyzer import Kriteria, ATSAnalyzer
+            if mode == 'library':
+                pos_id = request.POST.get('position_id')
+                pos    = Position.objects.get(pk=pos_id)
+                kriteria = Kriteria.from_position(pos)
+            elif mode == 'mprf':
+                mprf_id  = request.POST.get('mprf_id')
+                mprf     = ManpowerRequest.objects.get(pk=mprf_id)
+                kriteria = Kriteria.from_mprf(mprf)
+            else:
+                kriteria = Kriteria.from_manual(
+                    jabatan          = request.POST.get('jabatan', ''),
+                    pendidikan_min   = request.POST.get('pendidikan_min', ''),
+                    pengalaman_min   = int(request.POST.get('pengalaman_min', 0) or 0),
+                    skill_wajib_str  = request.POST.get('skill_wajib', ''),
+                    skill_diinginkan_str = request.POST.get('skill_diinginkan', ''),
+                )
+
+            hasil = ATSAnalyzer(kriteria, cv_data).analyze()
+            request.session['ats_hasil'] = hasil
+            request.session['ats_cv_data'] = cv_data
+        except Exception as e:
+            messages.error(request, f'Gagal analisis: {e}')
+
+        company = _get_company(request)
+        return render(request, 'recruitment/ats_analyze.html', {
+            'cv_filename': request.session.get('ats_cv_filename', ''),
+            'cv_data':     cv_data,
+            'hasil':       request.session.get('ats_hasil'),
+            'positions':   get_company_qs(Position, request, aktif=True),
+            'mprfs':       ManpowerRequest.objects.filter(
+                               company=company,
+                               status__in=['Open', 'In Process', 'Approved']
+                           ).order_by('-created_at'),
+        })
+
+    company = _get_company(request)
     return render(request, 'recruitment/ats_analyze.html', {
         'cv_filename': request.session.get('ats_cv_filename', ''),
-        'positions':   Position.objects.all(),
+        'cv_data':     cv_data,
+        'positions':   get_company_qs(Position, request, aktif=True),
+        'mprfs':       ManpowerRequest.objects.filter(
+                           company=company,
+                           status__in=['Open', 'In Process', 'Approved']
+                       ).order_by('-created_at'),
     })
 
 
