@@ -1,0 +1,482 @@
+[
+  {
+    "kode": "002",
+    "nama": "PT. BANK RAKYAT INDONESIA (PERSERO), Tbk"
+  },
+  {
+    "kode": "008",
+    "nama": "PT. BANK MANDIRI (PERSERO), Tbk"
+  },
+  {
+    "kode": "009",
+    "nama": "PT. BANK NEGARA INDONESIA (PERSERO),Tbk"
+  },
+  {
+    "kode": "011",
+    "nama": "PT. BANK DANAMON INDONESIA, Tbk"
+  },
+  {
+    "kode": "013",
+    "nama": "PT. BANK PERMATA, Tbk (d/h PT BANK BALI Tbk)"
+  },
+  {
+    "kode": "014",
+    "nama": "PT. BANK CENTRAL ASIA, Tbk."
+  },
+  {
+    "kode": "016",
+    "nama": "PT. BANK INTERNASIONAL INDONESIA, Tbk"
+  },
+  {
+    "kode": "019",
+    "nama": "PT. PAN INDONESIA BANK, Tbk"
+  },
+  {
+    "kode": "022",
+    "nama": "PT. BANK CIMB NIAGA, Tbk d/h NIAGA"
+  },
+  {
+    "kode": "023",
+    "nama": "PT. BANK UOB INDONESIA TBK"
+  },
+  {
+    "kode": "028",
+    "nama": "PT. BANK OCBC NISP, Tbk d/h PT BANK NISP TBK"
+  },
+  {
+    "kode": "031",
+    "nama": "CITIBANK N.A."
+  },
+  {
+    "kode": "032",
+    "nama": "JP MORGAN CHASE BANK, NA"
+  },
+  {
+    "kode": "033",
+    "nama": "BANK OF AMERICA, N.A"
+  },
+  {
+    "kode": "036",
+    "nama": "PT. BANK WINDU KENTJANA INTERNASIONAL TBK"
+  },
+  {
+    "kode": "037",
+    "nama": "PT. BANK ARTA GRAHA INTERNASIONAL, Tbk"
+  },
+  {
+    "kode": "040",
+    "nama": "THE BANGKOK BANK COMP, LTD"
+  },
+  {
+    "kode": "041",
+    "nama": "THE HONGKONG & SHANGHAI B.C."
+  },
+  {
+    "kode": "042",
+    "nama": "THE BANK OF TOKYO-MITSUBISHI UFJ, LTD"
+  },
+  {
+    "kode": "045",
+    "nama": "PT. BANK SUMITOMO MITSUI INDONESIA"
+  },
+  {
+    "kode": "046",
+    "nama": "PT. BANK DBS INDONESIA"
+  },
+  {
+    "kode": "047",
+    "nama": "PT. BANK RESONA PERDANIA"
+  },
+  {
+    "kode": "048",
+    "nama": "PT. BANK MIZUHO INDONESIA"
+  },
+  {
+    "kode": "050",
+    "nama": "STANDARD CHARTERED BANK"
+  },
+  {
+    "kode": "052",
+    "nama": "THE ROYAL BANK OF SCOTLAND NV D/H ABN AMRO BANK"
+  },
+  {
+    "kode": "054",
+    "nama": "PT. BANK CAPITAL INDONESIA(d/h CREDIT LYONNAIS)"
+  },
+  {
+    "kode": "057",
+    "nama": "PT. BANK BNP PARIBAS INDONESIA"
+  },
+  {
+    "kode": "059",
+    "nama": "PT. KOREA EXCHANGE BANK DANAMON"
+  },
+  {
+    "kode": "061",
+    "nama": "PT. BANK ANZ INDONESIA D/H ANZ PANIN BANK"
+  },
+  {
+    "kode": "067",
+    "nama": "DEUTSCHE BANK AG."
+  },
+  {
+    "kode": "068",
+    "nama": "PT. BANK WOORI INDONESIA"
+  },
+  {
+    "kode": "069",
+    "nama": "BANK OF CHINA, LTD"
+  },
+  {
+    "kode": "076",
+    "nama": "PT. BANK BUMI ARTA"
+  },
+  {
+    "kode": "087",
+    "nama": "PT. BANK EKONOMI RAHARJA TBK"
+  },
+  {
+    "kode": "088",
+    "nama": "PT. BANK ANTAR DAERAH"
+  },
+  {
+    "kode": "089",
+    "nama": "PT. BANK RABOBANK INT IND d/h BANK HAGA"
+  },
+  {
+    "kode": "095",
+    "nama": "PT. BANK MUTIARA, Tbk D/H PT BANK CENTURY TBK"
+  },
+  {
+    "kode": "097",
+    "nama": "PT. BANK MAYAPADA INTERNASIONAL TBK"
+  },
+  {
+    "kode": "110",
+    "nama": "PT. BPD JAWA BARAT DAN BANTEN"
+  },
+  {
+    "kode": "111",
+    "nama": "PT. BANK DKI"
+  },
+  {
+    "kode": "112",
+    "nama": "BPD YOGYAKARTA"
+  },
+  {
+    "kode": "113",
+    "nama": "PT. BPD JAWA TENGAH"
+  },
+  {
+    "kode": "114",
+    "nama": "PT. BPD JAWA TIMUR"
+  },
+  {
+    "kode": "115",
+    "nama": "BPD JAMBI"
+  },
+  {
+    "kode": "116",
+    "nama": "PT. BANK ACEH D/H BPD ACEH"
+  },
+  {
+    "kode": "117",
+    "nama": "PT. BPD SUMATERA UTARA"
+  },
+  {
+    "kode": "118",
+    "nama": "BPD SUMATERA BARAT"
+  },
+  {
+    "kode": "119",
+    "nama": "PT. BPD RIAU"
+  },
+  {
+    "kode": "120",
+    "nama": "PT. BPD SUMATERA SELATAN DAN BANGKA BELITUNG"
+  },
+  {
+    "kode": "121",
+    "nama": "PT. BANK LAMPUNG"
+  },
+  {
+    "kode": "122",
+    "nama": "PT. BPD KALIMANTAN SELATAN"
+  },
+  {
+    "kode": "123",
+    "nama": "PT. BPD KALIMANTAN BARAT"
+  },
+  {
+    "kode": "124",
+    "nama": "BPD KALIMANTAN TIMUR"
+  },
+  {
+    "kode": "125",
+    "nama": "PT. BPD BANK KALIMANTAN TENGAH"
+  },
+  {
+    "kode": "126",
+    "nama": "PT. BPD SULAWESI SELATAN DAN SULAWESI BARAT"
+  },
+  {
+    "kode": "127",
+    "nama": "PT. BPD SULAWESI UTARA"
+  },
+  {
+    "kode": "128",
+    "nama": "PT. BPD NUSA TENGGARA BARAT"
+  },
+  {
+    "kode": "129",
+    "nama": "PT. BPD BALI"
+  },
+  {
+    "kode": "130",
+    "nama": "PT. BPD NUSA TENGGARA TIMUR"
+  },
+  {
+    "kode": "131",
+    "nama": "PT. BPD MALUKU"
+  },
+  {
+    "kode": "132",
+    "nama": "PT. BPD PAPUA"
+  },
+  {
+    "kode": "133",
+    "nama": "PT. BPD BENGKULU"
+  },
+  {
+    "kode": "134",
+    "nama": "PT. BPD SULAWESI TENGAH"
+  },
+  {
+    "kode": "135",
+    "nama": "PT. BPD SULAWESI TENGGARA"
+  },
+  {
+    "kode": "145",
+    "nama": "PT. BANK NUSANTARA PARAHYANGAN TBK."
+  },
+  {
+    "kode": "146",
+    "nama": "PT. BANK SWADESI, Tbk"
+  },
+  {
+    "kode": "147",
+    "nama": "PT. BANK MUAMALAT INDONESIA"
+  },
+  {
+    "kode": "151",
+    "nama": "PT. BANK MESTIKA DHARMA"
+  },
+  {
+    "kode": "152",
+    "nama": "PT. BANK METRO EKSPRESS"
+  },
+  {
+    "kode": "153",
+    "nama": "PT. BANK SINAR MAS"
+  },
+  {
+    "kode": "157",
+    "nama": "PT. BANK MASPION INDONESIA"
+  },
+  {
+    "kode": "161",
+    "nama": "PT. BANK GANESHA"
+  },
+  {
+    "kode": "164",
+    "nama": "PT. BANK ICBC INDONESIA"
+  },
+  {
+    "kode": "167",
+    "nama": "PT. BANK QNB KESAWAN, Tbk"
+  },
+  {
+    "kode": "200",
+    "nama": "PT. BANK TABUNGAN NEGARA (PERSERO)"
+  },
+  {
+    "kode": "212",
+    "nama": "PT. BANK HIMPUNAN SAUDARA 1906"
+  },
+  {
+    "kode": "213",
+    "nama": "PT. BANK TABUNGAN PENSIUNAN NASIONAL TBK"
+  },
+  {
+    "kode": "405",
+    "nama": "PT. BANK VICTORIA SYARIAH d/h BANK SWAGUNA"
+  },
+  {
+    "kode": "422",
+    "nama": "PT. BANK BRI SYARIAH d/h DJASA ARTHA"
+  },
+  {
+    "kode": "425",
+    "nama": "PT BANK JABAR BANTEN SYARIAH"
+  },
+  {
+    "kode": "426",
+    "nama": "PT BANK MEGA, Tbk"
+  },
+  {
+    "kode": "427",
+    "nama": "PT BANK BNI SYARIAH"
+  },
+  {
+    "kode": "441",
+    "nama": "PT. BANK BUKOPIN"
+  },
+  {
+    "kode": "451",
+    "nama": "PT. BANK SYARIAH MANDIRI, Tbk"
+  },
+  {
+    "kode": "459",
+    "nama": "PT. BANK BISNIS INTERNASIONAL"
+  },
+  {
+    "kode": "466",
+    "nama": "PT. BANK ANDARA d/h SRI PARTHA"
+  },
+  {
+    "kode": "472",
+    "nama": "PT. BANK JASA JAKARTA"
+  },
+  {
+    "kode": "484",
+    "nama": "PT. BANK HANA D/H BINTANG MANUNGGAL"
+  },
+  {
+    "kode": "485",
+    "nama": "PT. BANK ICB BUMIPUTERA,Tbkd/hBumiputera Indonesia"
+  },
+  {
+    "kode": "490",
+    "nama": "PT. BANK YUDHA BHAKTI"
+  },
+  {
+    "kode": "491",
+    "nama": "PT. BANK MITRANIAGA"
+  },
+  {
+    "kode": "494",
+    "nama": "PT. BANK RAKYAT INDONESIA AGRONIAGA, TBK"
+  },
+  {
+    "kode": "498",
+    "nama": "PT. BANK SBI INDONESIA d/h INDOMONEX"
+  },
+  {
+    "kode": "501",
+    "nama": "PT. BANK ROYAL INDONESIA"
+  },
+  {
+    "kode": "503",
+    "nama": "PT. BANK NATIONALNOBU D/H PT BANK ALFINDO"
+  },
+  {
+    "kode": "506",
+    "nama": "PT. BANK MEGA SYARIAH(dh B MG SY IND/TUGU)"
+  },
+  {
+    "kode": "513",
+    "nama": "PT. BANK INA PERDANA"
+  },
+  {
+    "kode": "517",
+    "nama": "PT. BANK PANIN SYARIAH D/H HARFA"
+  },
+  {
+    "kode": "520",
+    "nama": "PT. BANK PRIMA MASTER"
+  },
+  {
+    "kode": "521",
+    "nama": "PT. BANK SYARIAH BUKOPIN D/H PERSYARIKATAN IND."
+  },
+  {
+    "kode": "523",
+    "nama": "PT. BANK SAHABAT SAMPOERNA"
+  },
+  {
+    "kode": "526",
+    "nama": "PT. BANK DINAR INDONESIA"
+  },
+  {
+    "kode": "531",
+    "nama": "PT. BANK ANGLOMAS INTERNASIONAL"
+  },
+  {
+    "kode": "535",
+    "nama": "PT. BANK KESEJAHTERAAN EKONOMI"
+  },
+  {
+    "kode": "536",
+    "nama": "PT. BANK BCA SYARIAH d/h UIB"
+  },
+  {
+    "kode": "542",
+    "nama": "PT. BANK ARTOS INDONESIA"
+  },
+  {
+    "kode": "547",
+    "nama": "PT. BANK SAHABAT PURBA DANARTA"
+  },
+  {
+    "kode": "548",
+    "nama": "PT. BANK MULTI ARTA SENTOSA"
+  },
+  {
+    "kode": "553",
+    "nama": "PT. BANK MAYORA"
+  },
+  {
+    "kode": "555",
+    "nama": "PT. BANK INDEX SELINDO"
+  },
+  {
+    "kode": "558",
+    "nama": "PT BANK PUNDI INDONESIA,Tbk d/h EKSEKUTIF INTL"
+  },
+  {
+    "kode": "559",
+    "nama": "PT. CENTRATAMA NASIONAL BANK"
+  },
+  {
+    "kode": "562",
+    "nama": "PT. BANK FAMA INTERNASIONAL"
+  },
+  {
+    "kode": "564",
+    "nama": "PT. BANK SINAR HARAPAN BALI"
+  },
+  {
+    "kode": "566",
+    "nama": "PT. BANK VICTORIA INTERNATIONAL"
+  },
+  {
+    "kode": "567",
+    "nama": "PT. BANK HARDA INTERNASIONAL"
+  },
+  {
+    "kode": "945",
+    "nama": "PT. BANK AGRIS D/H FINCONESIA"
+  },
+  {
+    "kode": "947",
+    "nama": "PT. BANK MAYBANK INDOCORP"
+  },
+  {
+    "kode": "949",
+    "nama": "PT. BANK CHINATRUST INDONESIA"
+  },
+  {
+    "kode": "950",
+    "nama": "PT. BANK COMMONWEALTH"
+  }
+]

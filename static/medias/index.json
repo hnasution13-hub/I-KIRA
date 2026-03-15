@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "file": "bank_indonesia.json",
+      "deskripsi": "Daftar bank Indonesia",
+      "total": 120
+    },
+    {
+      "file": "wilayah_provinsi.json",
+      "deskripsi": "Kode wilayah tingkat provinsi",
+      "total": 38
+    },
+    {
+      "file": "wilayah_kabupaten_kota.json",
+      "deskripsi": "Kode wilayah tingkat kabupaten/kota",
+      "total": 514
+    },
+    {
+      "file": "wilayah_kecamatan.json",
+      "deskripsi": "Kode wilayah tingkat kecamatan",
+      "total": 7277
+    },
+    {
+      "file": "wilayah_desa_kelurahan.json",
+      "deskripsi": "Kode wilayah tingkat desa/kelurahan",
+      "total": 83768
+    }
+  ]
+}
