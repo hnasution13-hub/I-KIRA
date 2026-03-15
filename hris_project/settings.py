@@ -144,6 +144,16 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ── Supabase Storage — untuk file media permanen (CV, foto, dll) ──────────────
+SUPABASE_URL         = os.environ.get('SUPABASE_URL', '')
+SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
+SUPABASE_BUCKET      = os.environ.get('SUPABASE_BUCKET', 'ikira-media')
+
+# Pakai Supabase Storage jika credentials tersedia (production)
+# Fallback ke local storage jika tidak ada (development)
+if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+    DEFAULT_FILE_STORAGE = 'hris_project.supabase_storage.SupabaseStorage'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST Framework
