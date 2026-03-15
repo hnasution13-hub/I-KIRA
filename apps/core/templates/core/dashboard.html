@@ -344,6 +344,94 @@ a { color: inherit; }
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- ROW: Headcount per Departemen + Turnover                   -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="row g-3 mt-1">
+        <!-- Headcount per Departemen -->
+        <div class="col-12 col-lg-7">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-sitemap me-2" style="color:#1976d2;"></i>Headcount per Departemen</h5>
+                </div>
+                <div class="card-body" style="position:relative;height:280px;">
+                    {% if chart_hc_data %}
+                    <canvas id="hcChart"></canvas>
+                    {% else %}
+                    <div class="text-muted text-center py-5"><i class="fas fa-sitemap fa-2x mb-2 d-block opacity-25"></i>Belum ada data</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Turnover per Bulan -->
+        <div class="col-12 col-lg-5">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-sign-out-alt me-2" style="color:#ef4444;"></i>Turnover / Attrition (6 Bulan)</h5>
+                </div>
+                <div class="card-body" style="position:relative;height:280px;">
+                    <canvas id="turnoverChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- ROW: Labor Cost + Attendance Rate per Dept                 -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="row g-3 mt-1">
+        <!-- Labor Cost per Dept -->
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2" style="color:#22c55e;"></i>Labor Cost per Departemen</h5>
+                </div>
+                <div class="card-body" style="position:relative;height:280px;">
+                    {% if chart_lc_data %}
+                    <canvas id="lcChart"></canvas>
+                    {% else %}
+                    <div class="text-muted text-center py-5"><i class="fas fa-money-bill-wave fa-2x mb-2 d-block opacity-25"></i>Belum ada data gaji</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Attendance Rate per Dept -->
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user-check me-2" style="color:#06b6d4;"></i>Attendance Rate per Departemen (Bulan Ini)</h5>
+                </div>
+                <div class="card-body" style="position:relative;height:280px;">
+                    {% if chart_att_data %}
+                    <canvas id="attChart"></canvas>
+                    {% else %}
+                    <div class="text-muted text-center py-5"><i class="fas fa-user-check fa-2x mb-2 d-block opacity-25"></i>Belum ada data absensi</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- ROW: Recruitment Pipeline                                  -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="row g-3 mt-1 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-funnel-dollar me-2" style="color:#a855f7;"></i>Recruitment Pipeline — Status Kandidat</h5>
+                </div>
+                <div class="card-body" style="position:relative;height:260px;">
+                    {% if chart_rec_data %}
+                    <canvas id="recChart"></canvas>
+                    {% else %}
+                    <div class="text-muted text-center py-5"><i class="fas fa-user-tie fa-2x mb-2 d-block opacity-25"></i>Belum ada data kandidat</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 {# Data absensi rekap untuk JS #}
@@ -536,6 +624,145 @@ renderRekap('hari');
         }
     });
 })();
+
+// ── Chart Options Defaults ────────────────────────────────────────────────────
+const CHART_DEFAULTS = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#252525', titleColor: '#f0f0f0', bodyColor: '#c8c8c8', borderColor: '#3a3a3a', borderWidth: 1 }
+    },
+    scales: {
+        x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#888', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#888', font: { size: 10 } }, beginAtZero: true }
+    }
+};
+
+// ── 1. Headcount per Departemen ───────────────────────────────────────────────
+{% if chart_hc_data %}
+(function() {
+    const ctx = document.getElementById('hcChart');
+    if (!ctx) return;
+    const labels = {{ chart_hc_labels|safe }};
+    const data   = {{ chart_hc_data|safe }};
+    const colors = data.map((_, i) => PALETTE[i % PALETTE.length]);
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 6, borderSkipped: false }] },
+        options: { ...CHART_DEFAULTS,
+            plugins: { ...CHART_DEFAULTS.plugins,
+                legend: { display: false },
+                tooltip: { ...CHART_DEFAULTS.plugins.tooltip,
+                    callbacks: { label: c => ` ${c.raw} karyawan` }
+                }
+            }
+        }
+    });
+})();
+{% endif %}
+
+// ── 2. Turnover per Bulan ─────────────────────────────────────────────────────
+(function() {
+    const ctx = document.getElementById('turnoverChart');
+    if (!ctx) return;
+    const labels = {{ chart_turnover_labels|safe }};
+    const data   = {{ chart_turnover_data|safe }};
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Keluar', data, backgroundColor: '#ef444466', borderColor: '#ef4444', borderWidth: 1.5, borderRadius: 6 }] },
+        options: { ...CHART_DEFAULTS,
+            plugins: { ...CHART_DEFAULTS.plugins,
+                legend: { display: false },
+                tooltip: { ...CHART_DEFAULTS.plugins.tooltip, callbacks: { label: c => ` ${c.raw} orang keluar` } }
+            }
+        }
+    });
+})();
+
+// ── 3. Labor Cost per Departemen ──────────────────────────────────────────────
+{% if chart_lc_data %}
+(function() {
+    const ctx = document.getElementById('lcChart');
+    if (!ctx) return;
+    const labels = {{ chart_lc_labels|safe }};
+    const data   = {{ chart_lc_data|safe }};
+    const colors = data.map((_, i) => ['#22c55e66','#16a34a66','#15803d66','#166534','#14532d','#4ade8066','#86efac66','#bbf7d066'][i % 8]);
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#22c55e', borderWidth: 1, borderRadius: 6 }] },
+        options: { ...CHART_DEFAULTS,
+            plugins: { ...CHART_DEFAULTS.plugins,
+                legend: { display: false },
+                tooltip: { ...CHART_DEFAULTS.plugins.tooltip,
+                    callbacks: { label: c => ` Rp ${Math.round(c.raw).toLocaleString('id-ID')}` }
+                }
+            },
+            scales: { ...CHART_DEFAULTS.scales,
+                y: { ...CHART_DEFAULTS.scales.y,
+                    ticks: { color: '#888', font: { size: 10 },
+                        callback: v => 'Rp ' + (v >= 1000000 ? (v/1000000).toFixed(0)+'jt' : v.toLocaleString('id-ID'))
+                    }
+                }
+            }
+        }
+    });
+})();
+{% endif %}
+
+// ── 4. Attendance Rate per Departemen ─────────────────────────────────────────
+{% if chart_att_data %}
+(function() {
+    const ctx = document.getElementById('attChart');
+    if (!ctx) return;
+    const labels = {{ chart_att_labels|safe }};
+    const data   = {{ chart_att_data|safe }};
+    const colors = data.map(v => v >= 90 ? '#22c55e99' : v >= 75 ? '#f59e0b99' : '#ef444499');
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 6 }] },
+        options: { ...CHART_DEFAULTS,
+            plugins: { ...CHART_DEFAULTS.plugins,
+                legend: { display: false },
+                tooltip: { ...CHART_DEFAULTS.plugins.tooltip, callbacks: { label: c => ` ${c.raw}% hadir` } }
+            },
+            scales: { ...CHART_DEFAULTS.scales,
+                y: { ...CHART_DEFAULTS.scales.y, max: 100,
+                    ticks: { color: '#888', font: { size: 10 }, callback: v => v + '%' }
+                }
+            }
+        }
+    });
+})();
+{% endif %}
+
+// ── 5. Recruitment Pipeline ───────────────────────────────────────────────────
+{% if chart_rec_data %}
+(function() {
+    const ctx = document.getElementById('recChart');
+    if (!ctx) return;
+    const labels = {{ chart_rec_labels|safe }};
+    const data   = {{ chart_rec_data|safe }};
+    const STATUS_COLORS = {
+        'Screening':     '#60a5fa', 'Psikotes':      '#a78bfa',
+        'Interview HR':  '#f59e0b', 'Interview User':'#fb923c',
+        'Medical Check': '#34d399', 'Offering':      '#22d3ee',
+        'Hired':         '#22c55e', 'Rejected':      '#ef4444',
+        'Withdrawn':     '#6b7280',
+    };
+    const colors = labels.map(l => STATUS_COLORS[l] || '#888');
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: colors.map(c => c+'99'), borderColor: colors, borderWidth: 1.5, borderRadius: 6 }] },
+        options: { ...CHART_DEFAULTS,
+            plugins: { ...CHART_DEFAULTS.plugins,
+                legend: { display: false },
+                tooltip: { ...CHART_DEFAULTS.plugins.tooltip, callbacks: { label: c => ` ${c.raw} kandidat` } }
+            }
+        }
+    });
+})();
+{% endif %}
 
 </script>
 {% endblock %}
