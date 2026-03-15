@@ -192,6 +192,15 @@
   width:2px;height:8px;background:#cbd5e1;
 }
 
+/* ── Connector SVG overlay ── */
+.swimlane-table { position:relative; }
+
+/* ── Tree siblings grouping ── */
+.tree-group {
+  display:inline-flex;flex-direction:column;
+  align-items:center;margin:4px 6px;vertical-align:top;
+}
+
 @media print {
   .card.mb-3,#detail-panel,#legend-bar .text-muted { display:none!important; }
   #orgchart-canvas { overflow:visible!important; }
@@ -202,13 +211,17 @@
 <script>
 const JSON_URL   = "{% url 'orgchart_json' chart.pk %}";
 const CSRF_TOKEN = "{{ csrf_token }}";
-const LEVEL_ORDER = ['Director','Senior Manager','Manager','Senior Supervisor','Supervisor','Senior Staff','Staff'];
+const LEVEL_ORDER = ['Director','Senior Manager','Manager','Senior Supervisor','Superintendent','Supervisor','Senior Staff','Staff','Crew'];
 
 let scale    = 1;
 let allNodes = {};
 
 function lvlClass(l) { return (l||'Staff').replace(/\s+/g,'-'); }
-function lvlRank(l)  { const i=LEVEL_ORDER.indexOf(l); return i===-1?99:i; }
+function lvlRank(l) {
+  const norm = (l||'Staff').trim().toLowerCase();
+  const i = LEVEL_ORDER.findIndex(lo => lo.toLowerCase() === norm);
+  return i === -1 ? 99 : i;
+}
 
 // ── Fetch & render ────────────────────────────────────────────────────────────
 fetch(JSON_URL)
@@ -273,57 +286,75 @@ function buildDeptSection(deptName, nodes) {
     }
   });
 
-  // Group by level for swimlanes
+  // ── Gunakan LEVEL_ORDER sebagai urutan tetap swimlane ──────────────────────
+  // Semua level dari LEVEL_ORDER yang ada di dept ini ditampilkan,
+  // termasuk vacant (0 karyawan) — posisi tetap sesuai level
+
+  // Kumpulkan semua level yang ada di dept ini
+  const levelSet = new Set(nodes.map(n => n.level || 'Staff'));
+
+  // Urutkan berdasarkan LEVEL_ORDER (case-insensitive)
+  const levels = [...levelSet].sort((a, b) => lvlRank(a) - lvlRank(b));
+
+  // Group nodes by level
   const byLevel = {};
   nodes.forEach(n => {
-    (byLevel[n.level||'Staff'] = byLevel[n.level||'Staff']||[]).push(nodeMap[n.id]);
+    const lvl = n.level || 'Staff';
+    (byLevel[lvl] = byLevel[lvl] || []).push(nodeMap[n.id]);
   });
-
-  const levels = Object.keys(byLevel).sort((a,b)=>lvlRank(a)-lvlRank(b));
 
   levels.forEach(level => {
     const row = document.createElement('div');
     row.className = 'swimlane-row';
 
-    // Label
+    // ── Label swimlane di kiri ──
     const labelCell = document.createElement('div');
     labelCell.className = `swimlane-label-cell lbadge-${lvlClass(level)}`;
     labelCell.textContent = level;
     row.appendChild(labelCell);
 
-    // Content
+    // ── Content area ──
     const content = document.createElement('div');
     content.className = 'swimlane-content';
+    content.style.cssText = 'position:relative;padding-bottom:8px;';
 
-    // Get nodes at this level — group by parent
-    const levelNodes = byLevel[level];
+    const levelNodes = byLevel[level] || [];
 
-    // Find which nodes at this level have parent in PREVIOUS swimlane
-    // Group: nodes with same parent stay together
+    // Group nodes by parent_id untuk visual tree
     const parentGroups = {};
     levelNodes.forEach(n => {
-      const key = n.parent_id || '__root__';
-      (parentGroups[key] = parentGroups[key]||[]).push(n);
+      const key = n.parent_id != null ? String(n.parent_id) : '__root__';
+      (parentGroups[key] = parentGroups[key] || []).push(n);
     });
 
+    // Render setiap parent group
     for (const [parentKey, groupNodes] of Object.entries(parentGroups)) {
       const group = document.createElement('div');
       group.className = 'tree-group';
+      group.dataset.parentKey = parentKey;
 
       if (groupNodes.length === 1) {
-        // Single node — just render, no grouping wrapper
         const nodeEl = buildNodeEl(groupNodes[0]);
-        nodeEl.classList.add('tree-child');
         group.appendChild(nodeEl);
       } else {
-        // Multiple nodes with same parent — show grouped
+        // Multiple children dari parent yang sama — tampil berkelompok dengan garis
         const groupWrap = document.createElement('div');
-        groupWrap.className = 'tree-group-children';
+        groupWrap.className = 'tree-siblings';
+        groupWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;justify-content:center;position:relative;padding-top:12px;';
+
+        // Garis horizontal di atas siblings
+        groupWrap.style.borderTop = '2px solid #94a3b8';
+        groupWrap.style.marginTop = '12px';
+
         groupNodes.forEach(n => {
-          const child = document.createElement('div');
-          child.className = 'tree-child';
-          child.appendChild(buildNodeEl(n));
-          groupWrap.appendChild(child);
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;position:relative;';
+          // Garis vertikal dari bar ke node
+          const vline = document.createElement('div');
+          vline.style.cssText = 'width:2px;height:10px;background:#94a3b8;margin-bottom:0;';
+          wrap.appendChild(vline);
+          wrap.appendChild(buildNodeEl(n));
+          groupWrap.appendChild(wrap);
         });
         group.appendChild(groupWrap);
       }
@@ -333,6 +364,10 @@ function buildDeptSection(deptName, nodes) {
     row.appendChild(content);
     table.appendChild(row);
   });
+
+  // ── Gambar garis koneksi parent → child antar swimlane ───────────────────
+  // Dilakukan setelah semua row di-append ke DOM (via setTimeout)
+  setTimeout(() => drawConnectors(table, nodeMap), 50);
 
   sec.appendChild(table);
   return sec;
@@ -350,6 +385,62 @@ function buildNodeEl(node) {
 
   card.addEventListener('click', () => showPanel(node));
   return card;
+}
+
+// ── Draw SVG connector lines parent → child antar swimlane ──────────────────
+function drawConnectors(table, nodeMap) {
+  // Hapus SVG lama
+  table.querySelectorAll('.connector-svg').forEach(el => el.remove());
+
+  const tableRect = table.getBoundingClientRect();
+
+  // Untuk setiap node yang punya parent, gambar garis dari bottom parent ke top child
+  Object.values(nodeMap).forEach(node => {
+    if (!node.parent_id) return;
+    const parent = nodeMap[node.parent_id];
+    if (!parent) return;
+
+    const parentEl = table.querySelector(`[data-node-id="${node.parent_id}"]`);
+    const childEl  = table.querySelector(`[data-node-id="${node.id}"]`);
+    if (!parentEl || !childEl) return;
+
+    const pRect = parentEl.getBoundingClientRect();
+    const cRect = childEl.getBoundingClientRect();
+
+    // Koordinat relatif ke table
+    const x1 = pRect.left + pRect.width / 2 - tableRect.left;
+    const y1 = pRect.bottom - tableRect.top;
+    const x2 = cRect.left + cRect.width / 2 - tableRect.left;
+    const y2 = cRect.top - tableRect.top;
+
+    if (y2 <= y1) return; // skip kalau posisi tidak logis
+
+    // Buat SVG overlay
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('connector-svg');
+    const minX = Math.min(x1, x2) - 4;
+    const minY = y1;
+    const w    = Math.abs(x1 - x2) + 8;
+    const h    = y2 - y1;
+    svg.style.cssText = `position:absolute;left:${minX}px;top:${minY}px;width:${w}px;height:${h}px;pointer-events:none;overflow:visible;`;
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    const lx1 = x1 - minX;
+    const lx2 = x2 - minX;
+    const mid = h / 2;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${lx1} 0 C ${lx1} ${mid}, ${lx2} ${mid}, ${lx2} ${h}`);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#94a3b8');
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('stroke-dasharray', '4 3');
+    svg.appendChild(path);
+
+    // SVG harus di dalam table dengan position:relative
+    table.style.position = 'relative';
+    table.appendChild(svg);
+  });
 }
 
 // ── Dept filter buttons ───────────────────────────────────────────────────────
@@ -419,6 +510,12 @@ function setScale(s) {
   scale = Math.min(2.5, Math.max(.25, s));
   inner.style.transform = `scale(${scale})`;
   inner.style.transformOrigin = '0 0';
+  // Redraw connectors setelah zoom
+  setTimeout(() => {
+    document.querySelectorAll('.swimlane-table').forEach(table => {
+      drawConnectors(table, allNodes);
+    });
+  }, 100);
 }
 
 // ── Pan canvas ────────────────────────────────────────────────────────────────

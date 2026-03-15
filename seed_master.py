@@ -345,8 +345,10 @@ def menu_tambah_department():
 #  MENU 3 — TAMBAH JABATAN
 # ══════════════════════════════════════════════════════════════════════════════
 
-LEVEL_CHOICES = ['Staff', 'Senior Staff', 'Supervisor', 'Manager',
-                 'Senior Manager', 'General Manager', 'Director']
+LEVEL_CHOICES = [
+    'Staff', 'Senior Staff', 'Supervisor',
+    'Senior Supervisor', 'Manager', 'Senior Manager', 'Director'
+]
 
 
 def menu_tambah_jabatan():
@@ -898,11 +900,15 @@ def menu_generate_absensi():
 
 # Pool nama dummy Indonesia
 _NAMA_DEPAN_L = [
-    'Budi', 'Agus', 'Eko', 'Hendra', 'Dani', 'Riko', 'Fajar', 'Wahyu',
-    'Rizky', 'Andi', 'Doni', 'Bayu', 'Yoga', 'Arif', 'Gilang', 'Iwan',
-    'Joko', 'Kevin', 'Lutfi', 'Muhamad', 'Nanda', 'Oscar', 'Pandu', 'Qori',
-    'Rafi', 'Satria', 'Toni', 'Ucok', 'Vino', 'Widi', 'Yudi', 'Zaki',
+    'Ahmad', 'Muhammad', 'Rizky', 'Fajar', 'Dimas', 'Andi', 'Budi', 'Hendra',
+    'Dani', 'Agus', 'Wahyu', 'Bayu', 'Yoga', 'Arif', 'Gilang', 'Iwan',
+    'Joko', 'Kevin', 'Lutfi', 'Nanda', 'Rafi', 'Satria', 'Toni', 'Vino',
     'Aditya', 'Bagus', 'Candra', 'Dedy', 'Feri', 'Gunawan', 'Hadi', 'Imam',
+    'Yusuf', 'Farhan', 'Hafiz', 'Ilham', 'Jafar', 'Karim', 'Luthfi', 'Mirza',
+    'Nabil', 'Omar', 'Pandu', 'Qori', 'Reza', 'Syahrul', 'Taufik', 'Umar',
+    'Wildan', 'Zaki', 'Alfarizi', 'Bramantyo', 'Daffa', 'Evan', 'Fauzan',
+    'Ghifari', 'Hafidz', 'Irfan', 'Khoirul', 'Lukman', 'Marwan', 'Muhamad',
+    'Eko', 'Riko', 'Doni', 'Oscar', 'Ucok', 'Widi', 'Yudi', 'Satrio',
 ]
 _NAMA_DEPAN_P = [
     'Sari', 'Dewi', 'Putri', 'Rina', 'Ani', 'Wati', 'Fitri', 'Nita',
@@ -910,6 +916,14 @@ _NAMA_DEPAN_P = [
     'Ulfa', 'Vera', 'Winda', 'Xena', 'Yola', 'Zahra', 'Ayu', 'Bunga',
     'Cantika', 'Dina', 'Erika', 'Fanny', 'Gita', 'Hana', 'Ira', 'Julia',
     'Kiki', 'Lina', 'Mira', 'Nisa', 'Okta', 'Prita', 'Qanita', 'Reni',
+    'Sela', 'Tika', 'Umi', 'Vira', 'Widya', 'Yasmin', 'Zara', 'Amelia',
+    'Bella', 'Citra', 'Devi', 'Elsa', 'Fira', 'Ghina', 'Hasna', 'Intan',
+    'Khansa', 'Laila', 'Mawar', 'Nabila', 'Olivia', 'Paramita',
+]
+_NAMA_TENGAH = [
+    'Nur', 'Sri', 'Dwi', 'Tri', 'Eka', 'Budi', 'Hadi', 'Wahyu',
+    'Rizki', 'Cahya', 'Putra', 'Putri', 'Adi', 'Arya', 'Bagas',
+    '', '', '', '', '', '', '', '',  # lebih banyak tanpa nama tengah
 ]
 _NAMA_BELAKANG = [
     'Santoso', 'Wijaya', 'Kusuma', 'Pratama', 'Saputra', 'Hidayat',
@@ -917,6 +931,11 @@ _NAMA_BELAKANG = [
     'Hartono', 'Gunawan', 'Kurniawan', 'Hakim', 'Firmansyah', 'Darma',
     'Iskandar', 'Jaya', 'Laksono', 'Mulyono', 'Nurdiana', 'Oktavian',
     'Permadi', 'Qodri', 'Ramadan', 'Syahputra', 'Taufik', 'Utomo',
+    'Adiputra', 'Budiman', 'Cahyono', 'Dirgantara', 'Effendi', 'Firdaus',
+    'Gultom', 'Hasibuan', 'Irawan', 'Junaidi', 'Kartika', 'Manurung',
+    'Nasution', 'Panjaitan', 'Sitompul', 'Simbolon', 'Siregar', 'Pane',
+    'Harahap', 'Lubis', 'Daulay', 'Pulungan', 'Batubara', 'Sinaga',
+    'Wibowo', 'Zulkarnain', 'Ramadhan', 'Sanjaya', 'Nurhadi', 'Surya',
 ]
 _KOTA = [
     'Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Makassar',
@@ -925,27 +944,34 @@ _KOTA = [
 ]
 _AGAMA   = ['Islam', 'Islam', 'Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha']
 _PEND    = ['SMA/SMK', 'SMA/SMK', 'D3', 'D4/S1', 'D4/S1', 'S2']
-_ST_KAR  = ['PKWT', 'PKWT', 'PKWTT', 'PHL']
+_ST_KAR  = [
+    'PKWT', 'PKWT', 'PKWT', 'PKWT', 'PKWT', 'PKWT',  # 60% PKWT
+    'PKWTT', 'PKWTT', 'PKWTT',                          # 30% PKWTT
+    'PHL',                                               # 10% PHL
+]
 _PTKP_L  = ['TK/0', 'K/0', 'K/1', 'K/2']
 _PTKP_P  = ['TK/0', 'TK/0', 'K/0', 'K/1']
 
 # Gaji range default per level jabatan (Rp)
 _GAJI_LEVEL = {
-    'Staff':          (3_000_000,  6_000_000),
-    'Senior Staff':   (5_000_000,  9_000_000),
-    'Supervisor':     (7_000_000, 12_000_000),
-    'Manager':       (10_000_000, 18_000_000),
-    'Senior Manager':(15_000_000, 25_000_000),
-    'General Manager':(20_000_000,35_000_000),
-    'Director':      (30_000_000, 60_000_000),
+    'Staff':            (3_000_000,  6_000_000),
+    'Senior Staff':     (5_000_000,  9_000_000),
+    'Supervisor':       (7_000_000, 12_000_000),
+    'Senior Supervisor':(10_000_000, 18_000_000),
+    'Manager':          (15_000_000, 25_000_000),
+    'Senior Manager':   (20_000_000, 35_000_000),
+    'Director':         (40_000_000, 70_000_000),
 }
 
 
 def _gen_nama(jk):
-    pool = _NAMA_DEPAN_L if jk == 'L' else _NAMA_DEPAN_P
+    pool    = _NAMA_DEPAN_L if jk == 'L' else _NAMA_DEPAN_P
     depan   = random.choice(pool)
+    tengah  = random.choice(_NAMA_TENGAH)
     belakang = random.choice(_NAMA_BELAKANG)
-    return f'[D] {depan} {belakang}'
+    if tengah:
+        return f'{depan} {tengah} {belakang}'
+    return f'{depan} {belakang}'
 
 
 def _gen_nik_dummy(company, existing_niks):
@@ -981,12 +1007,24 @@ def _input_gaji_range(label_level, default_min, default_max):
 def menu_generate_dummy_karyawan():
     header('GENERATE KARYAWAN DUMMY')
 
-    # ── Pilih company ────────────────────────────────────────────────────────
+    # ── Pool data tambahan ────────────────────────────────────────────────────
+    _BANK = ['BCA', 'BRI', 'BNI', 'Mandiri', 'BSI', 'CIMB Niaga', 'Danamon', 'BTN']
+    _JALAN = ['Jl. Merdeka', 'Jl. Sudirman', 'Jl. Gatot Subroto', 'Jl. Ahmad Yani',
+              'Jl. Diponegoro', 'Jl. Pahlawan', 'Jl. Pemuda', 'Jl. Imam Bonjol',
+              'Jl. Kartini', 'Jl. Veteran', 'Jl. Cendrawasih', 'Jl. Mawar']
+    _KELURAHAN = ['Kebayoran', 'Menteng', 'Tebet', 'Cempaka Putih', 'Gambir',
+                  'Senen', 'Koja', 'Penjaringan', 'Cilincing', 'Tanjung Priok',
+                  'Lowokwaru', 'Blimbing', 'Klojen', 'Sukun', 'Kedungkandang']
+    _KECAMATAN = ['Kebayoran Baru', 'Menteng', 'Tebet', 'Cempaka Putih', 'Gambir',
+                  'Senen', 'Koja', 'Penjaringan', 'Cilincing', 'Tanjung Priok',
+                  'Lowokwaru', 'Blimbing', 'Klojen', 'Sukun', 'Kedungkandang']
+
+    # ── Pilih company ─────────────────────────────────────────────────────────
     targets = pilih_companies('Generate dummy karyawan untuk company')
     if not targets:
         return
 
-    # ── Cek department & jabatan tersedia ────────────────────────────────────
+    # ── Cek department & jabatan tersedia ─────────────────────────────────────
     for company in targets:
         n_dept = Department.objects.filter(company=company, aktif=True).count()
         n_pos  = Position.objects.filter(company=company, aktif=True).count()
@@ -994,7 +1032,7 @@ def menu_generate_dummy_karyawan():
             err(f'Company "{company.nama}" belum punya department/jabatan. Tambah dulu.')
             return
 
-    # ── Jumlah dummy per company ─────────────────────────────────────────────
+    # ── Jumlah dummy per company ──────────────────────────────────────────────
     print(f'\n{C}  Jumlah karyawan dummy:{RST}')
     while True:
         try:
@@ -1006,83 +1044,113 @@ def menu_generate_dummy_karyawan():
         except ValueError:
             err('Masukkan angka bulat.')
 
-    # ── Rasio gender ─────────────────────────────────────────────────────────
+    # ── Rasio gender ──────────────────────────────────────────────────────────
     print(f'\n{C}  Rasio gender:{RST}')
     while True:
         try:
             pct_l = int(input_prompt('% Laki-laki', default='60'))
-            pct_p = 100 - pct_l
             if not (0 <= pct_l <= 100):
                 err('Masukkan 0–100.')
                 continue
-            info(f'Laki-laki {pct_l}% | Perempuan {pct_p}%')
+            info(f'Laki-laki {pct_l}% | Perempuan {100-pct_l}%')
             break
         except ValueError:
             err('Masukkan angka bulat.')
 
-    # ── Range gaji per level ─────────────────────────────────────────────────
-    print(f'\n{C}  Range gaji per level jabatan:{RST}')
-    info('Tekan Enter untuk pakai default. Format: angka saja (contoh: 3000000)')
-    gaji_range = {}
-    for level, (dmin, dmax) in _GAJI_LEVEL.items():
-        gaji_range[level] = _input_gaji_range(level, dmin, dmax)
+    # ── Range gaji — pakai default langsung ──────────────────────────────────
+    gaji_range = {level: (dmin, dmax) for level, (dmin, dmax) in _GAJI_LEVEL.items()}
 
     # ── Tanggal join range ────────────────────────────────────────────────────
-    print(f'\n{C}  Rentang tanggal bergabung (join date):{RST}')
+    print(f'\n{C}  Rentang tanggal bergabung:{RST}')
     join_min = input_tanggal('Join date paling awal', default=date(2020, 1, 1))
     join_max = input_tanggal('Join date paling akhir', default=date.today())
     if join_min > join_max:
         err('Join date min tidak boleh lebih besar dari max.')
         return
 
-    # ── Konfirmasi ───────────────────────────────────────────────────────────
+    # ── Konfirmasi ────────────────────────────────────────────────────────────
     print()
     info('Ringkasan generate karyawan dummy:')
     dim(f'  Company  : {", ".join(c.nama for c in targets)}')
-    dim(f'  Jumlah   : {n_dummy} dummy per company ({n_dummy * len(targets)} total)')
-    dim(f'  Gender   : L {pct_l}% | P {pct_p}%')
-    dim(f'  NIK      : prefix DMY-XXXX')
-    dim(f'  Nama     : prefix [D]')
+    dim(f'  Jumlah   : {n_dummy} per company ({n_dummy * len(targets)} total)')
+    dim(f'  Gender   : L {pct_l}% | P {100-pct_l}%')
     dim(f'  Join date: {join_min.strftime("%d-%m-%Y")} — {join_max.strftime("%d-%m-%Y")}')
+    dim(f'  Logika   : Dept → Jabatan (jabatan sesuai dept)')
     print()
     if not confirm('Lanjutkan?'):
         warn('Dibatalkan.')
         return
 
-    # ── Generate ─────────────────────────────────────────────────────────────
+    # ── Generate ──────────────────────────────────────────────────────────────
     total_created = 0
     join_delta    = (join_max - join_min).days
 
     for company in targets:
-        depts     = list(Department.objects.filter(company=company, aktif=True))
-        positions = list(Position.objects.filter(company=company, aktif=True))
+        # Build mapping dept → list jabatan di dept itu
+        depts = list(Department.objects.filter(company=company, aktif=True))
+
+        dept_jabatan_map = {}
+        for dept in depts:
+            jabatans = list(Position.objects.filter(
+                company=company, aktif=True, department=dept
+            ))
+            if jabatans:
+                dept_jabatan_map[dept] = jabatans
+
+        # Dept yang tidak punya jabatan → pakai jabatan tanpa dept sebagai fallback
+        pos_no_dept = list(Position.objects.filter(
+            company=company, aktif=True, department__isnull=True
+        ))
+
+        # Kalau tidak ada mapping sama sekali, fallback semua jabatan
+        all_positions = list(Position.objects.filter(company=company, aktif=True))
+
         existing_niks = set()
-        emp_bulk  = []
+        emp_bulk = []
 
         for _ in range(n_dummy):
             jk   = 'L' if random.random() < pct_l / 100 else 'P'
             nama = _gen_nama(jk)
             nik  = _gen_nik_dummy(company, existing_niks)
-            dept = random.choice(depts)
-            pos  = random.choice(positions)
 
-            level     = pos.level if pos.level in _GAJI_LEVEL else 'Staff'
+            # ── Pilih dept dulu, lalu jabatan dari dept itu ──
+            if dept_jabatan_map:
+                dept = random.choice(list(dept_jabatan_map.keys()))
+                pos  = random.choice(dept_jabatan_map[dept])
+            elif pos_no_dept:
+                dept = random.choice(depts)
+                pos  = random.choice(pos_no_dept)
+            else:
+                dept = random.choice(depts)
+                pos  = random.choice(all_positions)
+
+            level    = pos.level if pos.level in _GAJI_LEVEL else 'Staff'
             g_min, g_max = gaji_range[level]
-            gaji_pokok = random.randint(g_min // 1000, g_max // 1000) * 1000
+            gaji_pokok   = random.randint(g_min // 1000, g_max // 1000) * 1000
 
-            join_date  = join_min + timedelta(days=random.randint(0, join_delta))
-            tgl_lahir  = date(
-                random.randint(1975, 2000),
-                random.randint(1, 12),
-                random.randint(1, 28)
-            )
-            agama      = random.choice(_AGAMA)
-            pendidikan = random.choice(_PEND)
-            st_kar     = random.choice(_ST_KAR)
-            st_nikah   = random.choice(['Lajang', 'Menikah', 'Menikah', 'Lajang'])
-            jml_anak   = random.randint(0, 3) if st_nikah == 'Menikah' else 0
-            ptkp       = random.choice(_PTKP_L if jk == 'L' else _PTKP_P)
-            tempat_lhr = random.choice(_KOTA)
+            join_date = join_min + timedelta(days=random.randint(0, join_delta))
+            tgl_lahir = date(random.randint(1975, 2000), random.randint(1, 12), random.randint(1, 28))
+            st_nikah  = random.choice(['Lajang', 'Menikah', 'Menikah', 'Lajang'])
+            jml_anak  = random.randint(0, 3) if st_nikah == 'Menikah' else 0
+            jk_full   = 'Laki-laki' if jk == 'L' else 'Perempuan'
+            ptkp      = random.choice(_PTKP_L if jk == 'L' else _PTKP_P)
+            kota      = random.choice(_KOTA)
+
+            # ── Data identitas & bank ──
+            no_ktp  = ''.join([str(random.randint(0,9)) for _ in range(16)])
+            no_npwp = f'{random.randint(10,99)}.{random.randint(100,999)}.{random.randint(100,999)}.{random.randint(1,9)}-{random.randint(100,999)}.{random.randint(100,999)}'
+            no_bpjs_kes = ''.join([str(random.randint(0,9)) for _ in range(13)])
+            no_bpjs_tk  = ''.join([str(random.randint(0,9)) for _ in range(11)])
+            nama_bank   = random.choice(_BANK)
+            no_rek      = ''.join([str(random.randint(0,9)) for _ in range(random.randint(10,13))])
+            no_hp       = f'08{random.randint(100000000, 999999999)}'
+            email       = f'{nama.lower().replace(" ",".")[:20]}@gmail.com'
+            alamat      = f'{random.choice(_JALAN)} No.{random.randint(1,99)}'
+            rt          = f'{random.randint(1,20):03d}'
+            rw          = f'{random.randint(1,10):03d}'
+            kelurahan   = random.choice(_KELURAHAN)
+            kecamatan   = random.choice(_KECAMATAN)
+            kode_pos    = str(random.randint(10000, 99999))
 
             emp_bulk.append(Employee(
                 company         = company,
@@ -1090,18 +1158,33 @@ def menu_generate_dummy_karyawan():
                 nama            = nama,
                 department      = dept,
                 jabatan         = pos,
-                status_karyawan = st_kar,
+                status_karyawan = random.choice(_ST_KAR),
                 join_date       = join_date,
                 status          = 'Aktif',
                 jenis_kelamin   = jk,
-                agama           = agama,
-                pendidikan      = pendidikan,
+                agama           = random.choice(_AGAMA),
+                pendidikan      = random.choice(_PEND),
                 status_nikah    = st_nikah,
                 jumlah_anak     = jml_anak,
                 ptkp            = ptkp,
-                tempat_lahir    = tempat_lhr,
+                tempat_lahir    = kota,
                 tanggal_lahir   = tgl_lahir,
                 gaji_pokok      = gaji_pokok,
+                no_ktp          = no_ktp,
+                no_npwp         = no_npwp,
+                no_bpjs_kes     = no_bpjs_kes,
+                no_bpjs_tk      = no_bpjs_tk,
+                nama_bank       = nama_bank,
+                no_rek          = no_rek,
+                nama_rek        = nama,
+                no_hp           = no_hp,
+                email           = email,
+                alamat          = alamat,
+                rt              = rt,
+                rw              = rw,
+                kelurahan       = kelurahan,
+                kecamatan       = kecamatan,
+                kode_pos        = kode_pos,
             ))
 
         try:
@@ -1114,8 +1197,8 @@ def menu_generate_dummy_karyawan():
 
     print()
     ok(f'Total {total_created} karyawan dummy berhasil dibuat.')
-    info('NIK prefix DMY-XXXX | Nama prefix [D] | Password portal: demo1234')
-    dim('Jalankan Generate Absensi untuk generate data kehadiran karyawan dummy.')
+    info('Logika: Dept dipilih dulu → jabatan dari dept tersebut')
+    dim('Jalankan Generate Absensi untuk generate data kehadiran.')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1178,6 +1261,548 @@ def menu_lihat_data():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  MENU JABATAN PRESET — 114 Jabatan Industri
+# ══════════════════════════════════════════════════════════════════════════════
+
+JABATAN_PRESET = [
+    # Mining | MPE-MIN
+    ("Operator ADT",                    "Staff"),
+    ("Operator Excavator",              "Staff"),
+    ("Operator Dozer",                  "Staff"),
+    ("Operator Grader",                 "Staff"),
+    ("Operator Loader",                 "Staff"),
+    ("Surveyor",                        "Staff"),
+    ("Mine Dispatcher",                 "Staff"),
+    ("Drill & Blast Officer",           "Staff"),
+    ("Mine Engineer",                   "Staff"),
+    ("Senior Mine Engineer",            "Senior Staff"),
+    ("Mine Foreman",                    "Supervisor"),
+    ("Pit Supervisor",                  "Supervisor"),
+    ("Mining Superintendent",           "Senior Supervisor"),
+    ("Mine Manager",                    "Manager"),
+
+    # Civil & Maintenance | CIV-MAINT
+    ("Mechanic",                        "Staff"),
+    ("Helper Mechanic",                 "Staff"),
+    ("Welder",                          "Staff"),
+    ("Technician",                      "Staff"),
+    ("Maintenance Planner",             "Staff"),
+    ("Senior Mechanic",                 "Senior Staff"),
+    ("Foreman Mechanic",                "Supervisor"),
+    ("Workshop Supervisor",             "Supervisor"),
+    ("Maintenance Superintendent",      "Senior Supervisor"),
+    ("Maintenance Manager",             "Manager"),
+
+    # Electric & Utility | EWF
+    ("Electrician",                     "Staff"),
+    ("Genset Operator",                 "Staff"),
+    ("Water Pump Operator",             "Staff"),
+    ("Electrical Technician",           "Staff"),
+    ("Electrical Engineer",             "Staff"),
+    ("Senior Electrical Engineer",      "Senior Staff"),
+    ("Electrical Supervisor",           "Supervisor"),
+    ("Electrical Superintendent",       "Senior Supervisor"),
+    ("Utility Manager",                 "Manager"),
+
+    # Health Safety Environment | HSE
+    ("Safety Patrol",                   "Staff"),
+    ("Firefighter",                     "Staff"),
+    ("Safety Officer",                  "Staff"),
+    ("Environmental Officer",           "Staff"),
+    ("Senior Safety Officer",           "Senior Staff"),
+    ("Safety Supervisor",               "Supervisor"),
+    ("HSE Superintendent",              "Senior Supervisor"),
+    ("HSE Manager",                     "Manager"),
+
+    # Human Resources | HR
+    ("HR Admin",                        "Staff"),
+    ("Recruitment Officer",             "Staff"),
+    ("Training Officer",                "Staff"),
+    ("HR Generalist",                   "Senior Staff"),
+    ("HR Supervisor",                   "Supervisor"),
+    ("HR Superintendent",               "Senior Supervisor"),
+    ("HR Manager",                      "Manager"),
+
+    # General Affair | GA
+    ("Office Boy",                      "Staff"),
+    ("Office Girl",                     "Staff"),
+    ("Driver",                          "Staff"),
+    ("Gardener",                        "Staff"),
+    ("GA Officer",                      "Staff"),
+    ("Mess & Camp Officer",             "Staff"),
+    ("Senior GA Officer",               "Senior Staff"),
+    ("GA Supervisor",                   "Supervisor"),
+    ("GA Superintendent",               "Senior Supervisor"),
+    ("GA Manager",                      "Manager"),
+
+    # Logistic & Warehouse | LOG
+    ("Warehouse Helper",                "Staff"),
+    ("Storekeeper",                     "Staff"),
+    ("Logistic Officer",                "Staff"),
+    ("Senior Logistic Officer",         "Senior Staff"),
+    ("Warehouse Supervisor",            "Supervisor"),
+    ("Logistic Superintendent",         "Senior Supervisor"),
+    ("Logistic Manager",                "Manager"),
+
+    # Purchasing | PURCH
+    ("Purchasing Admin",                "Staff"),
+    ("Procurement Officer",             "Staff"),
+    ("Senior Procurement Officer",      "Senior Staff"),
+    ("Procurement Supervisor",          "Supervisor"),
+    ("Procurement Superintendent",      "Senior Supervisor"),
+    ("Procurement Manager",             "Manager"),
+
+    # Finance & Accounting | FAT
+    ("Finance Admin",                   "Staff"),
+    ("Accountant",                      "Staff"),
+    ("Tax Officer",                     "Staff"),
+    ("Senior Accountant",               "Senior Staff"),
+    ("Finance Supervisor",              "Supervisor"),
+    ("Finance Superintendent",          "Senior Supervisor"),
+    ("Finance Manager",                 "Manager"),
+
+    # Infrastructure Technology | IT
+    ("IT Support",                      "Staff"),
+    ("Network Engineer",                "Staff"),
+    ("System Administrator",            "Senior Staff"),
+    ("IT Supervisor",                   "Supervisor"),
+    ("IT Superintendent",               "Senior Supervisor"),
+    ("IT Manager",                      "Manager"),
+
+    # Legal | LGL
+    ("Legal Admin",                     "Staff"),
+    ("Legal Officer",                   "Staff"),
+    ("Senior Legal Officer",            "Senior Staff"),
+    ("Legal Supervisor",                "Supervisor"),
+    ("Legal Manager",                   "Manager"),
+
+    # Security | SG
+    ("Security Guard",                  "Staff"),
+    ("Security Officer",                "Staff"),
+    ("Senior Security Officer",         "Senior Staff"),
+    ("Security Supervisor",             "Supervisor"),
+    ("Security Manager",                "Manager"),
+
+    # Site Management
+    ("Site Superintendent",             "Senior Manager"),
+    ("Site Manager",                    "Senior Manager"),
+
+    # Corporate Management
+    ("Operations Director",             "Director"),
+    ("Finance Director",                "Director"),
+    ("HR Director",                     "Director"),
+    ("Managing Director",               "Director"),
+]
+
+
+def menu_jabatan_preset():
+    header('TAMBAH JABATAN PRESET — 114 Jabatan Industri')
+
+    targets = pilih_companies('Apply jabatan ke company')
+    if not targets:
+        return
+
+    info(f'Target: {", ".join(c.nama for c in targets)}')
+    info(f'Akan insert {len(JABATAN_PRESET)} jabatan preset.')
+
+    if not confirm('Lanjutkan?'):
+        warn('Dibatalkan.')
+        return
+
+    created = skipped = 0
+    for company in targets:
+        for nama, level in JABATAN_PRESET:
+            obj, is_new = Position.objects.get_or_create(
+                company=company,
+                nama=nama,
+                defaults={'level': level, 'aktif': True}
+            )
+            if is_new:
+                created += 1
+            else:
+                skipped += 1
+
+    print()
+    ok(f'{created} jabatan berhasil ditambah, {skipped} sudah ada (skip).')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MENU SEED KANDIDAT
+# ══════════════════════════════════════════════════════════════════════════════
+
+_SUMBER_REKRUTMEN = [
+    'LinkedIn', 'LinkedIn', 'JobStreet', 'JobStreet', 'Indeed',
+    'Referral', 'Referral', 'Walk-in', 'Instagram', 'Website',
+]
+_STATUS_KANDIDAT = [
+    'Screening', 'Screening', 'Screening',
+    'Psikotes', 'Psikotes',
+    'Interview HR', 'Interview HR',
+    'Interview User',
+    'Medical Check',
+    'Offering',
+    'Hired', 'Hired',
+    'Rejected', 'Rejected', 'Rejected',
+    'Withdrawn',
+]
+_PENDIDIKAN_K = ['SMA/SMK', 'D3', 'D4/S1', 'D4/S1', 'S1', 'S2']
+
+
+def menu_sync_department_jabatan():
+    header('FIX DEPARTMENT KE JABATAN')
+    info('Update department jabatan berdasarkan struktur organisasi perusahaan.')
+
+    # Mapping jabatan → department (berdasarkan struktur org resmi)
+    JABATAN_DEPT_MAP = {
+        # Mining
+        'Operator ADT':                 'Mining',
+        'Operator Excavator':           'Mining',
+        'Operator Dozer':               'Mining',
+        'Operator Grader':              'Mining',
+        'Operator Loader':              'Mining',
+        'Surveyor':                     'Mining',
+        'Mine Dispatcher':              'Mining',
+        'Drill & Blast Officer':        'Mining',
+        'Mine Engineer':                'Mining',
+        'Senior Mine Engineer':         'Mining',
+        'Mine Foreman':                 'Mining',
+        'Pit Supervisor':               'Mining',
+        'Mining Superintendent':        'Mining',
+        'Mine Manager':                 'Mining',
+
+        # Civil & Maintenance
+        'Mechanic':                     'Civil & Maintenance',
+        'Helper Mechanic':              'Civil & Maintenance',
+        'Welder':                       'Civil & Maintenance',
+        'Technician':                   'Civil & Maintenance',
+        'Maintenance Planner':          'Civil & Maintenance',
+        'Senior Mechanic':              'Civil & Maintenance',
+        'Foreman Mechanic':             'Civil & Maintenance',
+        'Workshop Supervisor':          'Civil & Maintenance',
+        'Maintenance Superintendent':   'Civil & Maintenance',
+        'Maintenance Manager':          'Civil & Maintenance',
+
+        # Electric & Water Facility
+        'Electrician':                  'Electric & Water Facility',
+        'Genset Operator':              'Electric & Water Facility',
+        'Water Pump Operator':          'Electric & Water Facility',
+        'Electrical Technician':        'Electric & Water Facility',
+        'Electrical Engineer':          'Electric & Water Facility',
+        'Senior Electrical Engineer':   'Electric & Water Facility',
+        'Electrical Supervisor':        'Electric & Water Facility',
+        'Electrical Superintendent':    'Electric & Water Facility',
+        'Utility Manager':              'Electric & Water Facility',
+
+        # Health Safety Environment
+        'Safety Patrol':                'Health Safety Environment',
+        'Firefighter':                  'Health Safety Environment',
+        'Safety Officer':               'Health Safety Environment',
+        'Environmental Officer':        'Health Safety Environment',
+        'Senior Safety Officer':        'Health Safety Environment',
+        'Safety Supervisor':            'Health Safety Environment',
+        'HSE Superintendent':           'Health Safety Environment',
+        'HSE Manager':                  'Health Safety Environment',
+
+        # Human Resources
+        'HR Admin':                     'Human Resources',
+        'Recruitment Officer':          'Human Resources',
+        'Training Officer':             'Human Resources',
+        'HR Generalist':                'Human Resources',
+        'HR Supervisor':                'Human Resources',
+        'HR Superintendent':            'Human Resources',
+        'HR Manager':                   'Human Resources',
+
+        # General Affair
+        'Office Boy':                   'General Affair',
+        'Office Girl':                  'General Affair',
+        'Driver':                       'General Affair',
+        'Gardener':                     'General Affair',
+        'GA Officer':                   'General Affair',
+        'Mess & Camp Officer':          'General Affair',
+        'Senior GA Officer':            'General Affair',
+        'GA Supervisor':                'General Affair',
+        'GA Superintendent':            'General Affair',
+        'GA Manager':                   'General Affair',
+
+        # Logistic
+        'Warehouse Helper':             'Logistic',
+        'Storekeeper':                  'Logistic',
+        'Logistic Officer':             'Logistic',
+        'Senior Logistic Officer':      'Logistic',
+        'Warehouse Supervisor':         'Logistic',
+        'Logistic Superintendent':      'Logistic',
+        'Logistic Manager':             'Logistic',
+
+        # Purchasing
+        'Purchasing Admin':             'Purchasing',
+        'Procurement Officer':          'Purchasing',
+        'Senior Procurement Officer':   'Purchasing',
+        'Procurement Supervisor':       'Purchasing',
+        'Procurement Superintendent':   'Purchasing',
+        'Procurement Manager':          'Purchasing',
+
+        # Finance & Accounting
+        'Finance Admin':                'Finance & Accounting',
+        'Accountant':                   'Finance & Accounting',
+        'Tax Officer':                  'Finance & Accounting',
+        'Senior Accountant':            'Finance & Accounting',
+        'Finance Supervisor':           'Finance & Accounting',
+        'Finance Superintendent':       'Finance & Accounting',
+        'Finance Manager':              'Finance & Accounting',
+
+        # Infrastructure Technology
+        'IT Support':                   'Infrastructure Technology',
+        'Network Engineer':             'Infrastructure Technology',
+        'System Administrator':         'Infrastructure Technology',
+        'IT Supervisor':                'Infrastructure Technology',
+        'IT Superintendent':            'Infrastructure Technology',
+        'IT Manager':                   'Infrastructure Technology',
+
+        # Legal
+        'Legal Admin':                  'Legal',
+        'Legal Officer':                'Legal',
+        'Senior Legal Officer':         'Legal',
+        'Legal Supervisor':             'Legal',
+        'Legal Manager':                'Legal',
+
+        # Security
+        'Security Guard':               'Security',
+        'Security Officer':             'Security',
+        'Senior Security Officer':      'Security',
+        'Security Supervisor':          'Security',
+        'Security Manager':             'Security',
+    }
+
+    targets = pilih_companies('Fix jabatan untuk company')
+    if not targets:
+        return
+
+    updated = skipped = not_found = 0
+    for company in targets:
+        depts = {d.nama: d for d in Department.objects.filter(company=company)}
+
+        for jabatan_nama, dept_keyword in JABATAN_DEPT_MAP.items():
+            dept_match = None
+            for dept_nama, dept_obj in depts.items():
+                if dept_keyword.lower() in dept_nama.lower():
+                    dept_match = dept_obj
+                    break
+
+            if not dept_match:
+                not_found += 1
+                continue
+
+            n = Position.objects.filter(
+                company=company,
+                nama__iexact=jabatan_nama
+            ).update(department=dept_match)
+
+            if n > 0:
+                updated += n
+            else:
+                skipped += 1
+
+    print()
+    ok(f'Selesai! {updated} jabatan berhasil di-fix department-nya.')
+    if skipped:
+        warn(f'{skipped} jabatan tidak ditemukan di database (mungkin nama berbeda).')
+    if not_found:
+        warn(f'{not_found} dept tidak ditemukan di company.')
+
+
+def menu_seed_kandidat():
+    header('SEED KANDIDAT REKRUTMEN')
+
+    targets = pilih_companies('Seed kandidat untuk company')
+    if not targets:
+        return
+
+    while True:
+        try:
+            jumlah = int(input_prompt('Jumlah kandidat per company', default='30'))
+            if jumlah <= 0:
+                err('Harus lebih dari 0.')
+                continue
+            break
+        except ValueError:
+            err('Masukkan angka.')
+
+    info(f'Akan generate {jumlah} kandidat per company ({jumlah * len(targets)} total)')
+    if not confirm('Lanjutkan?'):
+        warn('Dibatalkan.')
+        return
+
+    from apps.recruitment.models import Candidate, ManpowerRequest
+    from datetime import date, timedelta
+
+    _SUMBER = ['LinkedIn', 'LinkedIn', 'JobStreet', 'JobStreet', 'Indeed',
+               'Referral', 'Referral', 'Walk-in', 'Instagram', 'Website']
+    _STATUS = ['Screening', 'Screening', 'Screening', 'Psikotes', 'Psikotes',
+               'Interview HR', 'Interview HR', 'Interview User', 'Medical Check',
+               'Offering', 'Hired', 'Hired', 'Rejected', 'Rejected', 'Rejected', 'Withdrawn']
+    _PEND   = ['SMA/SMK', 'D3', 'D4/S1', 'D4/S1', 'S1', 'S2']
+
+    total = 0
+    for company in targets:
+        positions = list(Position.objects.filter(company=company, aktif=True).values_list('nama', flat=True))
+        if not positions:
+            positions = ['Staff Umum', 'Operator', 'Supervisor', 'Admin', 'Manager']
+
+        mprf = ManpowerRequest.objects.filter(company=company).first()
+
+        bulk = []
+        for _ in range(jumlah):
+            jk  = random.choice(['L', 'L', 'P'])
+            nama = _gen_nama(jk)
+            jabatan = random.choice(positions)
+            exp = random.randint(0, 15)
+            gaji_min = 3_000_000 + (exp * 500_000)
+            gaji_max = gaji_min + 3_000_000
+            ekspektasi = random.randint(gaji_min // 1000, gaji_max // 1000) * 1000
+            ats_score = random.randint(40, 95)
+            if ats_score >= 80:   ats_grade = 'A'
+            elif ats_score >= 65: ats_grade = 'B'
+            elif ats_score >= 50: ats_grade = 'C'
+            else:                 ats_grade = 'D'
+
+            bulk.append(Candidate(
+                mprf             = mprf,
+                nama             = nama,
+                email            = f'{nama.lower().replace(" ", ".")[:20]}@gmail.com',
+                no_hp            = f'08{random.randint(100000000, 999999999)}',
+                jabatan_dilamar  = jabatan,
+                sumber           = random.choice(_SUMBER),
+                status           = random.choice(_STATUS),
+                pendidikan       = random.choice(_PEND),
+                pengalaman_tahun = exp,
+                ekspektasi_gaji  = ekspektasi,
+                ats_score        = ats_score,
+                ats_grade        = ats_grade,
+                ats_rekomendasi  = 'Lanjut' if ats_score >= 65 else 'Pertimbangkan',
+            ))
+
+        created = Candidate.objects.bulk_create(bulk, ignore_conflicts=True)
+        n = len(created)
+        total += n
+        ok(f'{company.nama}: {n} kandidat berhasil dibuat.')
+
+    print()
+    ok(f'Total {total} kandidat berhasil dibuat!')
+
+
+def menu_seed_kontrak():
+    header('SEED KONTRAK KARYAWAN')
+
+    _PENANDATANGAN = [
+        ('HR Manager',        'Manager'),
+        ('Site Manager',      'Manager'),
+        ('HR Director',       'Director'),
+        ('Managing Director', 'Director'),
+    ]
+
+    targets = pilih_companies('Seed kontrak untuk company')
+    if not targets:
+        return
+
+    info('Kontrak akan dibuat untuk karyawan aktif yang belum punya kontrak.')
+
+    # Pilih tipe kontrak & rasio
+    print(f'\n{C}  Rasio tipe kontrak:{RST}')
+    info('Total harus 100. Default: PKWT=60, PKWTT=30, PHL=10')
+    while True:
+        try:
+            pct_pkwt  = int(input_prompt('% PKWT  (Waktu Tertentu)', default='60') or 60)
+            pct_pkwtt = int(input_prompt('% PKWTT (Waktu Tidak Tertentu)', default='30') or 30)
+            pct_phl   = 100 - pct_pkwt - pct_pkwtt
+            if pct_pkwt + pct_pkwtt > 100 or pct_phl < 0:
+                err('Total melebihi 100. Coba lagi.')
+                continue
+            info(f'Rasio: PKWT={pct_pkwt}% | PKWTT={pct_pkwtt}% | PHL={pct_phl}%')
+            break
+        except ValueError:
+            err('Masukkan angka.')
+
+    if not confirm('Lanjutkan?'):
+        warn('Dibatalkan.')
+        return
+
+    from apps.contracts.models import Contract
+    from apps.employees.models import Employee
+    from datetime import date, timedelta
+
+    # Build tipe pool sesuai rasio
+    tipe_pool = (
+        ['PKWT'] * pct_pkwt +
+        ['PKWTT'] * pct_pkwtt +
+        ['Perjanjian Harian Lepas'] * pct_phl
+    )
+
+    total = 0
+    for company in targets:
+        employees = Employee.objects.filter(company=company, status='Aktif')
+        existing  = set(Contract.objects.filter(company=company).values_list('employee_id', flat=True))
+        targets_emp = [e for e in employees if e.pk not in existing]
+
+        if not targets_emp:
+            warn(f'{company.nama}: semua karyawan sudah punya kontrak.')
+            continue
+
+        penandatangan = random.choice(_PENANDATANGAN)
+        bulk = []
+
+        for emp in targets_emp:
+            tipe = random.choice(tipe_pool)
+            mulai = emp.join_date if emp.join_date else date(2023, 1, 1)
+
+            if tipe == 'PKWT':
+                durasi = random.choice([6, 12, 12, 24])
+                selesai = mulai + timedelta(days=30 * durasi)
+                # Tentukan status berdasarkan tanggal
+                if selesai < date.today():
+                    status = random.choice(['Expired', 'Renewed'])
+                else:
+                    status = 'Aktif'
+            elif tipe == 'Perjanjian Harian Lepas':
+                durasi = random.choice([3, 6])
+                selesai = mulai + timedelta(days=30 * durasi)
+                status = 'Aktif' if selesai >= date.today() else 'Expired'
+            else:
+                selesai = None  # PKWTT tidak ada tanggal selesai
+                status = 'Aktif'
+
+            bulk.append(Contract(
+                company              = company,
+                employee             = emp,
+                tipe_kontrak         = tipe,
+                tanggal_mulai        = mulai,
+                tanggal_selesai      = selesai,
+                jabatan              = emp.jabatan.nama if emp.jabatan else '',
+                departemen           = emp.department.nama if emp.department else '',
+                gaji_pokok           = emp.gaji_pokok or 0,
+                status_gaji          = random.choice(['reguler', 'reguler', 'all_in']),
+                nama_penandatangan   = penandatangan[0],
+                jabatan_penandatangan= penandatangan[1],
+                status               = status,
+            ))
+
+        # Simpan satu per satu karena ada auto-generate nomor kontrak
+        created = 0
+        for contract in bulk:
+            try:
+                contract.save()
+                created += 1
+            except Exception as e:
+                pass
+
+        total += created
+        ok(f'{company.nama}: {created} kontrak berhasil dibuat.')
+
+    print()
+    ok(f'Total {total} kontrak berhasil dibuat!')
+    info('PKWT = ada tanggal selesai | PKWTT = permanen | PHL = harian lepas')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  MENU UTAMA
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -1197,9 +1822,13 @@ def main_menu():
         menu = pilih_menu([
             'Tambah Company / Tenant',
             'Tambah Department',
-            'Tambah Jabatan',
+            'Tambah Jabatan (manual)',
+            'Tambah Jabatan Preset (114 jabatan industri)',
+            'Sync Department ke Jabatan',
             'Generate Karyawan Dummy',
             'Generate Absensi',
+            'Seed Kandidat Rekrutmen',
+            'Seed Kontrak Karyawan',
             'Seed Asset Management',
             'Lihat semua data',
             'Keluar',
@@ -1208,11 +1837,15 @@ def main_menu():
         if   menu == 0: menu_tambah_company()
         elif menu == 1: menu_tambah_department()
         elif menu == 2: menu_tambah_jabatan()
-        elif menu == 3: menu_generate_dummy_karyawan()
-        elif menu == 4: menu_generate_absensi()
-        elif menu == 5: menu_seed_asset()
-        elif menu == 6: menu_lihat_data()
-        elif menu == 7:
+        elif menu == 3: menu_jabatan_preset()
+        elif menu == 4: menu_sync_department_jabatan()
+        elif menu == 5: menu_generate_dummy_karyawan()
+        elif menu == 6: menu_generate_absensi()
+        elif menu == 7: menu_seed_kandidat()
+        elif menu == 8: menu_seed_kontrak()
+        elif menu == 9: menu_seed_asset()
+        elif menu == 10: menu_lihat_data()
+        elif menu == 11:
             print(f'\n{G}  Selesai. Sampai jumpa!{RST}\n')
             break
 
@@ -1707,9 +2340,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='HRIS SmartDesk — Seed Data')
     parser.add_argument('--company',    action='store_true', help='Langsung ke menu tambah company')
     parser.add_argument('--department', action='store_true', help='Langsung ke menu tambah department')
-    parser.add_argument('--jabatan',    action='store_true', help='Langsung ke menu tambah jabatan')
+    parser.add_argument('--jabatan',    action='store_true', help='Langsung ke menu tambah jabatan manual')
+    parser.add_argument('--preset',     action='store_true', help='Langsung ke menu jabatan preset 114 jabatan')
     parser.add_argument('--dummy',      action='store_true', help='Langsung ke menu generate karyawan dummy')
     parser.add_argument('--absensi',    action='store_true', help='Langsung ke menu generate absensi')
+    parser.add_argument('--sync-dept',  action='store_true', help='Sync department ke jabatan dari data karyawan')
+    parser.add_argument('--kandidat',   action='store_true', help='Langsung ke menu seed kandidat rekrutmen')
+    parser.add_argument('--kontrak',    action='store_true', help='Langsung ke menu seed kontrak karyawan')
     parser.add_argument('--asset',      action='store_true', help='Langsung ke menu seed asset management')
     parser.add_argument('--list',       action='store_true', help='Langsung ke lihat data')
     args = parser.parse_args()
@@ -1718,8 +2355,12 @@ if __name__ == '__main__':
         if   args.company:    menu_tambah_company()
         elif args.department: menu_tambah_department()
         elif args.jabatan:    menu_tambah_jabatan()
+        elif args.preset:     menu_jabatan_preset()
+        elif getattr(args, 'sync_dept', False): menu_sync_department_jabatan()
         elif args.dummy:      menu_generate_dummy_karyawan()
         elif args.absensi:    menu_generate_absensi()
+        elif args.kandidat:   menu_seed_kandidat()
+        elif args.kontrak:    menu_seed_kontrak()
         elif args.asset:      menu_seed_asset()
         elif args.list:       menu_lihat_data()
         else:                 main_menu()
