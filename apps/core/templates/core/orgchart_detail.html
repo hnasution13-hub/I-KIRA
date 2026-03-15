@@ -21,21 +21,16 @@
       <button class="btn btn-success btn-sm">Aktifkan</button>
     </form>
     {% endif %}
-    {% if request.user.is_hr %}
-    <button id="btn-edit-mode" class="btn btn-warning btn-sm">✏ Edit Struktur</button>
-    {% endif %}
     <a href="{% url 'orgchart_list' %}" class="btn btn-outline-secondary btn-sm">← Daftar</a>
   </div>
 </div>
 
-{# Toolbar #}
+<!-- Toolbar -->
 <div class="card mb-3 border-0 shadow-sm">
   <div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">
-    <span class="text-muted small me-1">Filter:</span>
+    <span class="text-muted small me-1">Filter Dept:</span>
     <button class="btn btn-sm btn-primary dept-filter active" data-dept="all">Semua</button>
-    {% for dept_nama, nodes in tree.items %}
-    <button class="btn btn-sm btn-outline-primary dept-filter" data-dept="{{ dept_nama }}">{{ dept_nama }}</button>
-    {% endfor %}
+    <div id="dept-filter-btns"></div>
     <div class="ms-auto d-flex gap-2">
       <button id="btn-zoom-in"  class="btn btn-sm btn-outline-secondary">＋</button>
       <button id="btn-zoom-out" class="btn btn-sm btn-outline-secondary">－</button>
@@ -45,45 +40,25 @@
   </div>
 </div>
 
-{# Legend #}
+<!-- Legend -->
 <div class="d-flex flex-wrap gap-2 mb-3 small" id="legend-bar">
   <span class="lbadge lbadge-Director">Director</span>
-  <span class="lbadge lbadge-General-Manager">General Manager</span>
   <span class="lbadge lbadge-Senior-Manager">Senior Manager</span>
   <span class="lbadge lbadge-Manager">Manager</span>
+  <span class="lbadge lbadge-Senior-Supervisor">Senior Supervisor</span>
   <span class="lbadge lbadge-Supervisor">Supervisor</span>
   <span class="lbadge lbadge-Senior-Staff">Senior Staff</span>
   <span class="lbadge lbadge-Staff">Staff</span>
-  <span class="ms-3 text-muted" id="edit-hint" style="display:none">
-    <i class="fas fa-arrows-alt me-1"></i>Drag node untuk pindah hierarki · Drop ke swimlane atau ke node lain
-  </span>
 </div>
 
-{# Warning modal #}
-<div class="modal fade" id="warnModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-warning border-0">
-        <h6 class="modal-title fw-bold">⚠ Perhatian — Approval Matrix</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body small" id="warn-body"></div>
-      <div class="modal-footer border-0">
-        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
-        <a href="{% url 'approval_matrix_list' %}" class="btn btn-sm btn-warning">Cek Approval Matrix →</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-{# Canvas #}
-<div id="orgchart-canvas" class="border rounded bg-white" style="overflow:auto;min-height:520px;position:relative;cursor:grab">
+<!-- Canvas -->
+<div id="orgchart-canvas" style="overflow:auto;min-height:520px;position:relative;cursor:grab;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
   <div id="orgchart-inner" style="padding:32px;display:inline-block;min-width:100%;transform-origin:0 0">
     <div id="orgchart-root"></div>
   </div>
 </div>
 
-{# Detail panel #}
+<!-- Detail panel -->
 <div id="detail-panel" class="card shadow border-0" style="position:fixed;right:-380px;top:80px;width:360px;max-height:82vh;overflow-y:auto;z-index:1050;transition:right .25s;border-radius:12px">
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -95,148 +70,159 @@
 </div>
 
 <style>
-/* ── Level colors ─────────────────────────────────────── */
 :root {
-  --c-director:   #5b21b6; --bg-director:   #f5f3ff;
-  --c-gm:         #0f766e; --bg-gm:         #f0fdfa;
-  --c-sm:         #b45309; --bg-sm:         #fffbeb;
-  --c-manager:    #1d4ed8; --bg-manager:    #eff6ff;
-  --c-supervisor: #0369a1; --bg-supervisor: #e0f2fe;
-  --c-ss:         #4d7c0f; --bg-ss:         #ecfccb;
-  --c-staff:      #475569; --bg-staff:      #f8fafc;
+  --c-director:  #5b21b6; --bg-director:  #f5f3ff;
+  --c-sm:        #b45309; --bg-sm:        #fffbeb;
+  --c-manager:   #1d4ed8; --bg-manager:   #eff6ff;
+  --c-ss:        #0369a1; --bg-ss:        #e0f2fe;
+  --c-supervisor:#4d7c0f; --bg-supervisor:#ecfccb;
+  --c-senstaff:  #0f766e; --bg-senstaff:  #f0fdfa;
+  --c-staff:     #475569; --bg-staff:     #f8fafc;
 }
 .lbadge { padding:3px 10px;border-radius:20px;font-weight:600;font-size:11px; }
-.lbadge-Director        { background:var(--bg-director);  color:var(--c-director); }
-.lbadge-General-Manager { background:var(--bg-gm);        color:var(--c-gm); }
-.lbadge-Senior-Manager  { background:var(--bg-sm);        color:var(--c-sm); }
-.lbadge-Manager         { background:var(--bg-manager);   color:var(--c-manager); }
-.lbadge-Supervisor      { background:var(--bg-supervisor);color:var(--c-supervisor); }
-.lbadge-Senior-Staff    { background:var(--bg-ss);        color:var(--c-ss); }
-.lbadge-Staff           { background:var(--bg-staff);     color:var(--c-staff); }
+.lbadge-Director       { background:var(--bg-director);  color:var(--c-director); }
+.lbadge-Senior-Manager { background:var(--bg-sm);        color:var(--c-sm); }
+.lbadge-Manager        { background:var(--bg-manager);   color:var(--c-manager); }
+.lbadge-Senior-Supervisor { background:var(--bg-ss);     color:var(--c-ss); }
+.lbadge-Supervisor     { background:var(--bg-supervisor);color:var(--c-supervisor); }
+.lbadge-Senior-Staff   { background:var(--bg-senstaff);  color:var(--c-senstaff); }
+.lbadge-Staff          { background:var(--bg-staff);     color:var(--c-staff); }
 
-/* ── Node card ────────────────────────────────────────── */
-.org-node {
-  display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
-  border:2px solid #e2e8f0;border-radius:10px;padding:10px 14px;
-  min-width:140px;max-width:200px;background:#fff;
-  text-align:center;position:relative;
-  box-shadow:0 1px 4px rgba(0,0,0,.07);
-  transition:box-shadow .15s,transform .1s,border-color .2s;
-  cursor:pointer;
-}
-.org-node:hover { box-shadow:0 4px 16px rgba(0,0,0,.13);transform:translateY(-2px); }
-.org-node .nl  { font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;padding:2px 8px;border-radius:20px; }
-.org-node .nt  { font-size:12px;font-weight:700;color:#1e293b;line-height:1.3;margin-bottom:2px; }
-.org-node .nd  { font-size:10px;color:#94a3b8;margin-bottom:4px; }
-.org-node .nc  { font-size:10px;color:#64748b;background:#f1f5f9;border-radius:20px;padding:2px 8px; }
-
-.org-node.lvl-Director        { border-color:var(--c-director); }
-.org-node.lvl-Director .nl    { background:var(--bg-director);color:var(--c-director); }
-.org-node.lvl-General-Manager { border-color:var(--c-gm); }
-.org-node.lvl-General-Manager .nl { background:var(--bg-gm);color:var(--c-gm); }
-.org-node.lvl-Senior-Manager  { border-color:var(--c-sm); }
-.org-node.lvl-Senior-Manager .nl  { background:var(--bg-sm);color:var(--c-sm); }
-.org-node.lvl-Manager         { border-color:var(--c-manager); }
-.org-node.lvl-Manager .nl     { background:var(--bg-manager);color:var(--c-manager); }
-.org-node.lvl-Supervisor      { border-color:var(--c-supervisor); }
-.org-node.lvl-Supervisor .nl  { background:var(--bg-supervisor);color:var(--c-supervisor); }
-.org-node.lvl-Senior-Staff    { border-color:var(--c-ss); }
-.org-node.lvl-Senior-Staff .nl{ background:var(--bg-ss);color:var(--c-ss); }
-.org-node.lvl-Staff           { border-color:#cbd5e1; }
-.org-node.lvl-Staff .nl       { background:var(--bg-staff);color:var(--c-staff); }
-
-/* Drag states */
-.org-node.dragging  { opacity:.45;transform:scale(.96);box-shadow:none!important; }
-.org-node.drop-target { border-style:dashed!important;border-width:2.5px!important;transform:scale(1.04); }
-.org-node.drop-root { border-color:#f59e0b!important;background:#fffbeb!important; }
-
-/* ── Swimlane ─────────────────────────────────────────── */
-.swimlane {
-  display:flex;
-  margin-bottom:0;
-  position:relative;
-}
-.swimlane-label {
-  writing-mode:vertical-lr;
-  transform:rotate(180deg);
-  width:28px;min-width:28px;
-  font-size:10px;font-weight:700;letter-spacing:.08em;
-  text-transform:uppercase;
-  display:flex;align-items:center;justify-content:center;
-  border-right:2px solid #e2e8f0;
-  margin-right:16px;
-  color:#94a3b8;
-  padding:8px 0;
-  flex-shrink:0;
-}
-.swimlane-body {
-  flex:1;
-  display:flex;
-  flex-wrap:wrap;
-  gap:16px;
-  align-items:flex-start;
-  padding:16px 0;
-  border-bottom:1px dashed #e2e8f0;
-  min-height:80px;
-  position:relative;
-}
-.swimlane-body.drag-over {
-  background:rgba(251,191,36,.08);
-  border-bottom-color:#f59e0b;
-}
-.swimlane:last-child .swimlane-body { border-bottom:none; }
-
-/* ── Dept section ─────────────────────────────────────── */
-.dept-section { margin-bottom:48px; }
+/* ── Dept section ── */
+.dept-section { margin-bottom:40px; }
 .dept-header {
   display:flex;align-items:center;gap:10px;
-  margin-bottom:12px;padding-bottom:8px;
-  border-bottom:2px solid #e2e8f0;
+  margin-bottom:0;padding:10px 16px;
+  background:#1e3a5f;border-radius:10px 10px 0 0;color:#fff;
 }
 .dept-icon {
   width:32px;height:32px;border-radius:8px;
-  background:#1e3a5f;color:#fff;
+  background:rgba(255,255,255,.15);
   display:flex;align-items:center;justify-content:center;
   font-size:12px;font-weight:700;flex-shrink:0;
 }
-.dept-name { font-size:14px;font-weight:700;color:#1e293b; }
-.dept-meta { font-size:11px;color:#94a3b8; }
+.dept-name { font-size:14px;font-weight:700; }
+.dept-meta { font-size:11px;opacity:.7;margin-left:auto; }
 
-/* ── Drop zone: root level ────────────────────────────── */
-.root-drop-hint {
-  display:none;
-  border:2px dashed #f59e0b;border-radius:8px;
-  padding:8px 16px;color:#b45309;font-size:11px;font-weight:600;
-  background:#fffbeb;margin-bottom:12px;
+/* ── Swimlane table ── */
+.swimlane-table {
+  width:100%;border-collapse:collapse;
+  border:1px solid #e2e8f0;border-radius:0 0 10px 10px;
+  overflow:hidden;background:#fff;
 }
-.edit-mode .root-drop-hint { display:inline-flex;align-items:center;gap:6px; }
+.swimlane-row { display:flex;border-bottom:1px solid #e2e8f0; }
+.swimlane-row:last-child { border-bottom:none; }
+.swimlane-label-cell {
+  width:110px;min-width:110px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  border-right:2px solid #e2e8f0;
+  padding:12px 8px;
+  writing-mode:vertical-lr;transform:rotate(180deg);
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:#94a3b8;background:#fafafa;
+}
+.swimlane-content {
+  flex:1;padding:16px 20px;
+  display:flex;flex-wrap:wrap;gap:0;
+  align-items:flex-start;
+  position:relative;min-height:80px;
+}
+
+/* ── Node ── */
+.org-node {
+  display:inline-flex;flex-direction:column;
+  border:2px solid #e2e8f0;border-radius:10px;padding:8px 12px;
+  min-width:130px;max-width:180px;background:#fff;
+  text-align:center;position:relative;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
+  transition:box-shadow .15s,transform .1s;
+  cursor:pointer;margin:4px;
+  vertical-align:top;
+}
+.org-node:hover { box-shadow:0 4px 16px rgba(0,0,0,.13);transform:translateY(-2px); }
+.org-node .nl { font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;padding:2px 7px;border-radius:20px; }
+.org-node .nt { font-size:11px;font-weight:700;color:#1e293b;line-height:1.3;margin-bottom:2px; }
+.org-node .nc { font-size:10px;color:#64748b;background:#f1f5f9;border-radius:20px;padding:1px 7px;margin-top:3px;display:inline-block; }
+
+.org-node.lvl-Director       { border-color:var(--c-director); }
+.org-node.lvl-Director .nl   { background:var(--bg-director);color:var(--c-director); }
+.org-node.lvl-Senior-Manager { border-color:var(--c-sm); }
+.org-node.lvl-Senior-Manager .nl { background:var(--bg-sm);color:var(--c-sm); }
+.org-node.lvl-Manager        { border-color:var(--c-manager); }
+.org-node.lvl-Manager .nl    { background:var(--bg-manager);color:var(--c-manager); }
+.org-node.lvl-Senior-Supervisor { border-color:var(--c-ss); }
+.org-node.lvl-Senior-Supervisor .nl { background:var(--bg-ss);color:var(--c-ss); }
+.org-node.lvl-Supervisor     { border-color:var(--c-supervisor); }
+.org-node.lvl-Supervisor .nl { background:var(--bg-supervisor);color:var(--c-supervisor); }
+.org-node.lvl-Senior-Staff   { border-color:var(--c-senstaff); }
+.org-node.lvl-Senior-Staff .nl { background:var(--bg-senstaff);color:var(--c-senstaff); }
+.org-node.lvl-Staff          { border-color:#cbd5e1; }
+.org-node.lvl-Staff .nl      { background:var(--bg-staff);color:var(--c-staff); }
+
+/* ── Tree group ── */
+.tree-group {
+  display:inline-flex;flex-direction:column;
+  align-items:center;margin:4px 8px;
+  vertical-align:top;
+}
+.tree-group-children {
+  display:flex;flex-wrap:wrap;justify-content:center;
+  gap:4px;padding-top:8px;
+  border-top:2px solid #cbd5e1;
+  margin-top:4px;position:relative;
+}
+/* Vertical line from parent to children bar */
+.tree-group-children::before {
+  content:'';position:absolute;
+  top:-10px;left:50%;transform:translateX(-50%);
+  width:2px;height:10px;background:#cbd5e1;
+}
+/* Horizontal connector bar above children */
+.tree-group-children::after {
+  content:'';display:none;
+}
+.tree-child {
+  display:inline-flex;flex-direction:column;
+  align-items:center;position:relative;
+}
+/* Vertical line down to each child */
+.tree-child::before {
+  content:'';position:absolute;
+  top:-8px;left:50%;transform:translateX(-50%);
+  width:2px;height:8px;background:#cbd5e1;
+}
 
 @media print {
-  .card.mb-3,#btn-edit-mode,#detail-panel,#legend-bar .text-muted { display:none!important; }
+  .card.mb-3,#detail-panel,#legend-bar .text-muted { display:none!important; }
   #orgchart-canvas { overflow:visible!important; }
   #orgchart-inner  { transform:none!important; }
 }
 </style>
 
 <script>
-const JSON_URL    = "{% url 'orgchart_json' chart.pk %}";
-const CSRF_TOKEN  = "{{ csrf_token }}";
-const IS_HR       = {{ request.user.is_hr|yesno:"true,false" }};
-const LEVEL_ORDER = ['Director','General Manager','Senior Manager','Manager','Supervisor','Senior Staff','Staff'];
+const JSON_URL   = "{% url 'orgchart_json' chart.pk %}";
+const CSRF_TOKEN = "{{ csrf_token }}";
+const LEVEL_ORDER = ['Director','Senior Manager','Manager','Senior Supervisor','Supervisor','Senior Staff','Staff'];
 
 let scale    = 1;
-let editMode = false;
-let dragNode = null;
 let allNodes = {};
 
-function lvlRank(l) { const i=LEVEL_ORDER.indexOf(l); return i===-1?99:i; }
 function lvlClass(l) { return (l||'Staff').replace(/\s+/g,'-'); }
+function lvlRank(l)  { const i=LEVEL_ORDER.indexOf(l); return i===-1?99:i; }
 
-// ── Fetch & render ───────────────────────────────────────────────────────────
+// ── Fetch & render ────────────────────────────────────────────────────────────
 fetch(JSON_URL)
   .then(r=>r.json())
-  .then(d=>{ allNodes={}; d.nodes.forEach(n=>allNodes[n.id]=n); renderChart(d.nodes); })
-  .catch(()=>{ document.getElementById('orgchart-root').innerHTML='<p class="text-danger p-4">Gagal memuat data.</p>'; });
+  .then(d=>{
+    allNodes = {};
+    d.nodes.forEach(n => allNodes[n.id] = n);
+    renderChart(d.nodes);
+    buildDeptFilters(d.nodes);
+  })
+  .catch(()=>{
+    document.getElementById('orgchart-root').innerHTML =
+      '<p class="text-danger p-4">Gagal memuat data.</p>';
+  });
 
 function renderChart(nodes) {
   // Group by dept
@@ -248,11 +234,9 @@ function renderChart(nodes) {
 
   const root = document.getElementById('orgchart-root');
   root.innerHTML = '';
-
   for (const [deptName, deptNodes] of Object.entries(depts)) {
     root.appendChild(buildDeptSection(deptName, deptNodes));
   }
-  if (editMode) enableDrag();
 }
 
 function buildDeptSection(deptName, nodes) {
@@ -261,59 +245,96 @@ function buildDeptSection(deptName, nodes) {
   sec.dataset.dept = deptName;
 
   // Header
-  const initials = deptName.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-  const totalEmp = nodes.reduce((s,n)=>s+n.emp_count,0);
+  const initials = deptName.split(/[\s|&]+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+  const totalEmp = nodes.reduce((s,n)=>s+n.emp_count, 0);
   const hdr = document.createElement('div');
   hdr.className = 'dept-header';
-  hdr.innerHTML = `<div class="dept-icon">${initials}</div>
-    <div><div class="dept-name">${deptName}</div>
-    <div class="dept-meta">${nodes.length} jabatan · ${totalEmp} karyawan</div></div>`;
+  hdr.innerHTML = `
+    <div class="dept-icon">${initials}</div>
+    <div class="dept-name">${deptName}</div>
+    <div class="dept-meta">${nodes.length} jabatan · ${totalEmp} karyawan</div>`;
   sec.appendChild(hdr);
 
-  // Root drop hint (edit mode)
-  const rootHint = document.createElement('div');
-  rootHint.className = 'root-drop-hint';
-  rootHint.dataset.dropDept = deptName;
-  rootHint.innerHTML = '⬆ Drop di sini untuk jadikan jabatan puncak departemen ini';
-  rootHint.addEventListener('dragover', e=>{e.preventDefault();rootHint.style.background='#fef3c7';});
-  rootHint.addEventListener('dragleave', ()=>{rootHint.style.background='#fffbeb';});
-  rootHint.addEventListener('drop', e=>{e.preventDefault();if(dragNode) saveParent(dragNode,null);rootHint.style.background='#fffbeb';});
-  sec.appendChild(rootHint);
+  // Build swimlane table
+  const table = document.createElement('div');
+  table.className = 'swimlane-table';
 
-  // Group nodes by level → swimlanes
-  const byLevel = {};
-  nodes.forEach(n=>{(byLevel[n.level]=byLevel[n.level]||[]).push(n);});
-  const levels = Object.keys(byLevel).sort((a,b)=>lvlRank(a)-lvlRank(b));
+  // Build node map for tree
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.id] = {...n, children: []});
 
-  levels.forEach(level=>{
-    const lane = document.createElement('div');
-    lane.className = 'swimlane';
-    lane.dataset.level = level;
-
-    const label = document.createElement('div');
-    label.className = `swimlane-label lbadge-${lvlClass(level)}`;
-    label.textContent = level;
-    lane.appendChild(label);
-
-    const body = document.createElement('div');
-    body.className = 'swimlane-body';
-    body.dataset.level = level;
-    body.dataset.dept  = deptName;
-
-    // Drag-over untuk drop ke swimlane = set parent ke null di level ini (nanti user pilih parent manual)
-    body.addEventListener('dragover', e=>{e.preventDefault();body.classList.add('drag-over');});
-    body.addEventListener('dragleave', ()=>body.classList.remove('drag-over'));
-    body.addEventListener('drop', e=>{
-      e.preventDefault();body.classList.remove('drag-over');
-      // Drop ke swimlane tanpa node target = jadikan root (tanpa parent)
-      if(dragNode && !e.target.closest('.org-node')) saveParent(dragNode,null);
-    });
-
-    byLevel[level].forEach(n=>body.appendChild(buildNodeEl(n)));
-    lane.appendChild(body);
-    sec.appendChild(lane);
+  // Build parent-child tree within dept
+  const roots = [];
+  nodes.forEach(n => {
+    if (n.parent_id && nodeMap[n.parent_id]) {
+      nodeMap[n.parent_id].children.push(nodeMap[n.id]);
+    } else {
+      roots.push(nodeMap[n.id]);
+    }
   });
 
+  // Group by level for swimlanes
+  const byLevel = {};
+  nodes.forEach(n => {
+    (byLevel[n.level||'Staff'] = byLevel[n.level||'Staff']||[]).push(nodeMap[n.id]);
+  });
+
+  const levels = Object.keys(byLevel).sort((a,b)=>lvlRank(a)-lvlRank(b));
+
+  levels.forEach(level => {
+    const row = document.createElement('div');
+    row.className = 'swimlane-row';
+
+    // Label
+    const labelCell = document.createElement('div');
+    labelCell.className = `swimlane-label-cell lbadge-${lvlClass(level)}`;
+    labelCell.textContent = level;
+    row.appendChild(labelCell);
+
+    // Content
+    const content = document.createElement('div');
+    content.className = 'swimlane-content';
+
+    // Get nodes at this level — group by parent
+    const levelNodes = byLevel[level];
+
+    // Find which nodes at this level have parent in PREVIOUS swimlane
+    // Group: nodes with same parent stay together
+    const parentGroups = {};
+    levelNodes.forEach(n => {
+      const key = n.parent_id || '__root__';
+      (parentGroups[key] = parentGroups[key]||[]).push(n);
+    });
+
+    for (const [parentKey, groupNodes] of Object.entries(parentGroups)) {
+      const group = document.createElement('div');
+      group.className = 'tree-group';
+
+      if (groupNodes.length === 1) {
+        // Single node — just render, no grouping wrapper
+        const nodeEl = buildNodeEl(groupNodes[0]);
+        nodeEl.classList.add('tree-child');
+        group.appendChild(nodeEl);
+      } else {
+        // Multiple nodes with same parent — show grouped
+        const groupWrap = document.createElement('div');
+        groupWrap.className = 'tree-group-children';
+        groupNodes.forEach(n => {
+          const child = document.createElement('div');
+          child.className = 'tree-child';
+          child.appendChild(buildNodeEl(n));
+          groupWrap.appendChild(child);
+        });
+        group.appendChild(groupWrap);
+      }
+      content.appendChild(group);
+    }
+
+    row.appendChild(content);
+    table.appendChild(row);
+  });
+
+  sec.appendChild(table);
   return sec;
 }
 
@@ -322,130 +343,55 @@ function buildNodeEl(node) {
   const card = document.createElement('div');
   card.className = `org-node lvl-${lc}`;
   card.dataset.nodeId = node.id;
-  card.draggable = editMode; // ikuti state edit mode saat ini
   card.innerHTML = `
     <div class="nl">${node.level||'Staff'}</div>
     <div class="nt">${node.nama}</div>
-    ${node.department?`<div class="nd">${node.department}</div>`:''}
-    <div class="nc">👤 ${node.emp_count} orang</div>`;
+    <div class="nc">👤 ${node.emp_count}</div>`;
 
-  card.addEventListener('click', e=>{
-    if(!e.defaultPrevented && !card.classList.contains('dragging')) showPanel(node);
-  });
-
-  // Drag events (aktif di edit mode)
-  card.addEventListener('dragstart', e=>{
-    if(!editMode || !card.draggable) return;
-    dragNode = node;
-    card.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', String(node.id));
-    // Ghost image
-    const ghost = card.cloneNode(true);
-    ghost.style.cssText = 'position:absolute;top:-9999px;opacity:.8;transform:scale(.9)';
-    document.body.appendChild(ghost);
-    e.dataTransfer.setDragImage(ghost, 80, 40);
-    setTimeout(()=>ghost.remove(), 0);
-  });
-  card.addEventListener('dragend', ()=>{
-    card.classList.remove('dragging');
-    document.querySelectorAll('.drop-target,.drop-root').forEach(el=>{
-      el.classList.remove('drop-target','drop-root');
-    });
-    dragNode = null;
-  });
-
-  // Drop target: jabatan lain jadi parent
-  card.addEventListener('dragover', e=>{
-    if(!editMode||!dragNode||dragNode.id===node.id)return;
-    e.preventDefault();e.stopPropagation();
-    card.classList.add('drop-target');
-  });
-  card.addEventListener('dragleave', ()=>card.classList.remove('drop-target'));
-  card.addEventListener('drop', e=>{
-    e.preventDefault();e.stopPropagation();
-    card.classList.remove('drop-target');
-    if(dragNode && dragNode.id !== node.id) saveParent(dragNode, node.id);
-  });
-
+  card.addEventListener('click', () => showPanel(node));
   return card;
 }
 
-// ── Save parent via API ──────────────────────────────────────────────────────
-function saveParent(node, newParentId) {
-  const parentNama = newParentId ? (allNodes[newParentId]?.nama||'?') : '(Puncak hierarki)';
-  fetch(`/api/position/${node.id}/update-parent/`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF_TOKEN},
-    body: JSON.stringify({parent_id: newParentId})
-  })
-  .then(r=>r.json())
-  .then(data=>{
-    if(data.error) { showToast(data.error,'danger'); return; }
-    // Update local state
-    allNodes[node.id] = {...allNodes[node.id], parent_id: newParentId};
-    showToast(`✓ ${node.nama} → ${parentNama}`,'success');
-    // Warning jika ada ApprovalMatrix eksplisit
-    if(data.matrix_count > 0) {
-      document.getElementById('warn-body').innerHTML =
-        `<p><strong>${node.nama}</strong> memiliki <strong>${data.matrix_count} rule Approval Matrix eksplisit</strong>.</p>
-         <p>Perubahan hierarki tidak otomatis mengubah rule tersebut. Approval chain untuk jabatan ini akan tetap mengikuti rule yang sudah diset, bukan parent baru.</p>
-         <p>Klik <strong>Cek Approval Matrix</strong> untuk review dan sesuaikan jika perlu.</p>`;
-      new bootstrap.Modal(document.getElementById('warnModal')).show();
-    }
-    // Re-render
-    const nodes = Object.values(allNodes);
-    renderChart(nodes);
-    if(editMode) enableDrag();
-  })
-  .catch(()=>showToast('Gagal menyimpan perubahan','danger'));
+// ── Dept filter buttons ───────────────────────────────────────────────────────
+function buildDeptFilters(nodes) {
+  const depts = [...new Set(nodes.map(n => n.department||'Tanpa Departemen'))];
+  const wrap  = document.getElementById('dept-filter-btns');
+  depts.forEach(d => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm btn-outline-primary dept-filter';
+    btn.dataset.dept = d;
+    btn.textContent = d.split('|')[0].trim();
+    btn.addEventListener('click', () => filterDept(d, btn));
+    wrap.appendChild(btn);
+  });
 }
 
-// ── Toast notifikasi ─────────────────────────────────────────────────────────
-function showToast(msg, type='success') {
-  const t = document.createElement('div');
-  t.className = `alert alert-${type} shadow py-2 px-3 small`;
-  t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:2000;min-width:260px;border-radius:8px;animation:fadeIn .2s';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(), 3200);
+function filterDept(dept, clickedBtn) {
+  document.querySelectorAll('.dept-filter').forEach(b => b.classList.remove('active'));
+  clickedBtn.classList.add('active');
+  document.querySelectorAll('.dept-section').forEach(s => {
+    s.style.display = (dept === 'all' || s.dataset.dept === dept) ? '' : 'none';
+  });
 }
 
-// ── Edit mode ────────────────────────────────────────────────────────────────
-document.getElementById('btn-edit-mode')?.addEventListener('click', function() {
-  editMode = !editMode;
-  this.textContent = editMode ? '✓ Selesai Edit' : '✏ Edit Struktur';
-  this.className   = editMode ? 'btn btn-success btn-sm' : 'btn btn-warning btn-sm';
-  document.getElementById('edit-hint').style.display = editMode ? '' : 'none';
-  document.getElementById('orgchart-root').classList.toggle('edit-mode', editMode);
-  // Re-render agar semua node dibuat dengan draggable state yang benar
-  const nodes = Object.values(allNodes);
-  renderChart(nodes);
+document.querySelector('.dept-filter[data-dept="all"]').addEventListener('click', function() {
+  document.querySelectorAll('.dept-filter').forEach(b => b.classList.remove('active'));
+  this.classList.add('active');
+  document.querySelectorAll('.dept-section').forEach(s => s.style.display = '');
 });
 
-function enableDrag() {
-  document.querySelectorAll('.org-node').forEach(n=>{
-    n.draggable = true;
-    n.style.cursor = 'grab';
-    n.style.userSelect = 'none';
-    n.style.webkitUserDrag = 'element';
-  });
-}
-function disableDrag() {
-  document.querySelectorAll('.org-node').forEach(n=>{
-    n.draggable = false;
-    n.style.cursor = 'pointer';
-    n.style.userSelect = '';
-  });
-}
-
-// ── Detail panel ─────────────────────────────────────────────────────────────
+// ── Detail panel ──────────────────────────────────────────────────────────────
 function showPanel(node) {
   document.getElementById('panel-title').textContent = node.nama;
-  const parentNama = node.parent_id && allNodes[node.parent_id] ? allNodes[node.parent_id].nama : '(Puncak hierarki)';
+  const parentNama = node.parent_id && allNodes[node.parent_id]
+    ? allNodes[node.parent_id].nama : '(Puncak hierarki)';
   const empList = node.employees.length
-    ? node.employees.map(e=>`<li class="list-group-item py-1 px-2 small d-flex justify-content-between"><span>${e.nama}</span><span class="text-muted">${e.nik}</span></li>`).join('')
-    : '<li class="list-group-item py-2 px-2 small text-muted">Belum ada karyawan aktif</li>';
+    ? node.employees.map(e =>
+        `<li class="list-group-item py-1 px-2 small d-flex justify-content-between">
+          <span>${e.nama}</span><span class="text-muted">${e.nik}</span>
+        </li>`).join('')
+    : '<li class="list-group-item py-2 px-2 small text-muted">Belum ada karyawan</li>';
+
   document.getElementById('panel-body').innerHTML = `
     <dl class="row small mb-3">
       <dt class="col-5 text-muted">Level</dt>
@@ -456,51 +402,44 @@ function showPanel(node) {
     </dl>
     <p class="text-muted small mb-1 fw-semibold">Karyawan aktif:</p>
     <ul class="list-group list-group-flush mb-3" style="max-height:240px;overflow-y:auto">${empList}</ul>
-    <div class="d-flex gap-2">
-      <a href="/job-library/${node.id}/" class="btn btn-sm btn-outline-primary flex-fill">Detail Jabatan →</a>
-      ${IS_HR?`<a href="/job-library/${node.id}/edit/" class="btn btn-sm btn-outline-secondary">Edit</a>`:''}
-    </div>`;
-  document.getElementById('detail-panel').style.right='16px';
+    <a href="/job-library/${node.id}/" class="btn btn-sm btn-outline-primary w-100">Detail Jabatan →</a>`;
+
+  document.getElementById('detail-panel').style.right = '16px';
 }
-function closePanel() { document.getElementById('detail-panel').style.right='-380px'; }
+function closePanel() {
+  document.getElementById('detail-panel').style.right = '-380px';
+}
 
-// ── Dept filter ──────────────────────────────────────────────────────────────
-document.querySelectorAll('.dept-filter').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.dept-filter').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const dept=btn.dataset.dept;
-    document.querySelectorAll('.dept-section').forEach(s=>{
-      s.style.display=(dept==='all'||s.dataset.dept===dept)?'':'none';
-    });
-  });
-});
+// ── Zoom ──────────────────────────────────────────────────────────────────────
+const inner = document.getElementById('orgchart-inner');
+document.getElementById('btn-zoom-in').onclick  = () => setScale(scale + .15);
+document.getElementById('btn-zoom-out').onclick = () => setScale(scale - .15);
+document.getElementById('btn-reset').onclick    = () => setScale(1);
+function setScale(s) {
+  scale = Math.min(2.5, Math.max(.25, s));
+  inner.style.transform = `scale(${scale})`;
+  inner.style.transformOrigin = '0 0';
+}
 
-// ── Zoom ─────────────────────────────────────────────────────────────────────
-const inner=document.getElementById('orgchart-inner');
-document.getElementById('btn-zoom-in').onclick =()=>setScale(scale+.15);
-document.getElementById('btn-zoom-out').onclick=()=>setScale(scale-.15);
-document.getElementById('btn-reset').onclick   =()=>setScale(1);
-function setScale(s){scale=Math.min(2.5,Math.max(.25,s));inner.style.transform=`scale(${scale})`;inner.style.transformOrigin='0 0';}
-
-// ── Pan / drag canvas ────────────────────────────────────────────────────────
-const canvas=document.getElementById('orgchart-canvas');
-let isDrag=false,sx,sy,sl,st;
-canvas.addEventListener('mousedown',e=>{
-  if(e.target.closest('.org-node')||editMode) return;
-  isDrag=true;canvas.style.cursor='grabbing';
-  sx=e.pageX-canvas.offsetLeft;sy=e.pageY-canvas.offsetTop;
-  sl=canvas.scrollLeft;st=canvas.scrollTop;
+// ── Pan canvas ────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('orgchart-canvas');
+let isDrag=false, sx, sy, sl, st;
+canvas.addEventListener('mousedown', e => {
+  if (e.target.closest('.org-node')) return;
+  isDrag=true; canvas.style.cursor='grabbing';
+  sx=e.pageX; sy=e.pageY; sl=canvas.scrollLeft; st=canvas.scrollTop;
 });
-canvas.addEventListener('mousemove',e=>{
-  if(!isDrag)return;
-  canvas.scrollLeft=sl-(e.pageX-canvas.offsetLeft-sx);
-  canvas.scrollTop=st-(e.pageY-canvas.offsetTop-sy);
+canvas.addEventListener('mousemove', e => {
+  if (!isDrag) return;
+  canvas.scrollLeft = sl - (e.pageX - sx);
+  canvas.scrollTop  = st - (e.pageY - sy);
 });
-['mouseup','mouseleave'].forEach(ev=>canvas.addEventListener(ev,()=>{isDrag=false;canvas.style.cursor='grab';}));
+['mouseup','mouseleave'].forEach(ev =>
+  canvas.addEventListener(ev, () => { isDrag=false; canvas.style.cursor='grab'; })
+);
 </script>
 
 <style>
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 </style>
 {% endblock %}
