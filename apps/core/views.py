@@ -515,11 +515,19 @@ def orgchart_detail(request, pk):
 @login_required
 def orgchart_json(request, pk):
     """JSON endpoint — dipakai JS renderer untuk menampilkan tree interaktif."""
+    from django.core.cache import cache
+
     company = _get_company(request)
     if not company and request.user.is_superuser:
         from apps.core.models import Company
         company = Company.objects.first()
     chart = get_object_or_404(OrgChart, pk=pk, company=company)
+
+    # Cache key unik per chart & company
+    cache_key = f'orgchart_json_{pk}_{company.id if company else 0}'
+    cached = cache.get(cache_key)
+    if cached:
+        return JsonResponse(cached)
 
     positions = Position.objects.filter(
         company=company, aktif=True,
@@ -527,7 +535,7 @@ def orgchart_json(request, pk):
 
     from apps.employees.models import Employee
     emp_by_jabatan = {}
-    for emp in Employee.objects.filter(company=company, status='Aktif').select_related('jabatan'):
+    for emp in Employee.objects.filter(company=company, status='Aktif').only('id', 'nama', 'nik', 'jabatan_id'):
         emp_by_jabatan.setdefault(emp.jabatan_id, []).append({
             'id':   emp.id,
             'nama': emp.nama,
@@ -546,7 +554,12 @@ def orgchart_json(request, pk):
             'emp_count':   len(emp_by_jabatan.get(pos.id, [])),
         })
 
-    return JsonResponse({'chart_id': chart.id, 'chart_nama': chart.nama, 'nodes': nodes})
+    data = {'chart_id': chart.id, 'chart_nama': chart.nama, 'nodes': nodes}
+
+    # Simpan cache selama 5 menit
+    cache.set(cache_key, data, timeout=300)
+
+    return JsonResponse(data)
 
 
 @login_required
@@ -787,9 +800,12 @@ def api_approval_chain(request):
     jabatan = get_object_or_404(Position, pk=jabatan_id, company=company)
 
     # Buat dummy employee object untuk helper
+    _company = _get_company(request)
+    _jabatan = jabatan
+
     class _FakeEmp:
-        company = _get_company(request)
-        jabatan  = jabatan
+        company = _company
+        jabatan = _jabatan
 
     chain = get_approval_chain_display(_FakeEmp(), modul)
     return JsonResponse({'chain': chain})
