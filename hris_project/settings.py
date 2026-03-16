@@ -18,6 +18,8 @@ _allowed = os.environ.get('ALLOWED_HOSTS', '*')
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',')]
 
 INSTALLED_APPS = [
+    'cloudinary_storage',
+    'cloudinary',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -60,9 +62,6 @@ INSTALLED_APPS = [
     'apps.performance',
     # ── Registrasi Demo & Trial ───────────────────────────
     'apps.registration',
-    # Storage
-    'cloudinary_storage',
-    'cloudinary',
     # ── Investor Dashboard ────────────────────────────────
     'apps.investor',
 ]
