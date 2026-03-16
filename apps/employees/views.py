@@ -96,53 +96,134 @@ def employee_form(request, pk=None):
             messages.error(request, f'NIK "{nik}" sudah digunakan oleh karyawan lain.')
             return _render_form(request, instance)
 
+        # ── Resolve tempat_lahir: form kirim ID kabupaten, model simpan nama string ──
+        tempat_lahir_id = request.POST.get('tempat_lahir_id', '').strip()
+        tempat_lahir_str = ''
+        if tempat_lahir_id:
+            try:
+                from apps.wilayah.models import Kabupaten
+                kab = Kabupaten.objects.get(pk=tempat_lahir_id)
+                tempat_lahir_str = kab.nama
+            except Exception:
+                tempat_lahir_str = ''
+
+        # ── Resolve kecamatan/kelurahan: form kirim ID, model simpan nama string ──
+        kecamatan_str = ''
+        kelurahan_str = ''
+        kecamatan_id = request.POST.get('kecamatan_id', '').strip()
+        kelurahan_id = request.POST.get('kelurahan_id', '').strip()
+        if kecamatan_id:
+            try:
+                from apps.wilayah.models import Kecamatan
+                kecamatan_str = Kecamatan.objects.get(pk=kecamatan_id).nama
+            except Exception:
+                pass
+        if kelurahan_id:
+            try:
+                from apps.wilayah.models import Kelurahan
+                kelurahan_str = Kelurahan.objects.get(pk=kelurahan_id).nama
+            except Exception:
+                pass
+
+        # ── Helper safe int ──────────────────────────────────────────────────
+        def _int(key, default=0):
+            try:
+                return int(request.POST.get(key, default) or default)
+            except (ValueError, TypeError):
+                return default
+
         data = {
-            'nik'            : nik,
-            'nama'           : request.POST.get('nama', ''),
-            'department_id'  : request.POST.get('department') or None,
-            'jabatan_id'     : request.POST.get('jabatan') or None,
-            'status_karyawan': request.POST.get('status_karyawan', 'PKWT'),
-            'join_date'      : request.POST.get('join_date'),
-            'status'         : request.POST.get('status', 'Aktif'),
+            # Data Utama
+            'nik'             : nik,
+            'nama'            : request.POST.get('nama', ''),
+            'department_id'   : request.POST.get('department') or None,
+            'jabatan_id'      : request.POST.get('jabatan') or None,
+            'status_karyawan' : request.POST.get('status_karyawan', 'PKWT'),
+            'join_date'       : request.POST.get('join_date'),
+            'status'          : request.POST.get('status', 'Aktif'),
             'point_of_hire_id': request.POST.get('point_of_hire') or None,
-            'job_site_id'    : request.POST.get('job_site') or None,
-            # Pribadi
-            'jenis_kelamin'  : request.POST.get('jenis_kelamin', ''),
-            'tempat_lahir'   : request.POST.get('tempat_lahir', ''),
-            'tanggal_lahir'  : request.POST.get('tanggal_lahir') or None,
-            'agama'          : request.POST.get('agama', ''),
-            'pendidikan'     : request.POST.get('pendidikan', ''),
-            'golongan_darah' : request.POST.get('golongan_darah', ''),
+            'job_site_id'     : request.POST.get('job_site') or None,
+            # Data Pribadi
+            'jenis_kelamin'   : request.POST.get('jenis_kelamin', ''),
+            'tempat_lahir'    : tempat_lahir_str,
+            'tanggal_lahir'   : request.POST.get('tanggal_lahir') or None,
+            'agama'           : request.POST.get('agama', ''),
+            'pendidikan'      : request.POST.get('pendidikan', ''),
+            'golongan_darah'  : request.POST.get('golongan_darah', ''),
             # Dokumen
-            'no_ktp'         : request.POST.get('no_ktp', ''),
-            'no_npwp'        : request.POST.get('no_npwp', ''),
-            'no_bpjs_tk'     : request.POST.get('no_bpjs_tk', ''),
-            'no_bpjs_kes'    : request.POST.get('no_bpjs_kes', ''),
-            'no_kk'          : request.POST.get('no_kk', ''),
+            'no_ktp'          : request.POST.get('no_ktp', ''),
+            'no_npwp'         : request.POST.get('no_npwp', ''),
+            'no_bpjs_tk'      : request.POST.get('no_bpjs_tk', ''),
+            'no_bpjs_kes'     : request.POST.get('no_bpjs_kes', ''),
+            'no_kk'           : request.POST.get('no_kk', ''),
             # Keluarga
-            'status_nikah'   : request.POST.get('status_nikah', ''),
-            'ptkp'           : request.POST.get('ptkp', ''),
-            'jumlah_anak'    : int(request.POST.get('jumlah_anak', 0) or 0),
+            'status_nikah'    : request.POST.get('status_nikah', ''),
+            'ptkp'            : request.POST.get('ptkp', ''),
+            'jumlah_anak'     : _int('jumlah_anak'),
             # Kontak
-            'no_hp'          : request.POST.get('no_hp', ''),
-            'hp_darurat'     : request.POST.get('no_darurat', ''),
-            'email'          : request.POST.get('email', ''),
-            'nama_darurat'   : request.POST.get('nama_darurat', ''),
-            'hub_darurat'    : request.POST.get('hub_darurat', ''),
+            'no_hp'           : request.POST.get('no_hp', ''),
+            'hp_darurat'      : request.POST.get('no_darurat', ''),
+            'email'           : request.POST.get('email', ''),
+            'nama_darurat'    : request.POST.get('nama_darurat', ''),
+            'hub_darurat'     : request.POST.get('hub_darurat', ''),
             # Bank
-            'nama_bank'  : request.POST.get('bank_name', ''),
-            'no_rek'     : request.POST.get('bank_account', ''),
-            'nama_rek'   : request.POST.get('bank_account_name', ''),
-            # Alamat
-            'alamat'      : request.POST.get('alamat', ''),
-            'rt'          : request.POST.get('rt', ''),
-            'rw'          : request.POST.get('rw', ''),
-            'provinsi_id' : request.POST.get('provinsi_id') or None,
-            'kabupaten_id': request.POST.get('kabupaten_id') or None,
-            'kecamatan'   : request.POST.get('kecamatan', ''),
-            'kelurahan'   : request.POST.get('kelurahan', ''),
-            'kode_pos'    : request.POST.get('kode_pos', ''),
+            'nama_bank'       : request.POST.get('bank_name', ''),
+            'no_rek'          : request.POST.get('bank_account', ''),
+            'nama_rek'        : request.POST.get('bank_account_name', ''),
+            # Alamat KTP
+            'alamat'          : request.POST.get('alamat', ''),
+            'rt'              : request.POST.get('rt', ''),
+            'rw'              : request.POST.get('rw', ''),
+            'provinsi_id'     : request.POST.get('provinsi_id') or None,
+            'kabupaten_id'    : request.POST.get('kabupaten_id') or None,
+            'kecamatan'       : kecamatan_str,
+            'kelurahan'       : kelurahan_str,
+            'kode_pos'        : request.POST.get('kode_pos', ''),
         }
+
+        # ── Field opsional yang mungkin belum ada di model lama ─────────────
+        # Ditulis defensif agar tidak crash kalau field belum ada di DB
+        _optional_fields = {
+            'etnis'          : request.POST.get('etnis', ''),
+            'no_skck'        : request.POST.get('no_skck', ''),
+            'jenis_sim'      : request.POST.get('jenis_sim', ''),
+            'no_sim'         : request.POST.get('no_sim', ''),
+            'nama_pasangan'  : request.POST.get('nama_pasangan', ''),
+            'nama_bapak'     : request.POST.get('nama_bapak', ''),
+            'nama_ibu'       : request.POST.get('nama_ibu', ''),
+            'no_hp_2'        : request.POST.get('no_hp_2', ''),
+            'no_darurat_2'   : request.POST.get('no_darurat_2', ''),
+            # Alamat domisili
+            'domisili_sama'      : request.POST.get('domisili_sama') == '1',
+            'alamat_domisili'    : request.POST.get('alamat_domisili', ''),
+            'rt_domisili'        : request.POST.get('rt_domisili', ''),
+            'rw_domisili'        : request.POST.get('rw_domisili', ''),
+            'provinsi_domisili_id'  : request.POST.get('provinsi_domisili_id') or None,
+            'kabupaten_domisili_id' : request.POST.get('kabupaten_domisili_id') or None,
+            'kode_pos_domisili'  : request.POST.get('kode_pos_domisili', ''),
+        }
+        # Resolve kecamatan/kelurahan domisili
+        kec_dom_id = request.POST.get('kecamatan_domisili_id', '').strip()
+        kel_dom_id = request.POST.get('kelurahan_domisili_id', '').strip()
+        if kec_dom_id:
+            try:
+                from apps.wilayah.models import Kecamatan
+                _optional_fields['kecamatan_domisili'] = Kecamatan.objects.get(pk=kec_dom_id).nama
+            except Exception:
+                pass
+        if kel_dom_id:
+            try:
+                from apps.wilayah.models import Kelurahan
+                _optional_fields['kelurahan_domisili'] = Kelurahan.objects.get(pk=kel_dom_id).nama
+            except Exception:
+                pass
+
+        # Hanya masukkan ke data kalau field-nya memang ada di model
+        _emp_fields = {f.name for f in Employee._meta.get_fields() if hasattr(f, 'name')}
+        for k, v in _optional_fields.items():
+            field_key = k.replace('_id', '') if k.endswith('_id') else k
+            if k in _emp_fields or field_key in _emp_fields:
+                data[k] = v
 
         if not data.get('join_date'):
             messages.error(request, 'Tanggal masuk wajib diisi.')
