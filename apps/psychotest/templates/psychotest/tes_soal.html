@@ -119,5 +119,22 @@ const tick = setInterval(() => {
   if (seconds <= 30) { timerEl.classList.remove('bg-warning'); timerEl.classList.add('bg-danger'); }
 }, 1000);
 {% endif %}
+
+// Validasi DISC: Most dan Least tidak boleh pilih opsi yang sama
+document.getElementById('soal-form').addEventListener('submit', function(e) {
+    const discSoals = document.querySelectorAll('[name^="most_"]');
+    for (const mostInput of discSoals) {
+        if (!mostInput.checked) continue;
+        const soalId = mostInput.name.replace('most_', '');
+        const mostVal = mostInput.value;
+        const leastChecked = document.querySelector(`[name="least_${soalId}"]:checked`);
+        if (leastChecked && leastChecked.value === mostVal) {
+            e.preventDefault();
+            alert('Pilihan PALING mencerminkan dan PALING TIDAK mencerminkan tidak boleh sama pada soal yang sama. Silakan ubah salah satu pilihan.');
+            mostInput.closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    }
+});
 </script>
 </body></html>

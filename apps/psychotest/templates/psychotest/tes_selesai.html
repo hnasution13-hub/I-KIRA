@@ -42,14 +42,10 @@
         <div class="mt-2">
           <span class="badge bg-dark fs-6">{{ result.disc_profil }}</span>
         </div>
-        {% if disc_deskripsi and result.disc_dominant %}
-        {% with info=disc_deskripsi|get_key:result.disc_dominant %}
-        {% if info %}
+        {% if disc_deskripsi and result.disc_profil %}
         <div class="alert alert-light border mt-3 text-start small">
-          <strong>{{ info.nama }}:</strong> {{ info.deskripsi }}
+          <strong>Profil {{ result.disc_profil }}:</strong> {{ result.disc_deskripsi }}
         </div>
-        {% endif %}
-        {% endwith %}
         {% endif %}
       </div>
       {% endif %}

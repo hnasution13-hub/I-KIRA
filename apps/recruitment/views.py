@@ -593,6 +593,7 @@ def ats_analyze(request):
                 mprf     = ManpowerRequest.objects.get(pk=mprf_id)
                 kriteria = Kriteria.from_mprf(mprf)
                 request.session['ats_jabatan_dilamar'] = mprf.nama_jabatan
+                request.session['ats_mprf_id'] = mprf_id
             else:
                 jabatan_manual = request.POST.get('jabatan', '')
                 kriteria = Kriteria.from_manual(
@@ -685,8 +686,14 @@ def ats_save_candidate(request):
         'ats_detail'      : ats_detail,
         'status'          : 'Screening',
     }
-    # Candidate tidak punya field company langsung —
-    # relasi ke company lewat mprf (ForeignKey ManpowerRequest)
+
+    # Link ke MPRF kalau analisis pakai mode MPRF
+    mprf_id = request.session.get('ats_mprf_id')
+    if mprf_id:
+        try:
+            data['mprf'] = ManpowerRequest.objects.get(pk=mprf_id)
+        except ManpowerRequest.DoesNotExist:
+            pass
 
     # Cek duplikat by email
     existing = None
