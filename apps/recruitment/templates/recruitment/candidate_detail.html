@@ -114,16 +114,29 @@
             {% for step_num, step_label in pipeline_steps %}
             <div class="text-center flex-shrink-0 me-1" style="min-width:75px;cursor:pointer"
                  onclick="showTab({{ step_num }})">
-              <div class="mx-auto mb-1 d-flex align-items-center justify-content-center fw-bold step-circle-{{ step_num }}"
+              <div class="mx-auto mb-1 d-flex align-items-center justify-content-center fw-bold"
                    id="step-circle-{{ step_num }}"
                    style="width:36px;height:36px;border-radius:50%;font-size:0.85rem;
-                   background:{% if step_num == 1 %}#0d6efd;color:white{% else %}#e9ecef;color:#6c757d{% endif %}">
-                {{ step_num }}
+                   {% if step_num in completed_steps %}
+                     background:#198754;color:white;
+                   {% else %}
+                     background:#e9ecef;color:#6c757d;
+                   {% endif %}">
+                {% if step_num in completed_steps %}
+                  <i class="fas fa-check" style="font-size:0.75rem"></i>
+                {% else %}
+                  {{ step_num }}
+                {% endif %}
               </div>
-              <div style="font-size:0.65rem;line-height:1.2;color:#6c757d">{{ step_label }}</div>
+              <div style="font-size:0.65rem;line-height:1.2;
+                {% if step_num in completed_steps %}color:#198754;font-weight:600;{% else %}color:#6c757d;{% endif %}">
+                {{ step_label }}
+              </div>
             </div>
             {% if not forloop.last %}
-            <div class="flex-shrink-0" style="width:16px;height:2px;background:#dee2e6;margin-bottom:16px"></div>
+            <div class="flex-shrink-0" style="width:16px;height:2px;
+              background:{% if step_num in completed_steps %}#198754{% else %}#dee2e6{% endif %};
+              margin-bottom:16px"></div>
             {% endif %}
             {% endfor %}
           </div>

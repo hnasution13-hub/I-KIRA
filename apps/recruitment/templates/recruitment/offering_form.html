@@ -75,15 +75,21 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Site / Lokasi Surat</label>
-                            <input type="text" name="site_lokasi" class="form-control"
-                                   placeholder="contoh: Site Laroenai"
-                                   value="{{ instance.site_lokasi|default:'' }}">
+                            <select name="site_lokasi" class="form-select">
+                                <option value="">-- Pilih Site --</option>
+                                {% for js in job_sites %}
+                                <option value="{{ js.nama }}" {% if instance.site_lokasi == js.nama %}selected{% endif %}>{{ js.nama }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Point of Hire (POH)</label>
-                            <input type="text" name="point_of_hire" class="form-control"
-                                   placeholder="contoh: Pekanbaru"
-                                   value="{{ instance.point_of_hire|default:'' }}">
+                            <select name="point_of_hire" class="form-select">
+                                <option value="">-- Pilih Kabupaten/Kota --</option>
+                                {% for kab in poh_list %}
+                                <option value="{{ kab.nama }}" {% if instance.point_of_hire == kab.nama %}selected{% endif %}>{{ kab.nama }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Lokasi Kerja Lengkap</label>
@@ -137,6 +143,20 @@
                             </div>
                         </div>
                         <div class="col-md-4">
+                            <label class="form-label fw-semibold">Status Karyawan</label>
+                            <select name="status_karyawan" id="selectStatusKaryawan" class="form-select" onchange="toggleProbasi(this.value)">
+                                <option value="PKWT"  {% if instance.status_karyawan == 'PKWT'  or not instance %}selected{% endif %}>PKWT (Kontrak)</option>
+                                <option value="PKWTT" {% if instance.status_karyawan == 'PKWTT' %}selected{% endif %}>PKWTT (Permanen)</option>
+                                <option value="PHL"   {% if instance.status_karyawan == 'PHL'   %}selected{% endif %}>PHL (Harian Lepas)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4" id="divJangkaWaktu">
+                            <label class="form-label fw-semibold">Jangka Waktu Perjanjian</label>
+                            <input type="text" name="jangka_waktu" class="form-control"
+                                   placeholder="contoh: 1 tahun / 12 bulan"
+                                   value="{{ instance.jangka_waktu|default:'' }}">
+                        </div>
+                        <div class="col-md-4" id="divMasaProbasi">
                             <label class="form-label fw-semibold">Masa Probasi (bulan)</label>
                             <input type="number" name="masa_probasi" class="form-control" min="0" max="24"
                                    value="{{ instance.masa_probasi|default:3 }}">
@@ -257,6 +277,23 @@ document.getElementById('selectCandidate').addEventListener('change', function (
         document.getElementById('inputJabatan').value = jabatan;
     }
 });
+
+// Toggle probasi: PKWTT tidak perlu probasi, PKWT/PHL tidak perlu probasi
+function toggleProbasi(val) {
+    const divProbasi    = document.getElementById('divMasaProbasi');
+    const divJangka     = document.getElementById('divJangkaWaktu');
+    if (val === 'PKWTT') {
+        // Permanen: tidak ada jangka waktu, ada probasi
+        divJangka.style.display  = 'none';
+        divProbasi.style.display = '';
+    } else {
+        // PKWT/PHL: ada jangka waktu, tidak ada probasi
+        divJangka.style.display  = '';
+        divProbasi.style.display = 'none';
+    }
+}
+// Init saat load
+toggleProbasi(document.getElementById('selectStatusKaryawan').value);
 
 // Preview template via AJAX
 const selectTemplate = document.getElementById('selectTemplate');

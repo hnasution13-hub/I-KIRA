@@ -195,6 +195,24 @@ def candidate_detail(request, pk):
     addon_advanced_psychotest = check_addon(request, 'advanced_psychotest')
 
     # ── Pipeline step labels ──────────────────────────────────────────────────
+    # ── Pipeline step yang sudah selesai ─────────────────────────────────────
+    completed_steps = set()
+    completed_steps.add(1)  # ATS CV selalu ada kalau kandidat ada
+    if psy_result:
+        completed_steps.add(2)
+    if mcu and mcu.status in ['fit', 'unfit']:
+        completed_steps.add(3)
+    if interviews.exists():
+        completed_steps.add(4)
+    if rekomendasi_obj:
+        completed_steps.add(5)
+    if offering_letters.exists():
+        completed_steps.add(6)
+    if onboarding:
+        completed_steps.add(7)
+    if candidate.status in ['Hired', 'Rejected', 'Withdrawn']:
+        completed_steps.add(8)
+
     pipeline_steps = [
         (1, 'ATS CV'),
         (2, 'Psikotes'),
@@ -209,6 +227,7 @@ def candidate_detail(request, pk):
     return render(request, 'recruitment/candidate_detail.html', {
         'candidate':                candidate,
         'pipeline_steps':           pipeline_steps,
+        'completed_steps':          completed_steps,
         # psikotes
         'psy_session':              psy_session,
         'psy_result':               psy_result,
@@ -299,9 +318,11 @@ def offering_form(request, pk=None):
     setting = CompanySetting.get()
     templates = OfferingTemplate.objects.all()
     default_tpl = templates.filter(is_default=True).first()
+    company = getattr(request, 'company', None)
 
     if request.method == 'POST':
         tpl_id = request.POST.get('template') or None
+        status_karyawan = request.POST.get('status_karyawan', 'PKWT')
         data = {
             'candidate_id':        request.POST.get('candidate'),
             'template_id':         tpl_id,
@@ -316,7 +337,9 @@ def offering_form(request, pk=None):
             'gaji_pokok':          int(request.POST.get('gaji_pokok', 0) or 0),
             'fixed_allowance':     int(request.POST.get('fixed_allowance', 0) or 0),
             'tunjangan_total':     int(request.POST.get('tunjangan_total', 0) or 0),
-            'masa_probasi':        int(request.POST.get('masa_probasi', 3) or 3),
+            'status_karyawan':     status_karyawan,
+            'jangka_waktu':        request.POST.get('jangka_waktu', ''),
+            'masa_probasi':        int(request.POST.get('masa_probasi', 0) or 0),
             'no_arsip':            request.POST.get('no_arsip', ''),
             'status':              request.POST.get('status', 'Draft'),
             'keterangan':          request.POST.get('keterangan', ''),
@@ -331,19 +354,36 @@ def offering_form(request, pk=None):
             messages.success(request, f'Offering Letter {instance.nomor} berhasil dibuat.')
         return redirect('offering_list')
 
-    # GET — auto-fill dari kandidat jika ada query param
+    # GET
     prefill_candidate = None
     candidate_id = request.GET.get('candidate')
     if candidate_id:
         prefill_candidate = Candidate.objects.filter(pk=candidate_id).first()
+
+    # Filter kandidat: hanya yang sudah sampai tahap Offering dan belum Rejected/Withdrawn/Hired
+    candidates = Candidate.objects.exclude(
+        status__in=['Rejected', 'Withdrawn', 'Hired']
+    ).filter(status='Offering')
+    if company:
+        candidates = candidates.filter(mprf__company=company)
+
+    # Job sites dan POH dari data yang ada
+    from apps.employees.models import JobSite, PointOfHire
+    from apps.wilayah.models import Kabupaten
+    job_sites = JobSite.objects.filter(aktif=True)
+    poh_list  = Kabupaten.objects.all().order_by('nama')
+    if company:
+        job_sites = job_sites.filter(company=company)
 
     return render(request, 'recruitment/offering_form.html', {
         'instance':          instance,
         'setting':           setting,
         'templates':         templates,
         'default_tpl':       default_tpl,
-        'candidates':        Candidate.objects.exclude(status__in=['Hired', 'Rejected', 'Withdrawn']),
-        'departments':       Department.objects.filter(aktif=True),
+        'candidates':        candidates,
+        'departments':       Department.objects.filter(aktif=True, **({'company': company} if company else {})),
+        'job_sites':         job_sites,
+        'poh_list':          poh_list,
         'prefill_candidate': prefill_candidate,
     })
 

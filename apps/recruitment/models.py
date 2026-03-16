@@ -300,6 +300,15 @@ class OfferingLetter(models.Model):
     gaji_pokok          = models.BigIntegerField(verbose_name='Gaji Pokok')
     fixed_allowance     = models.BigIntegerField(default=0, verbose_name='Fixed Allowance')
     tunjangan_total     = models.BigIntegerField(default=0, verbose_name='Total Tunjangan Lain')
+    STATUS_KARYAWAN_CHOICES = [
+        ('PKWT',  'PKWT (Kontrak)'),
+        ('PKWTT', 'PKWTT (Permanen)'),
+        ('PHL',   'PHL (Harian Lepas)'),
+    ]
+    status_karyawan     = models.CharField(max_length=10, choices=STATUS_KARYAWAN_CHOICES,
+                                            default='PKWT', verbose_name='Status Karyawan')
+    jangka_waktu        = models.CharField(max_length=100, blank=True, default='',
+                                            verbose_name='Jangka Waktu Perjanjian')
     masa_probasi        = models.IntegerField(default=3, verbose_name='Masa Probasi (bulan)')
     no_arsip            = models.CharField(max_length=100, blank=True, default='',
                                             verbose_name='No. Arsip')
