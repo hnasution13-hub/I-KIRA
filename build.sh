@@ -4,5 +4,4 @@ set -o errexit
 pip install --upgrade pip
 pip install -r requirements.txt
 python manage.py collectstatic --noinput
-python manage.py migrate
-python manage.py createsuperuser --noinput --username admin --email admin@ikira.com
+python manage.py migrate --noinput
