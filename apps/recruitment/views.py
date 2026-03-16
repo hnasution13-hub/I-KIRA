@@ -587,18 +587,22 @@ def ats_analyze(request):
                 pos_id = request.POST.get('position_id')
                 pos    = Position.objects.get(pk=pos_id)
                 kriteria = Kriteria.from_position(pos)
+                request.session['ats_jabatan_dilamar'] = pos.nama
             elif mode == 'mprf':
                 mprf_id  = request.POST.get('mprf_id')
                 mprf     = ManpowerRequest.objects.get(pk=mprf_id)
                 kriteria = Kriteria.from_mprf(mprf)
+                request.session['ats_jabatan_dilamar'] = mprf.nama_jabatan
             else:
+                jabatan_manual = request.POST.get('jabatan', '')
                 kriteria = Kriteria.from_manual(
-                    jabatan          = request.POST.get('jabatan', ''),
+                    jabatan          = jabatan_manual,
                     pendidikan_min   = request.POST.get('pendidikan_min', ''),
                     pengalaman_min   = int(request.POST.get('pengalaman_min', 0) or 0),
                     skill_wajib_str  = request.POST.get('skill_wajib', ''),
                     skill_diinginkan_str = request.POST.get('skill_diinginkan', ''),
                 )
+                request.session['ats_jabatan_dilamar'] = jabatan_manual
 
             hasil = ATSAnalyzer().analyze(cv_data, kriteria)
             # Hapus object Kriteria sebelum simpan ke session
@@ -611,25 +615,27 @@ def ats_analyze(request):
 
         company = getattr(request, 'company', None)
         return render(request, 'recruitment/ats_analyze.html', {
-            'cv_filename': request.session.get('ats_cv_filename', ''),
-            'cv_data':     cv_data,
-            'hasil':       request.session.get('ats_hasil'),
-            'positions':   get_company_qs(Position, request, aktif=True),
-            'mprfs':       ManpowerRequest.objects.filter(
-                               company=company,
-                               status__in=['Open', 'In Process', 'Approved']
-                           ).order_by('-created_at'),
+            'cv_filename'     : request.session.get('ats_cv_filename', ''),
+            'cv_data'         : cv_data,
+            'hasil'           : request.session.get('ats_hasil'),
+            'jabatan_dilamar' : request.session.get('ats_jabatan_dilamar', ''),
+            'positions'       : get_company_qs(Position, request, aktif=True),
+            'mprfs'           : ManpowerRequest.objects.filter(
+                                    company=company,
+                                    status__in=['Open', 'In Process', 'Approved']
+                                ).order_by('-created_at'),
         })
 
     company = getattr(request, 'company', None)
     return render(request, 'recruitment/ats_analyze.html', {
-        'cv_filename': request.session.get('ats_cv_filename', ''),
-        'cv_data':     cv_data,
-        'positions':   get_company_qs(Position, request, aktif=True),
-        'mprfs':       ManpowerRequest.objects.filter(
-                           company=company,
-                           status__in=['Open', 'In Process', 'Approved']
-                       ).order_by('-created_at'),
+        'cv_filename'     : request.session.get('ats_cv_filename', ''),
+        'cv_data'         : cv_data,
+        'jabatan_dilamar' : request.session.get('ats_jabatan_dilamar', ''),
+        'positions'       : get_company_qs(Position, request, aktif=True),
+        'mprfs'           : ManpowerRequest.objects.filter(
+                                company=company,
+                                status__in=['Open', 'In Process', 'Approved']
+                            ).order_by('-created_at'),
     })
 
 
@@ -659,7 +665,7 @@ def ats_save_candidate(request):
 
     data = {
         'nama'            : nama,
-        'jabatan_dilamar' : jabatan_dilamar,
+        'jabatan_dilamar' : jabatan_dilamar or '—',
         'email'           : email,
         'no_hp'           : request.POST.get('no_hp', ''),
         'pendidikan'      : request.POST.get('pendidikan', ''),
@@ -670,16 +676,13 @@ def ats_save_candidate(request):
         'ats_detail'      : ats_detail,
         'status'          : 'Screening',
     }
-    if company:
-        data['company'] = company
+    # Candidate tidak punya field company langsung —
+    # relasi ke company lewat mprf (ForeignKey ManpowerRequest)
 
-    # Cek duplikat by email (kalau ada email)
+    # Cek duplikat by email
     existing = None
     if email:
-        qs = Candidate.objects.filter(email=email)
-        if company:
-            qs = qs.filter(company=company)
-        existing = qs.first()
+        existing = Candidate.objects.filter(email=email).first()
 
     if existing:
         # Update data ATS ke kandidat yang sudah ada
