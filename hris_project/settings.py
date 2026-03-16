@@ -266,5 +266,5 @@ LOGGING = {
 # ── Demo & Trial Config ───────────────────────────────────────────────────────
 TRIAL_DURASI_HARI = 30          # Durasi default trial (hari)
 SITE_URL    = os.environ.get('SITE_URL',    'http://localhost:8000')
-SALES_WA    = os.environ.get('SALES_WA',    '6281234567890')
+SALES_WA    = os.environ.get('SALES_WA',    '6285236410996')
 SALES_EMAIL = os.environ.get('SALES_EMAIL', 'sales@hris-smartdesk.com')
