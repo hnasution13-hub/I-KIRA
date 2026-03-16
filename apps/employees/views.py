@@ -229,6 +229,19 @@ def employee_form(request, pk=None):
             messages.error(request, 'Tanggal masuk wajib diisi.')
             return _render_form(request, instance)
 
+        # ── Resolve company ──────────────────────────────────────────────────
+        company = getattr(request, 'company', None)
+        if not company:
+            # Superuser belum pilih tenant aktif — arahkan ke switch tenant
+            messages.warning(
+                request,
+                'Pilih tenant aktif terlebih dahulu sebelum menambah karyawan.'
+            )
+            from django.urls import reverse
+            switch_url = reverse('switch_tenant')
+            next_url   = request.path
+            return redirect(f'{switch_url}?next={next_url}')
+
         # ── Pisahkan FK _id fields dari CharField biasa ─────────────────────
         # Django butuh set `department_id` langsung (bukan setattr 'department')
         # agar tidak trigger query tambahan / error RelatedObjectDoesNotExist
@@ -303,15 +316,18 @@ def _save_anak(employee, post_data):
 
 def _render_form(request, instance):
     from apps.wilayah.models import Bank
+    company = getattr(request, 'company', None)
+    company_filter = {'company': company} if company else {}
+
     return render(request, 'employees/employee_form.html', {
-        'instance'          : instance,
-        'departments'       : Department.objects.filter(aktif=True, **({'company': getattr(request, 'company', None)} if getattr(request, 'company', None) else {})),
-        'positions'         : Position.objects.filter(aktif=True, **({'company': getattr(request, 'company', None)} if getattr(request, 'company', None) else {})),
-        'provinsi_list'     : Provinsi.objects.all(),
-        'kabupaten_list'    : Kabupaten.objects.all(),
-        'poh_list'          : Kabupaten.objects.all().order_by('nama'),
-        'jobsite_list'      : JobSite.objects.filter(aktif=True),
-        'bank_list'         : Bank.objects.all().order_by('nama'),
+        'instance'           : instance,
+        'departments'        : Department.objects.filter(aktif=True, **company_filter),
+        'positions'          : Position.objects.filter(aktif=True, **company_filter),
+        'provinsi_list'      : Provinsi.objects.all(),
+        'kabupaten_list'     : Kabupaten.objects.all(),
+        'poh_list'           : Kabupaten.objects.all().order_by('nama'),
+        'jobsite_list'       : JobSite.objects.filter(aktif=True),
+        'bank_list'          : Bank.objects.all().order_by('nama'),
         'golongan_darah_list': ['A','B','AB','O','A+','A-','B+','B-','AB+','AB-','O+','O-'],
     })
 
