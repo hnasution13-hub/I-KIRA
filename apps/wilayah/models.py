@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Provinsi(models.Model):
-    kode = models.CharField(max_length=10, unique=True, verbose_name='Kode')
+    kode = models.CharField(max_length=20, unique=True, verbose_name='Kode')
     nama = models.CharField(max_length=100, verbose_name='Nama Provinsi')
 
     class Meta:
@@ -16,7 +16,7 @@ class Provinsi(models.Model):
 
 class Kabupaten(models.Model):
     provinsi = models.ForeignKey(Provinsi, on_delete=models.CASCADE, related_name='kabupatens')
-    kode = models.CharField(max_length=10, unique=True, verbose_name='Kode')
+    kode = models.CharField(max_length=20, unique=True, verbose_name='Kode')
     nama = models.CharField(max_length=100, verbose_name='Nama Kabupaten/Kota')
 
     class Meta:
@@ -30,7 +30,7 @@ class Kabupaten(models.Model):
 
 class Kecamatan(models.Model):
     kabupaten = models.ForeignKey(Kabupaten, on_delete=models.CASCADE, related_name='kecamatans')
-    kode = models.CharField(max_length=10, unique=True, verbose_name='Kode')
+    kode = models.CharField(max_length=20, unique=True, verbose_name='Kode')
     nama = models.CharField(max_length=100, verbose_name='Nama Kecamatan')
 
     class Meta:
@@ -44,7 +44,7 @@ class Kecamatan(models.Model):
 
 class Kelurahan(models.Model):
     kecamatan = models.ForeignKey(Kecamatan, on_delete=models.CASCADE, related_name='kelurahans')
-    kode = models.CharField(max_length=10, unique=True, verbose_name='Kode')
+    kode = models.CharField(max_length=20, unique=True, verbose_name='Kode')
     nama = models.CharField(max_length=100, verbose_name='Nama Kelurahan/Desa')
     kode_pos = models.CharField(max_length=10, blank=True, verbose_name='Kode Pos')
 
@@ -58,7 +58,7 @@ class Kelurahan(models.Model):
 
 
 class Bank(models.Model):
-    kode  = models.CharField(max_length=10, unique=True, verbose_name='Kode Bank')
+    kode  = models.CharField(max_length=20, unique=True, verbose_name='Kode Bank')
     nama  = models.CharField(max_length=200, verbose_name='Nama Bank')
     alias = models.CharField(max_length=50, blank=True, verbose_name='Alias / Singkatan',
                              help_text='Contoh: BRI, BCA, Mandiri. Diisi otomatis dari CSV.')
