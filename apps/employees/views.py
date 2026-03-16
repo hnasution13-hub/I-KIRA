@@ -508,20 +508,21 @@ def api_jabatan_by_dept(request):
     Dipakai untuk cascade dropdown Departemen → Jabatan di form karyawan.
     """
     from django.http import JsonResponse
-    company   = getattr(request, 'company', None)
-    dept_id   = request.GET.get('dept', '').strip()
+    company = getattr(request, 'company', None)
+    dept_id = request.GET.get('dept', '').strip()
 
     qs = Position.objects.filter(aktif=True)
     if company:
         qs = qs.filter(company=company)
     if dept_id:
         qs = qs.filter(department_id=dept_id)
-    else:
-        # tanpa filter dept — kembalikan semua (untuk reset / initial load)
-        pass
 
     data = [{'id': p.id, 'nama': p.nama} for p in qs.order_by('nama')]
     return JsonResponse({'jabatan': data})
+
+
+@login_required
+def api_employees(request):
     """
     GET /employees/api/?jabatan=<pk>
     Kembalikan JSON list karyawan aktif untuk jabatan tertentu.
