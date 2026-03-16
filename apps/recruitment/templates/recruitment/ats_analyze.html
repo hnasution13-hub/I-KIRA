@@ -45,23 +45,25 @@
     <div class="card shadow-sm mb-3">
       <div class="card-header fw-semibold py-2"><i class="fas fa-chart-bar me-1"></i>Detail Skor</div>
       <div class="card-body pb-2">
-        {% for key, val in hasil.detail_score.items %}
-        <div class="mb-3">
-          <div class="d-flex justify-content-between small mb-1">
-            <span class="fw-semibold">
-              {% if key == 'skill_wajib' %}Skill Wajib
-              {% elif key == 'skill_diinginkan' %}Skill Tambahan
-              {% elif key == 'pendidikan' %}Pendidikan
-              {% else %}Pengalaman{% endif %}
-            </span>
-            <span>{{ val.score }}/100 <span class="text-muted">(bobot {{ val.bobot }}%)</span></span>
+        {% for item in hasil.detail_score.items %}
+        {% with key=item.0 val=item.1 %}
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="fw-semibold">
+                {% if key == 'skill_wajib' %}Skill Wajib
+                {% elif key == 'skill_diinginkan' %}Skill Tambahan
+                {% elif key == 'pendidikan' %}Pendidikan
+                {% else %}Pengalaman{% endif %}
+              </span>
+              <span>{{ val.score }}/100 <span class="text-muted">(bobot {{ val.bobot }}%)</span></span>
+            </div>
+            <div class="progress" style="height:8px">
+              <div class="progress-bar {% if val.score >= 80 %}bg-success{% elif val.score >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                   style="width:{{ val.score }}%"></div>
+            </div>
+            {% if val.note %}<div class="small text-muted mt-1">{{ val.note }}</div>{% endif %}
           </div>
-          <div class="progress" style="height:8px">
-            <div class="progress-bar {% if val.score >= 80 %}bg-success{% elif val.score >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
-                 style="width:{{ val.score }}%"></div>
-          </div>
-          {% if val.note %}<div class="small text-muted mt-1">{{ val.note }}</div>{% endif %}
-        </div>
+        {% endwith %}
         {% endfor %}
       </div>
     </div>
@@ -234,7 +236,7 @@
             <span class="badge bg-light text-dark border" style="font-size:10px;">{{ s }}</span>
           {% endfor %}
           {% if cv_data.skill_list|length > 10 %}
-            <span class="badge bg-secondary" style="font-size:10px;">+{{ cv_data.skill_list|length|add:"-10" }}</span>
+            <span class="badge bg-secondary" style="font-size:10px;">+{{ cv_data.skill_list|length|add:"-10" }} lainnya</span>
           {% endif %}
         </div>
         {% endif %}
