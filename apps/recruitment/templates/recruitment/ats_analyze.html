@@ -187,11 +187,11 @@
           <input type="hidden" name="ats_grade"        value="{{ hasil.grade }}">
           <input type="hidden" name="ats_rekomendasi"  value="{{ hasil.rekomendasi }}">
           <input type="hidden" name="catatan_ats"      value="{{ hasil.catatan_ats }}">
-          <input type="hidden" name="jabatan_dilamar" value="{{ jabatan_dilamar|default:cv_data.jabatan_dilamar }}">
+          <input type="hidden" name="jabatan_dilamar" value="{{ jabatan_dilamar }}">
           <div class="mb-3">
             <label class="form-label fw-semibold small">Posisi Dilamar</label>
             <div class="form-control bg-light">
-              {{ jabatan_dilamar|default:cv_data.jabatan_dilamar|default:"—" }}
+              {{ jabatan_dilamar|default:"—" }}
             </div>
           </div>
           <div class="d-flex gap-2">
