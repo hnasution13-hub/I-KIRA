@@ -600,7 +600,7 @@ def ats_analyze(request):
                     skill_diinginkan_str = request.POST.get('skill_diinginkan', ''),
                 )
 
-            hasil = ATSAnalyzer(kriteria, cv_data).analyze()
+            hasil = ATSAnalyzer().analyze(cv_data, kriteria)
             request.session['ats_hasil'] = hasil
             request.session['ats_cv_data'] = cv_data
         except Exception as e:
