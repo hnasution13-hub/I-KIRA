@@ -605,37 +605,46 @@ def ats_analyze(request):
                 request.session['ats_jabatan_dilamar'] = jabatan_manual
 
             hasil = ATSAnalyzer().analyze(cv_data, kriteria)
-            # Hapus object Kriteria sebelum simpan ke session
-            # (session Django pakai JSON — object tidak serializable)
             hasil_session = {k: v for k, v in hasil.items() if k != 'kriteria'}
             request.session['ats_hasil'] = hasil_session
             request.session['ats_cv_data'] = cv_data
         except Exception as e:
+            import traceback
+            logger.error('ATS analyze error: %s\n%s', e, traceback.format_exc())
             messages.error(request, f'Gagal analisis: {e}')
 
         company = getattr(request, 'company', None)
+        # Filter ManpowerRequest — aman meski company None
+        mprf_qs = ManpowerRequest.objects.none()
+        if company:
+            mprf_qs = ManpowerRequest.objects.filter(
+                company=company,
+                status__in=['Open', 'In Process', 'Approved']
+            ).order_by('-created_at')
+
         return render(request, 'recruitment/ats_analyze.html', {
             'cv_filename'     : request.session.get('ats_cv_filename', ''),
             'cv_data'         : cv_data,
             'hasil'           : request.session.get('ats_hasil'),
             'jabatan_dilamar' : request.session.get('ats_jabatan_dilamar', ''),
             'positions'       : get_company_qs(Position, request, aktif=True),
-            'mprfs'           : ManpowerRequest.objects.filter(
-                                    company=company,
-                                    status__in=['Open', 'In Process', 'Approved']
-                                ).order_by('-created_at'),
+            'mprfs'           : mprf_qs,
         })
 
     company = getattr(request, 'company', None)
+    mprf_qs = ManpowerRequest.objects.none()
+    if company:
+        mprf_qs = ManpowerRequest.objects.filter(
+            company=company,
+            status__in=['Open', 'In Process', 'Approved']
+        ).order_by('-created_at')
+
     return render(request, 'recruitment/ats_analyze.html', {
         'cv_filename'     : request.session.get('ats_cv_filename', ''),
         'cv_data'         : cv_data,
         'jabatan_dilamar' : request.session.get('ats_jabatan_dilamar', ''),
         'positions'       : get_company_qs(Position, request, aktif=True),
-        'mprfs'           : ManpowerRequest.objects.filter(
-                                company=company,
-                                status__in=['Open', 'In Process', 'Approved']
-                            ).order_by('-created_at'),
+        'mprfs'           : mprf_qs,
     })
 
 
