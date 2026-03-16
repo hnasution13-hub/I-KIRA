@@ -119,6 +119,64 @@ def audit_login(sender, request, user, **kwargs):
         pass
 
 
+
+
+# ---------------------------------------------------------------------------
+# Auto-generate ApprovalMatrix saat Position dibuat atau parent diubah
+# ---------------------------------------------------------------------------
+# Logika:
+#   1. Saat jabatan baru dibuat → buat ApprovalMatrix default semua modul
+#      dengan approver = parent jabatan (auto-derive)
+#   2. Saat parent jabatan diubah → update ApprovalMatrix yang masih auto
+#      (belum di-set manual / jabatan_approver masih None)
+#   3. Kalau user sudah set manual (jabatan_approver != None) → TIDAK ditimpa
+# ---------------------------------------------------------------------------
+
+SEMUA_MODUL = [
+    'leave', 'overtime', 'payroll', 'performance',
+    'movement', 'recruitment', 'contract', 'sp', 'phk',
+]
+
+def _auto_setup_approval_matrix(position):
+    """
+    Buat atau update ApprovalMatrix default untuk semua modul.
+    Hanya menyentuh entry yang belum di-set manual (jabatan_approver=None).
+    Entry yang sudah di-set manual tidak akan ditimpa.
+    Fail-safe — tidak boleh crash.
+    """
+    try:
+        from apps.core.models import ApprovalMatrix
+        if not position.company_id:
+            return
+
+        for modul in SEMUA_MODUL:
+            # get_or_create — kalau sudah ada, skip (tidak timpa manual)
+            obj, created = ApprovalMatrix.objects.get_or_create(
+                company=position.company,
+                modul=modul,
+                jabatan_pemohon=position,
+                level_approval=1,
+                defaults={
+                    'jabatan_approver': None,  # None = auto-derive dari parent
+                    'auto_approve_hari': 0,
+                    'notif_email': True,
+                    'aktif': True,
+                }
+            )
+            # Kalau sudah ada tapi jabatan_approver None (auto) dan parent berubah
+            # → tidak perlu update karena auto-derive langsung baca dari Position.parent
+    except Exception:
+        pass
+
+
+@receiver(post_save, sender='core.Position')
+def position_post_save(sender, instance, created, **kwargs):
+    """
+    Trigger auto-setup ApprovalMatrix saat jabatan baru dibuat
+    atau saat jabatan diupdate (misal parent berubah).
+    """
+    _auto_setup_approval_matrix(instance)
+
 def _get_ip(request):
     """Ambil IP asli client, perhatikan proxy."""
     xff = request.META.get('HTTP_X_FORWARDED_FOR')
