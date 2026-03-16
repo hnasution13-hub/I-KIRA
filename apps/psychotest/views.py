@@ -191,6 +191,17 @@ def tes_mulai(request, token):
         SoalBank.objects.filter(kategori=kategori_aktif, aktif=True).order_by('urutan', 'id')
     )
 
+    # Auto-seed jika soal kategori ini kosong
+    if not soal_list:
+        try:
+            from utils.psychotest_seed import seed
+            seed()
+            soal_list = list(
+                SoalBank.objects.filter(kategori=kategori_aktif, aktif=True).order_by('urutan', 'id')
+            )
+        except Exception:
+            pass
+
     # Ambil jawaban yang sudah ada — preprocess jadi format template-friendly
     existing_answers = {
         a.soal_id: a for a in session.answers.filter(soal__kategori=kategori_aktif)
