@@ -606,7 +606,7 @@ def ats_analyze(request):
         except Exception as e:
             messages.error(request, f'Gagal analisis: {e}')
 
-        company = _get_company(request)
+        company = getattr(request, 'company', None)
         return render(request, 'recruitment/ats_analyze.html', {
             'cv_filename': request.session.get('ats_cv_filename', ''),
             'cv_data':     cv_data,
@@ -618,7 +618,7 @@ def ats_analyze(request):
                            ).order_by('-created_at'),
         })
 
-    company = _get_company(request)
+    company = getattr(request, 'company', None)
     return render(request, 'recruitment/ats_analyze.html', {
         'cv_filename': request.session.get('ats_cv_filename', ''),
         'cv_data':     cv_data,
