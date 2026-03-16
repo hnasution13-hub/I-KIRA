@@ -229,16 +229,30 @@ BRAND_COLOR = '#c40000'
 CONTRACT_EXPIRY_WARNING_DAYS = 30
 PROBATION_END_WARNING_DAYS = 14
 
-# ── Email (console untuk development, ganti ke SMTP di production) ────────────
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@hris-smartdesk.com'
-# Untuk production, ganti ke:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+# ── Email ─────────────────────────────────────────────────────────────────────
+# Otomatis pakai SMTP jika EMAIL_HOST_USER tersedia (production),
+# fallback ke console (development/lokal)
+_email_user = os.environ.get('EMAIL_HOST_USER', '')
+if _email_user:
+    EMAIL_BACKEND      = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST         = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT         = int(os.environ.get('EMAIL_PORT', 587))
+    EMAIL_USE_TLS      = True
+    EMAIL_HOST_USER    = _email_user
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+    DEFAULT_FROM_EMAIL = os.environ.get(
+        'DEFAULT_FROM_EMAIL',
+        f'HRIS SmartDesk <{_email_user}>'
+    )
+else:
+    EMAIL_BACKEND     = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'noreply@hris-smartdesk.com'
+
+HR_EMAIL_LIST = [
+    e.strip()
+    for e in os.environ.get('HR_EMAIL_LIST', '').split(',')
+    if e.strip()
+]
 
 # Django auth redirect override
 LOGIN_URL = '/login/'

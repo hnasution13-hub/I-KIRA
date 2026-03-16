@@ -1,8 +1,11 @@
 # hris_project/supabase_storage.py
 """
-Custom Django storage backend menggunakan Supabase Storage.
-File media (CV, foto, dll) disimpan ke Supabase Storage bucket,
-bukan ke disk lokal — aman di Render free tier (ephemeral filesystem).
+[DEPRECATED] — Tidak digunakan lagi.
+Storage backend telah diganti ke Cloudinary (cloudinary_storage).
+Konfigurasi ada di settings.py dan di-trigger oleh env var:
+  CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+
+File ini dipertahankan sebagai referensi saja dan AMAN UNTUK DIHAPUS.
 """
 
 import os
