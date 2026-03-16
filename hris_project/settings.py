@@ -60,6 +60,9 @@ INSTALLED_APPS = [
     'apps.performance',
     # ── Registrasi Demo & Trial ───────────────────────────
     'apps.registration',
+    # Storage
+    'cloudinary_storage',
+    'cloudinary',
     # ── Investor Dashboard ────────────────────────────────
     'apps.investor',
 ]
@@ -110,14 +113,10 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=60,
+            conn_max_age=600,
             conn_health_checks=True,
-            ssl_require=True,
         )
     }
-    # Neon SSL fix — prevent unexpected SSL close
-    DATABASES['default'].setdefault('OPTIONS', {})
-    DATABASES['default']['OPTIONS']['connect_timeout'] = 10
 else:
     DATABASES = {
         'default': {
@@ -148,15 +147,22 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# ── Supabase Storage — untuk file media permanen (CV, foto, dll) ──────────────
-SUPABASE_URL         = os.environ.get('SUPABASE_URL', '')
-SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
-SUPABASE_BUCKET      = os.environ.get('SUPABASE_BUCKET', 'ikira-media')
+# ── Cloudinary Storage — untuk file media permanen (CV, foto, dll) ───────────
+CLOUDINARY_CLOUD_NAME  = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+CLOUDINARY_API_KEY     = os.environ.get('CLOUDINARY_API_KEY', '')
+CLOUDINARY_API_SECRET  = os.environ.get('CLOUDINARY_API_SECRET', '')
 
-# Pakai Supabase Storage jika credentials tersedia (production)
+# Pakai Cloudinary jika credentials tersedia (production)
 # Fallback ke local storage jika tidak ada (development)
-if SUPABASE_URL and SUPABASE_SERVICE_KEY:
-    DEFAULT_FILE_STORAGE = 'hris_project.supabase_storage.SupabaseStorage'
+if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+    import cloudinary
+    cloudinary.config(
+        cloud_name = CLOUDINARY_CLOUD_NAME,
+        api_key    = CLOUDINARY_API_KEY,
+        api_secret = CLOUDINARY_API_SECRET,
+        secure     = True,
+    )
+    DEFAULT_FILE_STORAGE  = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
