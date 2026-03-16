@@ -110,10 +110,14 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=600,
+            conn_max_age=60,
             conn_health_checks=True,
+            ssl_require=True,
         )
     }
+    # Neon SSL fix — prevent unexpected SSL close
+    DATABASES['default'].setdefault('OPTIONS', {})
+    DATABASES['default']['OPTIONS']['connect_timeout'] = 10
 else:
     DATABASES = {
         'default': {
@@ -266,5 +270,5 @@ LOGGING = {
 # ── Demo & Trial Config ───────────────────────────────────────────────────────
 TRIAL_DURASI_HARI = 30          # Durasi default trial (hari)
 SITE_URL    = os.environ.get('SITE_URL',    'http://localhost:8000')
-SALES_WA    = os.environ.get('SALES_WA',    '6285236410996')
+SALES_WA    = os.environ.get('SALES_WA',    '6281234567890')
 SALES_EMAIL = os.environ.get('SALES_EMAIL', 'sales@hris-smartdesk.com')
