@@ -35,6 +35,21 @@ class ManpowerRequest(models.Model):
     def __str__(self):
         return f"{self.nomor_mprf} - {self.nama_jabatan}"
 
+    @property
+    def hired_count(self):
+        """Jumlah kandidat yang sudah Hired untuk MPRF ini."""
+        return self.candidates.filter(status='Hired').count()
+
+    @property
+    def is_fulfilled(self):
+        """True jika hired sudah memenuhi atau melebihi kebutuhan."""
+        return self.hired_count >= self.jumlah_kebutuhan
+
+    @property
+    def sisa_kebutuhan(self):
+        """Sisa kebutuhan yang belum terpenuhi."""
+        return max(0, self.jumlah_kebutuhan - self.hired_count)
+
     def save(self, *args, **kwargs):
         from django.db import IntegrityError
         from datetime import datetime

@@ -239,14 +239,43 @@ def candidate_print(request, pk):
 @login_required
 @require_POST
 def candidate_update_status(request, pk):
-    """Update status kandidat saja — tanpa menimpa field lain."""
+    """Update status kandidat — dengan auto-close MPRF & notifikasi."""
     candidate = get_object_or_404(Candidate, pk=pk)
     status = request.POST.get('status', '').strip()
     valid_statuses = dict(Candidate.STATUS_CHOICES)
+
     if status and status in valid_statuses:
         candidate.status = status
         candidate.save(update_fields=['status', 'updated_at'])
         messages.success(request, f'Status kandidat diubah ke: {valid_statuses[status]}')
+
+        # ── Auto-close MPRF jika kandidat Hired & kebutuhan terpenuhi ──
+        if status == 'Hired' and candidate.mprf:
+            mprf = candidate.mprf
+            if mprf.is_fulfilled and mprf.status not in ('Filled', 'Cancelled'):
+                mprf.status = 'Filled'
+                mprf.save(update_fields=['status', 'updated_at'])
+                messages.success(
+                    request,
+                    f'MPRF {mprf.nomor_mprf} otomatis ditutup — '
+                    f'kebutuhan {mprf.jumlah_kebutuhan} posisi terpenuhi.'
+                )
+            elif mprf.status == 'Approved':
+                # Ubah ke In Process saat ada yang hired pertama kali
+                mprf.status = 'In Process'
+                mprf.save(update_fields=['status', 'updated_at'])
+
+        # ── Warning jika kandidat tanpa MPRF di-Hired ──
+        if status == 'Hired' and not candidate.mprf:
+            from apps.core.models import Department
+            from apps.employees.models import Employee
+            # Cek headcount dept berdasarkan jabatan_dilamar
+            messages.warning(
+                request,
+                f'Kandidat {candidate.nama} di-Hired tanpa MPRF. '
+                f'Pastikan tidak terjadi over headcount di departemen terkait.'
+            )
+
     else:
         messages.error(request, 'Status tidak valid.')
     return redirect('candidate_detail', pk=pk)
@@ -355,6 +384,28 @@ def offering_update_status(request, pk):
             ol.candidate.status = 'Hired'
             ol.candidate.save(update_fields=['status', 'updated_at'])
             messages.success(request, f'Offering {ol.nomor} diterima. Kandidat {ol.candidate.nama} ditandai Hired.')
+
+            # Auto-close MPRF jika kebutuhan terpenuhi
+            if ol.candidate.mprf:
+                mprf = ol.candidate.mprf
+                if mprf.is_fulfilled and mprf.status not in ('Filled', 'Cancelled'):
+                    mprf.status = 'Filled'
+                    mprf.save(update_fields=['status', 'updated_at'])
+                    messages.success(
+                        request,
+                        f'MPRF {mprf.nomor_mprf} otomatis ditutup — kebutuhan terpenuhi.'
+                    )
+                elif mprf.status == 'Approved':
+                    mprf.status = 'In Process'
+                    mprf.save(update_fields=['status', 'updated_at'])
+
+            # Warning jika tanpa MPRF
+            if not ol.candidate.mprf:
+                messages.warning(
+                    request,
+                    f'Kandidat {ol.candidate.nama} di-Hired tanpa MPRF. '
+                    f'Pastikan tidak terjadi over headcount di departemen terkait.'
+                )
         elif new_status == 'Rejected':
             messages.warning(request, f'Offering {ol.nomor} ditolak.')
         else:
@@ -458,19 +509,6 @@ def company_setting(request):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  HELPERS
-# ══════════════════════════════════════════════════════════════════════════════
-
-def _get_company(request):
-    """Ambil objek Company dari request, fallback ke Company pertama jika superuser."""
-    company = getattr(request, 'company', None)
-    if not company and getattr(request.user, 'is_superuser', False):
-        from apps.core.models import Company
-        company = Company.objects.first()
-    return company
-
-
-# ══════════════════════════════════════════════════════════════════════════════
 #  ATS
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -563,7 +601,7 @@ def ats_analyze(request):
                     skill_diinginkan_str = request.POST.get('skill_diinginkan', ''),
                 )
 
-            hasil = ATSAnalyzer().analyze(cv_data, kriteria)
+            hasil = ATSAnalyzer(kriteria, cv_data).analyze()
             request.session['ats_hasil'] = hasil
             request.session['ats_cv_data'] = cv_data
         except Exception as e:

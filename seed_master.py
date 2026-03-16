@@ -954,13 +954,21 @@ _PTKP_P  = ['TK/0', 'TK/0', 'K/0', 'K/1']
 
 # Gaji range default per level jabatan (Rp)
 _GAJI_LEVEL = {
-    'Staff':            (3_000_000,  6_000_000),
-    'Senior Staff':     (5_000_000,  9_000_000),
-    'Supervisor':       (7_000_000, 12_000_000),
-    'Senior Supervisor':(10_000_000, 18_000_000),
-    'Manager':          (15_000_000, 25_000_000),
-    'Senior Manager':   (20_000_000, 35_000_000),
-    'Director':         (40_000_000, 70_000_000),
+    'Crew':                 (2_500_000,  4_000_000),
+    'Jr.Staff':             (3_000_000,  5_000_000),
+    'Staff':                (4_000_000,  7_000_000),
+    'Sr.Staff':             (6_000_000, 10_000_000),
+    'Jr.Supervisor':        (8_000_000, 12_000_000),
+    'Supervisor':           (10_000_000, 15_000_000),
+    'Sr.Supervisor':        (13_000_000, 20_000_000),
+    'Jr.Superintendent':    (15_000_000, 22_000_000),
+    'Superintendent':       (18_000_000, 28_000_000),
+    'Sr.Superintendent':    (22_000_000, 35_000_000),
+    'Jr.Manager':           (25_000_000, 35_000_000),
+    'Manager':              (30_000_000, 45_000_000),
+    'Sr.Manager':           (40_000_000, 60_000_000),
+    'Manajemen':            (55_000_000, 80_000_000),
+    'Corporate Manajemen':  (75_000_000, 120_000_000),
 }
 
 
@@ -1018,6 +1026,12 @@ def menu_generate_dummy_karyawan():
     _KECAMATAN = ['Kebayoran Baru', 'Menteng', 'Tebet', 'Cempaka Putih', 'Gambir',
                   'Senen', 'Koja', 'Penjaringan', 'Cilincing', 'Tanjung Priok',
                   'Lowokwaru', 'Blimbing', 'Klojen', 'Sukun', 'Kedungkandang']
+    _GOLDAR    = ['A', 'B', 'AB', 'O', 'A', 'O', 'B', 'O']  # O lebih umum
+    _HUB_DARURAT = ['Istri', 'Suami', 'Ayah', 'Ibu', 'Kakak', 'Adik', 'Saudara']
+    _NAMA_DARURAT_L = ['Budi', 'Ahmad', 'Hendra', 'Agus', 'Wahyu', 'Dani', 'Eko', 'Rudi']
+    _NAMA_DARURAT_P = ['Sari', 'Dewi', 'Rina', 'Ani', 'Wati', 'Fitri', 'Nita', 'Yuni']
+    _NAMA_ANAK_L = ['Bima', 'Arjuna', 'Raka', 'Dafa', 'Farhan', 'Rafi', 'Zaki', 'Naufal']
+    _NAMA_ANAK_P = ['Naura', 'Kirana', 'Azahra', 'Nabila', 'Salsabila', 'Hana', 'Intan', 'Syifa']
 
     # ── Pilih company ─────────────────────────────────────────────────────────
     targets = pilih_companies('Generate dummy karyawan untuk company')
@@ -1152,18 +1166,35 @@ def menu_generate_dummy_karyawan():
             kecamatan   = random.choice(_KECAMATAN)
             kode_pos    = str(random.randint(10000, 99999))
 
-            emp_bulk.append(Employee(
+            # ── Golongan darah & No KK ──
+            goldar  = random.choice(_GOLDAR)
+            no_kk   = ''.join([str(random.randint(0,9)) for _ in range(16)])
+
+            # ── Kontak darurat ──
+            hub_dar  = random.choice(_HUB_DARURAT)
+            pool_dar = _NAMA_DARURAT_L if random.random() < 0.5 else _NAMA_DARURAT_P
+            nama_dar = random.choice(pool_dar) + ' ' + random.choice(_NAMA_BELAKANG)
+            hp_dar   = f'08{random.randint(100000000, 999999999)}'
+
+            # ── Status karyawan sesuai level ──
+            if pos.level == 'Crew':
+                st_kar = random.choice(['PHL', 'PKWT'])
+            else:
+                st_kar = random.choice(_ST_KAR)
+
+            emp_obj = Employee(
                 company         = company,
                 nik             = nik,
                 nama            = nama,
                 department      = dept,
                 jabatan         = pos,
-                status_karyawan = random.choice(_ST_KAR),
+                status_karyawan = st_kar,
                 join_date       = join_date,
                 status          = 'Aktif',
                 jenis_kelamin   = jk,
                 agama           = random.choice(_AGAMA),
                 pendidikan      = random.choice(_PEND),
+                golongan_darah  = goldar,
                 status_nikah    = st_nikah,
                 jumlah_anak     = jml_anak,
                 ptkp            = ptkp,
@@ -1171,6 +1202,7 @@ def menu_generate_dummy_karyawan():
                 tanggal_lahir   = tgl_lahir,
                 gaji_pokok      = gaji_pokok,
                 no_ktp          = no_ktp,
+                no_kk           = no_kk,
                 no_npwp         = no_npwp,
                 no_bpjs_kes     = no_bpjs_kes,
                 no_bpjs_tk      = no_bpjs_tk,
@@ -1185,13 +1217,38 @@ def menu_generate_dummy_karyawan():
                 kelurahan       = kelurahan,
                 kecamatan       = kecamatan,
                 kode_pos        = kode_pos,
-            ))
+                nama_darurat    = nama_dar,
+                hub_darurat     = hub_dar,
+                hp_darurat      = hp_dar,
+            )
+            emp_bulk.append(emp_obj)
 
         try:
             created = Employee.objects.bulk_create(emp_bulk, ignore_conflicts=True)
             n = len(created)
             ok(f'{company.nama}: {n} karyawan dummy berhasil dibuat.')
             total_created += n
+
+            # ── Generate data anak untuk karyawan menikah ──────────────────
+            from apps.employees.models import AnakKaryawan
+            anak_bulk = []
+            for emp in Employee.objects.filter(company=company, status_nikah='Menikah', jumlah_anak__gt=0).order_by('-id')[:n]:
+                for urutan in range(1, emp.jumlah_anak + 1):
+                    jk_anak = random.choice(['L', 'P'])
+                    pool_anak = _NAMA_ANAK_L if jk_anak == 'L' else _NAMA_ANAK_P
+                    tgl_anak  = date(random.randint(2005, 2020), random.randint(1,12), random.randint(1,28))
+                    anak_bulk.append(AnakKaryawan(
+                        employee      = emp,
+                        urutan        = urutan,
+                        nama          = random.choice(pool_anak),
+                        tgl_lahir     = tgl_anak,
+                        jenis_kelamin = jk_anak,
+                        no_bpjs_kes   = ''.join([str(random.randint(0,9)) for _ in range(13)]),
+                    ))
+            if anak_bulk:
+                AnakKaryawan.objects.bulk_create(anak_bulk, ignore_conflicts=True)
+                info(f'{company.nama}: {len(anak_bulk)} data anak berhasil dibuat.')
+
         except Exception as e:
             err(f'{company.nama} gagal: {e}')
 

@@ -14,7 +14,7 @@
         <div>
           <h4 class="mb-0 fw-bold">{{ candidate.nama }}</h4>
           <small class="text-muted">{{ candidate.jabatan_dilamar }}
-            {% if candidate.mprf %} &middot; MPRF: {{ candidate.mprf.nomor_mprf }}{% endif %}
+            {% if candidate.mprf %} &middot; MPRF: {{ candidate.mprf.nomor_mprf }}{% else %} &middot; <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Tanpa MPRF</span>{% endif %}
           </small>
         </div>
         <div class="ms-auto d-flex gap-2">
@@ -688,7 +688,18 @@
             </div>
             {% if candidate.status == 'Hired' %}
               <p class="text-success mb-1"><i class="fas fa-check-circle me-1"></i>Kandidat telah diterima.</p>
-              {% if candidate.mprf %}<p class="small text-muted">MPRF {{ candidate.mprf.nomor_mprf }}: {{ candidate.mprf.get_status_display }}</p>{% endif %}
+              {% if candidate.mprf %}
+              <p class="small text-muted">MPRF {{ candidate.mprf.nomor_mprf }}: {{ candidate.mprf.get_status_display }}
+                {% if candidate.mprf.is_fulfilled %}<span class="badge bg-success ms-1">Kebutuhan Terpenuhi</span>{% endif %}
+              </p>
+            {% else %}
+              <div class="alert alert-warning py-2 px-3 mt-2 small">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                <strong>Kandidat ini tidak terhubung ke MPRF.</strong>
+                Pastikan tidak terjadi <em>over headcount</em> di departemen terkait.
+                <a href="{% url 'mprf_list' %}" class="alert-link ms-1">Cek MPRF</a>
+              </div>
+            {% endif %}
             {% elif candidate.status == 'Rejected' %}
               <p class="text-danger"><i class="fas fa-times-circle me-1"></i>Kandidat ditolak.</p>
             {% elif candidate.status == 'Withdrawn' %}

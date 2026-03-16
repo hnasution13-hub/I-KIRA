@@ -9,7 +9,7 @@
 <div class="card"><div class="card-body p-0">
     <div class="table-responsive-wrap">
 <table class="table table-hover datatable mb-0" id="tbl-mprf">
-        <thead class="table-light"><tr><th>No. MPRF</th><th>Departemen</th><th>Jabatan</th><th>Tipe</th><th class="text-center">Kebutuhan</th><th>Target</th><th>Status</th><th>Aksi</th></tr></thead>
+        <thead class="table-light"><tr><th>No. MPRF</th><th>Departemen</th><th>Jabatan</th><th>Tipe</th><th class="text-center">Kebutuhan</th><th class="text-center">Terpenuhi</th><th>Target</th><th>Status</th><th>Aksi</th></tr></thead>
         <tbody>
             {% for mprf in mprfs %}
             <tr>
@@ -18,6 +18,12 @@
                 <td>{{ mprf.nama_jabatan }}</td>
                 <td><span class="badge bg-info">{{ mprf.tipe }}</span></td>
                 <td class="text-center">{{ mprf.jumlah_kebutuhan }}</td>
+                <td class="text-center">
+                    <span class="fw-semibold {% if mprf.is_fulfilled %}text-success{% elif mprf.hired_count > 0 %}text-warning{% else %}text-muted{% endif %}">
+                        {{ mprf.hired_count }}/{{ mprf.jumlah_kebutuhan }}
+                    </span>
+                    {% if mprf.is_fulfilled %}<i class="fas fa-check-circle text-success ms-1" title="Terpenuhi"></i>{% endif %}
+                </td>
                 <td>{{ mprf.target_date|date:"d/m/Y" }}</td>
                 <td><span class="badge {% if mprf.status == 'Open' %}bg-success{% elif mprf.status == 'Filled' %}bg-primary{% elif mprf.status == 'Cancelled' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">{{ mprf.status }}</span></td>
                 <td>
