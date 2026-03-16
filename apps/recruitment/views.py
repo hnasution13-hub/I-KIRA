@@ -530,12 +530,11 @@ def ats_scan(request):
         request.session['ats_cv_filename'] = cv_file.name
         request.session['ats_cv_ext']      = ext
 
-        # Juga coba simpan ke disk (untuk localhost / server dengan persistent storage)
+        # Simpan ke temp dir sistem (selalu tersedia, aman di Render/Cloudinary)
         try:
-            from django.conf import settings
             import tempfile, os
-            with tempfile.NamedTemporaryFile(delete=False, suffix=ext,
-                                             dir=settings.MEDIA_ROOT) as tmp:
+            tmp_dir = tempfile.gettempdir()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext, dir=tmp_dir) as tmp:
                 tmp.write(cv_bytes)
                 request.session['ats_cv_path'] = tmp.name
         except Exception:
