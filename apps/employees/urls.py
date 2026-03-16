@@ -21,4 +21,5 @@ urlpatterns = [
 
     # API
     path('api/', views.api_employees, name='api_employees'),
+    path('api/jabatan/', views.api_jabatan_by_dept, name='api_jabatan_by_dept'),
 ]

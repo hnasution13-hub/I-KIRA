@@ -124,17 +124,20 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">Departemen</label>
-                    <select name="department" class="form-select">
+                    <select name="department" id="id_department" class="form-select">
                         <option value="">-- Pilih --</option>
                         {% for d in departments %}<option value="{{ d.id }}" {% if instance.department_id == d.id %}selected{% endif %}>{{ d.nama }}</option>{% endfor %}
                     </select>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">Jabatan</label>
-                    <select name="jabatan" class="form-select">
-                        <option value="">-- Pilih --</option>
+                    <select name="jabatan" id="id_jabatan" class="form-select">
+                        <option value="">-- Pilih Departemen dulu --</option>
                         {% for p in positions %}<option value="{{ p.id }}" {% if instance.jabatan_id == p.id %}selected{% endif %}>{{ p.nama }}</option>{% endfor %}
                     </select>
+                    <div class="form-help" id="jabatan-help" style="display:none">
+                        <i class="fas fa-info-circle"></i> Menampilkan jabatan sesuai departemen yang dipilih
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <div class="label-with-help">
@@ -535,7 +538,7 @@
             <div class="card mb-3"><div class="card-header fw-semibold text-primary">Kontak</div><div class="card-body"><div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">No. HP / Telp (Utama) <span class="text-danger">*</span></label>
-                    <input type="text" name="no_hp" class="form-control" value="{{ instance.no_hp|default:'' }}" required placeholder="08xxxxxxxxxx">
+                    <input type="text" name="no_hp" class="form-control" value="{{ instance.no_hp|default:'' }}" placeholder="08xxxxxxxxxx">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">No. HP / Telp (Alternatif) <small class="text-muted">opsional</small></label>
@@ -620,7 +623,83 @@
 })();
 
 
-// ── Tempat Lahir Autocomplete ───────────────────────────────────
+// ── Cascade Departemen → Jabatan ───────────────────────────────
+(function() {
+    const deptSel   = document.getElementById('id_department');
+    const jabSel    = document.getElementById('id_jabatan');
+    const jabHelp   = document.getElementById('jabatan-help');
+    if (!deptSel || !jabSel) return;
+
+    // Simpan jabatan yang sedang terpilih (saat edit) sebelum di-replace
+    const preselectedJabatan = jabSel.value;
+
+    function loadJabatan(deptId, selectValue) {
+        const url = "{% url 'api_jabatan_by_dept' %}" + (deptId ? '?dept=' + deptId : '');
+
+        // Loading state
+        jabSel.disabled  = true;
+        jabSel.innerHTML = '<option value="">Memuat jabatan...</option>';
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                jabSel.innerHTML = '';
+
+                if (!data.jabatan || data.jabatan.length === 0) {
+                    jabSel.innerHTML = '<option value="">-- Tidak ada jabatan --</option>';
+                    jabSel.disabled  = true;
+                    if (jabHelp) jabHelp.style.display = 'none';
+                    return;
+                }
+
+                // Placeholder
+                const placeholder = deptId
+                    ? '-- Pilih Jabatan --'
+                    : '-- Semua Jabatan --';
+                const optDefault = document.createElement('option');
+                optDefault.value = '';
+                optDefault.textContent = placeholder;
+                jabSel.appendChild(optDefault);
+
+                data.jabatan.forEach(function(j) {
+                    const opt = document.createElement('option');
+                    opt.value = j.id;
+                    opt.textContent = j.nama;
+                    jabSel.appendChild(opt);
+                });
+
+                jabSel.disabled = false;
+
+                // Restore pilihan sebelumnya kalau masih ada di list
+                if (selectValue) {
+                    jabSel.value = selectValue;
+                }
+
+                if (jabHelp) {
+                    jabHelp.style.display = deptId ? 'block' : 'none';
+                }
+            })
+            .catch(function() {
+                jabSel.innerHTML = '<option value="">-- Gagal memuat --</option>';
+                jabSel.disabled  = false;
+            });
+    }
+
+    // Event: pilih departemen
+    deptSel.addEventListener('change', function() {
+        loadJabatan(this.value, null);
+    });
+
+    // Initial load saat halaman pertama dibuka
+    const initialDept = deptSel.value;
+    if (initialDept) {
+        // Mode edit: load jabatan sesuai dept, lalu pilih kembali jabatan yang sudah tersimpan
+        loadJabatan(initialDept, preselectedJabatan);
+    } else {
+        // Mode tambah baru: load semua jabatan dulu supaya bisa dipilih tanpa dept
+        loadJabatan('', preselectedJabatan);
+    }
+})();
 (function() {
     const inp = document.getElementById('tl_input');
     const val = document.getElementById('tl_val');
@@ -977,14 +1056,17 @@ document.getElementById('id_npwp').addEventListener('input', function() {
   const form = document.getElementById('employeeForm');
   if (!form) return;
 
-  // Tandai tab yang punya required field belum terisi
+  // Tandai tab berdasarkan required field yang VISIBLE (ada di tab aktif saja)
   function checkTabErrors() {
     document.querySelectorAll('.tab-pane').forEach(function(pane) {
       const tabId = pane.id;
       const link = document.querySelector('.emp-step[data-tab="' + tabId + '"]');
       if (!link) return;
+      // Hanya cek tab yang sedang aktif — tab lain tidak bisa divalidasi browser
+      const isActive = pane.classList.contains('active');
+      if (!isActive) { link.classList.remove('has-error'); return; }
       const hasEmpty = Array.from(pane.querySelectorAll('[required]')).some(function(el) {
-        return !el.value.trim();
+        return !el.disabled && !el.value.trim();
       });
       link.classList.toggle('has-error', hasEmpty);
     });
@@ -1021,7 +1103,7 @@ document.getElementById('id_npwp').addEventListener('input', function() {
     });
   });
 
-  // KTP harus 16 digit
+  // KTP harus 16 digit (opsional — tidak block submit)
   const ktpEl = document.getElementById('id_no_ktp');
   if (ktpEl) {
     ktpEl.addEventListener('blur', function() {
@@ -1040,11 +1122,23 @@ document.getElementById('id_npwp').addEventListener('input', function() {
     });
   }
 
-  // Saat submit, cek semua required field
+  // ── Submit: hanya validasi required field yang VISIBLE & AKTIF ─────────────
+  // Field di tab tersembunyi TIDAK divalidasi di sini — backend yang handle.
+  // Ini mencegah browser/JS blocking submit karena hidden required field.
   form.addEventListener('submit', function(e) {
-    let firstError = null;
+    // Nonaktifkan validasi native browser untuk semua field tersembunyi
     form.querySelectorAll('[required]').forEach(function(el) {
-      if (!el.value.trim()) {
+      const pane = el.closest('.tab-pane');
+      if (pane && !pane.classList.contains('active')) {
+        el.removeAttribute('required');
+        el.dataset.wasRequired = 'true';
+      }
+    });
+
+    // Cek required field di tab yang sedang aktif saja
+    let firstError = null;
+    form.querySelectorAll('.tab-pane.active [required]').forEach(function(el) {
+      if (!el.disabled && !el.value.trim()) {
         el.classList.add('is-invalid');
         if (!el.parentElement.querySelector('.invalid-feedback')) {
           const fb = document.createElement('div');
@@ -1055,20 +1149,22 @@ document.getElementById('id_npwp').addEventListener('input', function() {
         if (!firstError) firstError = el;
       }
     });
-    checkTabErrors();
-    if (firstError) {
-      e.preventDefault();
-      // Pindah ke tab yang punya error pertama
-      const pane = firstError.closest('.tab-pane');
-      if (pane) {
-        const tabLink = document.querySelector('.emp-step[data-tab="' + pane.id + '"]');
-        if (tabLink) { (window._empActivateTab && window._empActivateTab(pane.id)) || tabLink.click(); }
-        setTimeout(function() { firstError.focus(); firstError.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
-      }
-    }
-  });
 
-  // Tab active state dihandle oleh manual tab switcher
+    if (firstError) {
+      // Restore required yang tadi dilepas, lalu batalkan submit
+      form.querySelectorAll('[data-was-required]').forEach(function(el) {
+        el.setAttribute('required', '');
+        delete el.dataset.wasRequired;
+      });
+      e.preventDefault();
+      setTimeout(function() {
+        firstError.focus();
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      checkTabErrors();
+    }
+    // Kalau tidak ada error, form submit langsung — tidak ada preventDefault
+  });
 
   checkTabErrors();
 })();
