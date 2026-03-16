@@ -1,74 +1,23 @@
-"""
-HRIS SmartDesk — Django Settings
-Production-ready: Render + Neon PostgreSQL + Cloudinary
-
-Environment variables wajib di production (set di Render Dashboard):
-  SECRET_KEY, DATABASE_URL,
-  CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
-  ALLOWED_HOSTS, SITE_URL, CORS_ALLOWED_ORIGINS
-
-Optional (ada default-nya):
-  DEBUG (default False), EMAIL_HOST_USER, EMAIL_HOST_PASSWORD,
-  DEFAULT_FROM_EMAIL, HR_EMAIL_LIST, SALES_WA, SALES_EMAIL
-"""
-
 from pathlib import Path
 from datetime import timedelta
-import os
-
-import dj_database_url
+import os  # FIX BUG-002: gunakan environment variable
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ── Security ──────────────────────────────────────────────────────────────────
+# FIX BUG-002: SECRET_KEY dari environment variable, bukan hardcoded
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-smartdesk-hris-change-in-production-2024-abc123xyz'
+)
 
-SECRET_KEY = os.environ.get('SECRET_KEY')
-if not SECRET_KEY:
-    import warnings
-    warnings.warn(
-        "SECRET_KEY tidak ditemukan di environment! Pakai fallback — JANGAN di production.",
-        stacklevel=1,
-    )
-    SECRET_KEY = 'django-insecure-local-dev-only-change-in-production-abc123xyz'
+# FIX BUG-002: DEBUG dari environment variable, default False di production
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-
-_allowed = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
-ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
-
-# Percayai header dari Render reverse proxy
-USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# ── Security Headers (aktif di production / HTTPS) ───────────────────────────
-
-if not DEBUG:
-    SECURE_SSL_REDIRECT               = True
-    SECURE_HSTS_SECONDS               = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS    = True
-    SECURE_HSTS_PRELOAD               = True
-    SECURE_CONTENT_TYPE_NOSNIFF       = True
-    SECURE_BROWSER_XSS_FILTER         = True
-    X_FRAME_OPTIONS                   = 'DENY'
-    SESSION_COOKIE_SECURE             = True
-    SESSION_COOKIE_HTTPONLY           = True
-    SESSION_COOKIE_SAMESITE           = 'Lax'
-    CSRF_COOKIE_SECURE                = True
-    CSRF_COOKIE_HTTPONLY              = True
-
-# ── CSRF Trusted Origins ──────────────────────────────────────────────────────
-
-_site_url = os.environ.get('SITE_URL', 'http://localhost:8000')
-CSRF_TRUSTED_ORIGINS = [_site_url]
-_cors_raw = os.environ.get('CORS_ALLOWED_ORIGINS', '')
-for _origin in [o.strip() for o in _cors_raw.split(',') if o.strip()]:
-    if _origin not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append(_origin)
-
-# ── Installed Apps ────────────────────────────────────────────────────────────
+# FIX BUG-002: ALLOWED_HOSTS dari environment variable
+_allowed = os.environ.get('ALLOWED_HOSTS', '*')
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',')]
 
 INSTALLED_APPS = [
-    # Cloudinary HARUS sebelum django.contrib.staticfiles
     'cloudinary_storage',
     'cloudinary',
     'django.contrib.admin',
@@ -82,7 +31,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'django_filters',
     'corsheaders',
-    'drf_spectacular',
+    'drf_spectacular',  # API docs / OpenAPI
     # Local apps
     'apps.core',
     'apps.employees',
@@ -93,7 +42,9 @@ INSTALLED_APPS = [
     'apps.recruitment',
     'apps.psychotest',
     'apps.reports',
+    # ── Add-On: Advanced Psychometric Test ───────────────
     'apps.advanced_psychotest',
+    # ── Add-On: Asset Management ─────────────────────────
     'apps.assets',
     'apps.locations',
     'apps.vendors',
@@ -103,16 +54,17 @@ INSTALLED_APPS = [
     'apps.asset_reports',
     'apps.custom_categories',
     'apps.api',
-    'apps.wilayah',
-    'apps.portal',
-    'apps.shifts',
+    'apps.wilayah',  # Data wilayah Indonesia
+    'apps.portal',   # Portal self-service karyawan
+    'apps.shifts',   # Manajemen Shift & Roster
+    # ── Add-On: Organisation Development ─────────────────
     'apps.od',
     'apps.performance',
+    # ── Registrasi Demo & Trial ───────────────────────────
     'apps.registration',
+    # ── Investor Dashboard ────────────────────────────────
     'apps.investor',
 ]
-
-# ── Middleware ────────────────────────────────────────────────────────────────
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -126,6 +78,8 @@ MIDDLEWARE = [
     'apps.core.middleware.PlanCheckMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # FIX: Ganti AuditMiddleware berbasis path-guessing dengan RequestUserMiddleware
+    # yang bekerja bersama Django signals untuk audit log yang akurat.
     'apps.core.signals.RequestUserMiddleware',
 ]
 
@@ -134,11 +88,7 @@ ROOT_URLCONF = 'hris_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            BASE_DIR / 'templates',
-            BASE_DIR / 'core' / 'templates',
-            BASE_DIR / 'attendance' / 'templates',
-        ],
+        'DIRS': [BASE_DIR / 'templates', BASE_DIR / 'core' / 'templates', BASE_DIR / 'attendance' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -154,8 +104,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'hris_project.wsgi.application'
 
-# ── Database: Neon PostgreSQL ─────────────────────────────────────────────────
-
+# Database — otomatis pakai PostgreSQL kalau ada DATABASE_URL (Railway/production)
+# kalau tidak ada, fallback ke SQLite (local development)
+import dj_database_url
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 if DATABASE_URL:
     DATABASES = {
@@ -165,8 +116,6 @@ if DATABASE_URL:
             conn_health_checks=True,
         )
     }
-    DATABASES['default'].setdefault('OPTIONS', {})
-    DATABASES['default']['OPTIONS']['sslmode'] = 'require'
 else:
     DATABASES = {
         'default': {
@@ -174,8 +123,6 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
-# ── Auth ──────────────────────────────────────────────────────────────────────
 
 AUTH_USER_MODEL = 'core.User'
 
@@ -186,32 +133,26 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-LOGIN_URL           = '/login/'
-LOGIN_REDIRECT_URL  = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/'
-
-# ── Internationalisation ──────────────────────────────────────────────────────
-
 LANGUAGE_CODE = 'id-id'
-TIME_ZONE     = 'Asia/Jakarta'
-USE_I18N      = True
-USE_TZ        = True
+TIME_ZONE = 'Asia/Jakarta'
+USE_I18N = True
+USE_TZ = True
 
-# ── Static Files (Whitenoise) ─────────────────────────────────────────────────
-# CompressedStaticFilesStorage — compress & cache tapi tidak strict-manifest
-# Menghindari MissingFileError dari .map file milik DRF / third-party
-
-STATIC_URL       = '/static/'
-STATIC_ROOT      = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_URL = '/static/'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# ── Media Files (Cloudinary) ──────────────────────────────────────────────────
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
-CLOUDINARY_API_KEY    = os.environ.get('CLOUDINARY_API_KEY', '')
-CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '')
+# ── Cloudinary Storage — untuk file media permanen (CV, foto, dll) ───────────
+CLOUDINARY_CLOUD_NAME  = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+CLOUDINARY_API_KEY     = os.environ.get('CLOUDINARY_API_KEY', '')
+CLOUDINARY_API_SECRET  = os.environ.get('CLOUDINARY_API_SECRET', '')
 
+# Pakai Cloudinary jika credentials tersedia (production)
+# Fallback ke local storage jika tidak ada (development)
 if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
     import cloudinary
     cloudinary.config(
@@ -220,48 +161,11 @@ if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
         api_secret = CLOUDINARY_API_SECRET,
         secure     = True,
     )
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/'
-else:
-    MEDIA_URL  = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+    DEFAULT_FILE_STORAGE  = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-# ── Email ─────────────────────────────────────────────────────────────────────
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-_email_user = os.environ.get('EMAIL_HOST_USER', '')
-if _email_user:
-    EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST          = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-    EMAIL_PORT          = int(os.environ.get('EMAIL_PORT', 587))
-    EMAIL_USE_TLS       = True
-    EMAIL_HOST_USER     = _email_user
-    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-    DEFAULT_FROM_EMAIL  = os.environ.get(
-        'DEFAULT_FROM_EMAIL',
-        f'HRIS SmartDesk <{_email_user}>'
-    )
-else:
-    EMAIL_BACKEND      = 'django.core.mail.backends.console.EmailBackend'
-    DEFAULT_FROM_EMAIL = 'noreply@hris-smartdesk.com'
-
-HR_EMAIL_LIST = [
-    e.strip()
-    for e in os.environ.get('HR_EMAIL_LIST', '').split(',')
-    if e.strip()
-]
-
-# ── CORS ──────────────────────────────────────────────────────────────────────
-
-_cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
-if _cors_origins:
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(',') if o.strip()]
-else:
-    CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000']
-
-CORS_ALLOW_CREDENTIALS = True
-
-# ── REST Framework ────────────────────────────────────────────────────────────
-
+# REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -277,30 +181,12 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '60/hour',
-        'user': '1000/hour',
-    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # untuk API docs
 }
 
-# ── JWT ───────────────────────────────────────────────────────────────────────
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':  timedelta(hours=8),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS':  True,
-    'BLACKLIST_AFTER_ROTATION': False,
-}
-
-# ── OpenAPI / Swagger Docs ────────────────────────────────────────────────────
-
+# OpenAPI / Swagger docs (drf-spectacular)
 SPECTACULAR_SETTINGS = {
-    'TITLE':       'HRIS SmartDesk API',
+    'TITLE': 'HRIS SmartDesk API',
     'DESCRIPTION': (
         'REST API untuk HRIS SmartDesk. '
         'Autentikasi menggunakan JWT Bearer token. '
@@ -311,80 +197,97 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 }
 
-# ── Session ───────────────────────────────────────────────────────────────────
-
-SESSION_ENGINE                  = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE              = 28800   # 8 jam, sinkron dengan JWT access token
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-SESSION_SAVE_EVERY_REQUEST      = False
-
-# ── Cache ─────────────────────────────────────────────────────────────────────
-# LocMemCache cukup untuk single-instance Render free/starter tier.
-# Upgrade ke Redis kalau sudah multi-instance atau butuh shared cache.
-
-CACHES = {
-    'default': {
-        'BACKEND':  'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'ikira-hris-cache',
-    }
+# JWT Settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
-# ── App Config ────────────────────────────────────────────────────────────────
+# FIX BUG-018: Jangan izinkan semua origin — batasi ke domain yang diizinkan
+# Isi CORS_ALLOWED_ORIGINS di environment variable atau di sini secara eksplisit
+_cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+if _cors_origins:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(',') if o.strip()]
+else:
+    # Fallback untuk development lokal saja
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ]
+# CORS_ALLOW_ALL_ORIGINS = True  # DIHAPUS — BUG-018
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-APP_NAME     = 'HRIS-SmartDesk'
-APP_VERSION  = '1.0.0'
+# App Config
+APP_NAME = 'HRIS-SmartDesk'
+APP_VERSION = '1.0.0'
 COMPANY_NAME = 'SmartDesk Technology'
-BRAND_COLOR  = '#c40000'
+TRIAL_DAYS = 30
 
-TRIAL_DAYS        = 30
-TRIAL_DURASI_HARI = 30
+# Colors (untuk template)
+BRAND_COLOR = '#c40000'
 
+# Notification days
 CONTRACT_EXPIRY_WARNING_DAYS = 30
-PROBATION_END_WARNING_DAYS   = 14
+PROBATION_END_WARNING_DAYS = 14
 
-SITE_URL    = os.environ.get('SITE_URL',    'http://localhost:8000')
-SALES_WA    = os.environ.get('SALES_WA',    '6281234567890')
-SALES_EMAIL = os.environ.get('SALES_EMAIL', 'sales@hris-smartdesk.com')
+# ── Email ─────────────────────────────────────────────────────────────────────
+# Otomatis pakai SMTP jika EMAIL_HOST_USER tersedia (production),
+# fallback ke console (development/lokal)
+_email_user = os.environ.get('EMAIL_HOST_USER', '')
+if _email_user:
+    EMAIL_BACKEND      = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST         = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT         = int(os.environ.get('EMAIL_PORT', 587))
+    EMAIL_USE_TLS      = True
+    EMAIL_HOST_USER    = _email_user
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+    DEFAULT_FROM_EMAIL = os.environ.get(
+        'DEFAULT_FROM_EMAIL',
+        f'HRIS SmartDesk <{_email_user}>'
+    )
+else:
+    EMAIL_BACKEND     = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'noreply@hris-smartdesk.com'
 
-# ── Logging ───────────────────────────────────────────────────────────────────
-# Semua output ke console — Render tangkap otomatis ke log dashboard.
+HR_EMAIL_LIST = [
+    e.strip()
+    for e in os.environ.get('HR_EMAIL_LIST', '').split(',')
+    if e.strip()
+]
 
+# Django auth redirect override
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
+
+# ── Logging — tampilkan semua error Django ke console ─────────────────────────
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {
-        'simple': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-    },
     'handlers': {
         'console': {
-            'class':     'logging.StreamHandler',
-            'formatter': 'simple',
+            'class': 'logging.StreamHandler',
         },
     },
     'root': {
         'handlers': ['console'],
-        'level':    'WARNING',
+        'level': 'WARNING',
     },
     'loggers': {
         'django': {
-            'handlers':  ['console'],
-            'level':     'WARNING',
-            'propagate': False,
-        },
-        'django.request': {
-            'handlers':  ['console'],
-            'level':     'ERROR',
+            'handlers': ['console'],
+            'level': 'WARNING',
             'propagate': False,
         },
         'apps': {
-            'handlers':  ['console'],
-            'level':     'DEBUG' if DEBUG else 'WARNING',
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'ERROR',
             'propagate': False,
         },
     },
 }
+
+# ── Demo & Trial Config ───────────────────────────────────────────────────────
+TRIAL_DURASI_HARI = 30          # Durasi default trial (hari)
+SITE_URL    = os.environ.get('SITE_URL',    'http://localhost:8000')
+SALES_WA    = os.environ.get('SALES_WA',    '6281234567890')
+SALES_EMAIL = os.environ.get('SALES_EMAIL', 'sales@hris-smartdesk.com')

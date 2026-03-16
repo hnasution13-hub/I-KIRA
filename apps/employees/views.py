@@ -229,24 +229,49 @@ def employee_form(request, pk=None):
             messages.error(request, 'Tanggal masuk wajib diisi.')
             return _render_form(request, instance)
 
-        if instance:
-            for k, v in data.items():
-                setattr(instance, k, v)
-            if 'foto' in request.FILES:
-                instance.foto = request.FILES['foto']
-            instance.save()
-            _save_anak(instance, request.POST)
-            messages.success(request, f'Data {instance.nama} berhasil diperbarui.')
-        else:
-            emp = Employee(**data)
-            if company:
-                emp.company = company
-            if 'foto' in request.FILES:
-                emp.foto = request.FILES['foto']
-            emp.save()
-            _save_anak(emp, request.POST)
-            messages.success(request, f'Karyawan {emp.nama} berhasil ditambahkan.')
-        return redirect('employee_list')
+        # ── Pisahkan FK _id fields dari CharField biasa ─────────────────────
+        # Django butuh set `department_id` langsung (bukan setattr 'department')
+        # agar tidak trigger query tambahan / error RelatedObjectDoesNotExist
+        fk_id_keys = {k for k in data if k.endswith('_id')}
+        regular_keys = {k for k in data if not k.endswith('_id')}
+
+        try:
+            if instance:
+                # Update FK fields
+                for k in fk_id_keys:
+                    setattr(instance, k, data[k])
+                # Update regular fields — hanya yang benar-benar ada di model
+                _model_fields = {f.attname for f in Employee._meta.concrete_fields}
+                _model_fields |= {f.name for f in Employee._meta.concrete_fields}
+                for k in regular_keys:
+                    if k in _model_fields:
+                        setattr(instance, k, data[k])
+                if 'foto' in request.FILES:
+                    instance.foto = request.FILES['foto']
+                instance.save()
+                _save_anak(instance, request.POST)
+                messages.success(request, f'Data {instance.nama} berhasil diperbarui.')
+            else:
+                # Buat instance baru — hanya kirim field yang valid ke konstruktor
+                _model_attnames = {f.attname for f in Employee._meta.concrete_fields}
+                _model_attnames |= {f.name for f in Employee._meta.concrete_fields}
+                safe_data = {k: v for k, v in data.items() if k in _model_attnames}
+                emp = Employee(**safe_data)
+                if company:
+                    emp.company = company
+                if 'foto' in request.FILES:
+                    emp.foto = request.FILES['foto']
+                emp.save()
+                _save_anak(emp, request.POST)
+                messages.success(request, f'Karyawan {emp.nama} berhasil ditambahkan.')
+            return redirect('employee_list')
+
+        except Exception as exc:
+            import logging, traceback
+            logger = logging.getLogger('apps')
+            logger.error('employee_form POST error: %s\n%s', exc, traceback.format_exc())
+            messages.error(request, f'Terjadi kesalahan saat menyimpan data: {exc}')
+            return _render_form(request, instance)
 
     return _render_form(request, instance)
 
