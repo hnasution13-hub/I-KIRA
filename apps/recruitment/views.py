@@ -638,24 +638,82 @@ def ats_analyze(request):
 def ats_save_candidate(request):
     if request.method != 'POST':
         return redirect('ats_scan')
-    # simpan kandidat dari hasil ATS
-    data = {
-        'nama':             request.POST.get('nama', ''),
-        'jabatan_dilamar':  request.POST.get('jabatan_dilamar', ''),
-        'email':            request.POST.get('email', ''),
-        'no_hp':            request.POST.get('no_hp', ''),
-        'pendidikan':       request.POST.get('pendidikan', ''),
-        'pengalaman_tahun': int(request.POST.get('pengalaman_tahun', 0) or 0),
-        'ats_score':        int(request.POST.get('ats_score', 0) or 0),
-        'ats_grade':        request.POST.get('ats_grade', ''),
-        'ats_rekomendasi':  request.POST.get('ats_rekomendasi', ''),
-        'status':           'Screening',
-    }
+
+    company = getattr(request, 'company', None)
+
+    nama            = request.POST.get('nama', '').strip()
+    email           = request.POST.get('email', '').strip()
+    jabatan_dilamar = request.POST.get('jabatan_dilamar', '').strip()
+
+    # Fallback nama kalau kosong atau tidak valid
+    if not nama or len(nama.split()) < 2:
+        nama = request.session.get('ats_cv_filename', '').replace('.pdf','').replace('.docx','').strip()
+    if not nama:
+        nama = 'Kandidat ATS'
+
     ats_detail_raw = request.POST.get('ats_detail', '')
     try:
-        data['ats_detail'] = json.loads(ats_detail_raw)
+        ats_detail = json.loads(ats_detail_raw)
     except Exception:
-        data['ats_detail'] = {}
-    candidate = Candidate.objects.create(**data)
-    messages.success(request, f'Kandidat {candidate.nama} berhasil disimpan dari ATS.')
-    return redirect('candidate_detail', pk=candidate.pk)
+        ats_detail = {}
+
+    data = {
+        'nama'            : nama,
+        'jabatan_dilamar' : jabatan_dilamar,
+        'email'           : email,
+        'no_hp'           : request.POST.get('no_hp', ''),
+        'pendidikan'      : request.POST.get('pendidikan', ''),
+        'pengalaman_tahun': int(request.POST.get('pengalaman_tahun', 0) or 0),
+        'ats_score'       : int(request.POST.get('ats_score', 0) or 0),
+        'ats_grade'       : request.POST.get('ats_grade', ''),
+        'ats_rekomendasi' : request.POST.get('ats_rekomendasi', ''),
+        'ats_detail'      : ats_detail,
+        'status'          : 'Screening',
+    }
+    if company:
+        data['company'] = company
+
+    # Cek duplikat by email (kalau ada email)
+    existing = None
+    if email:
+        qs = Candidate.objects.filter(email=email)
+        if company:
+            qs = qs.filter(company=company)
+        existing = qs.first()
+
+    if existing:
+        # Update data ATS ke kandidat yang sudah ada
+        for k, v in data.items():
+            setattr(existing, k, v)
+        existing.save()
+        _save_cv_to_candidate(existing, request)
+        messages.success(request, f'Data ATS kandidat {existing.nama} berhasil diperbarui.')
+        return redirect('candidate_detail', pk=existing.pk)
+    else:
+        candidate = Candidate.objects.create(**data)
+        _save_cv_to_candidate(candidate, request)
+        messages.success(request, f'Kandidat {candidate.nama} berhasil disimpan dari ATS.')
+        return redirect('candidate_detail', pk=candidate.pk)
+
+
+def _save_cv_to_candidate(candidate, request):
+    """Simpan file CV dari session ke candidate.cv_file (Cloudinary)."""
+    import base64
+    from django.core.files.base import ContentFile
+
+    cv_b64      = request.session.get('ats_cv_b64')
+    cv_filename = request.session.get('ats_cv_filename', 'cv.pdf')
+    cv_ext      = request.session.get('ats_cv_ext', '.pdf')
+
+    if not cv_b64:
+        return
+
+    try:
+        cv_bytes = base64.b64decode(cv_b64.encode('utf-8'))
+        # Beri nama file yang bersih: cv_<nama>_<id>.<ext>
+        safe_nama = ''.join(c for c in candidate.nama if c.isalnum() or c in ' _-')[:30].strip()
+        filename  = f'cv_{safe_nama}_{candidate.pk}{cv_ext}'
+        candidate.cv_file.save(filename, ContentFile(cv_bytes), save=True)
+    except Exception as e:
+        import logging
+        logging.getLogger('apps').error(f'Gagal simpan CV ke Cloudinary: {e}')

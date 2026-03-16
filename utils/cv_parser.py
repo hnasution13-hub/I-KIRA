@@ -210,15 +210,25 @@ class CVParser:
 
     def _extract_name(self, lines: list) -> str:
         skip = ['curriculum', 'vitae', 'resume', 'cv', 'profile',
-                'data diri', 'biodata', 'personal', 'profil', 'daftar riwayat']
-        for line in lines[:8]:
+                'data diri', 'biodata', 'personal', 'profil', 'daftar riwayat',
+                'working', 'experience', 'education', 'skill', 'objective',
+                'summary', 'contact', 'address', 'phone', 'email',
+                'riwayat', 'pengalaman', 'pendidikan', 'keahlian', 'alamat']
+        for line in lines[:15]:
+            line = line.strip()
+            if not line:
+                continue
             low = line.lower()
             if any(k in low for k in skip):
                 continue
             if re.search(r'[@:/\\]|http|\.com|\.id|\d{5,}', low):
                 continue
             words = line.split()
-            if 2 <= len(words) <= 6 and all(re.match(r"[A-Za-z.,'\-]+$", w) for w in words):
+            if not (2 <= len(words) <= 6):
+                continue
+            if all(re.match(r"[A-Za-z.,'-]+$", w) for w in words):
+                if line == line.lower():
+                    continue
                 return line.title()
         return ''
 
