@@ -18,8 +18,6 @@ _allowed = os.environ.get('ALLOWED_HOSTS', '*')
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',')]
 
 INSTALLED_APPS = [
-    'cloudinary_storage',
-    'cloudinary',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -143,31 +141,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-MEDIA_URL  = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'   # selalu di-set — dipakai untuk temp files
-
-# ── Cloudinary Storage ────────────────────────────────────────────────────────
-CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
-CLOUDINARY_API_KEY    = os.environ.get('CLOUDINARY_API_KEY', '')
-CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '')
-
-if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
-    import cloudinary
-    cloudinary.config(
-        cloud_name = CLOUDINARY_CLOUD_NAME,
-        api_key    = CLOUDINARY_API_KEY,
-        api_secret = CLOUDINARY_API_SECRET,
-        secure     = True,
-    )
-    # django-cloudinary-storage==0.3.0 butuh dict ini secara eksplisit
-    CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
-        'API_KEY'   : CLOUDINARY_API_KEY,
-        'API_SECRET': CLOUDINARY_API_SECRET,
-        'SECURE'    : True,
-    }
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -235,30 +210,16 @@ BRAND_COLOR = '#c40000'
 CONTRACT_EXPIRY_WARNING_DAYS = 30
 PROBATION_END_WARNING_DAYS = 14
 
-# ── Email ─────────────────────────────────────────────────────────────────────
-# Otomatis pakai SMTP jika EMAIL_HOST_USER tersedia (production),
-# fallback ke console (development/lokal)
-_email_user = os.environ.get('EMAIL_HOST_USER', '')
-if _email_user:
-    EMAIL_BACKEND      = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST         = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-    EMAIL_PORT         = int(os.environ.get('EMAIL_PORT', 587))
-    EMAIL_USE_TLS      = True
-    EMAIL_HOST_USER    = _email_user
-    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-    DEFAULT_FROM_EMAIL = os.environ.get(
-        'DEFAULT_FROM_EMAIL',
-        f'HRIS SmartDesk <{_email_user}>'
-    )
-else:
-    EMAIL_BACKEND     = 'django.core.mail.backends.console.EmailBackend'
-    DEFAULT_FROM_EMAIL = 'noreply@hris-smartdesk.com'
-
-HR_EMAIL_LIST = [
-    e.strip()
-    for e in os.environ.get('HR_EMAIL_LIST', '').split(',')
-    if e.strip()
-]
+# ── Email (console untuk development, ganti ke SMTP di production) ────────────
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@hris-smartdesk.com'
+# Untuk production, ganti ke:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
 # Django auth redirect override
 LOGIN_URL = '/login/'
@@ -286,7 +247,7 @@ LOGGING = {
         },
         'apps': {
             'handlers': ['console'],
-            'level': 'DEBUG' if DEBUG else 'ERROR',
+            'level': 'DEBUG',
             'propagate': False,
         },
     },
