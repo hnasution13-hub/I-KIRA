@@ -601,7 +601,10 @@ def ats_analyze(request):
                 )
 
             hasil = ATSAnalyzer().analyze(cv_data, kriteria)
-            request.session['ats_hasil'] = hasil
+            # Hapus object Kriteria sebelum simpan ke session
+            # (session Django pakai JSON — object tidak serializable)
+            hasil_session = {k: v for k, v in hasil.items() if k != 'kriteria'}
+            request.session['ats_hasil'] = hasil_session
             request.session['ats_cv_data'] = cv_data
         except Exception as e:
             messages.error(request, f'Gagal analisis: {e}')

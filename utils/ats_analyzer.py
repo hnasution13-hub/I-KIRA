@@ -315,7 +315,6 @@ class ATSAnalyzer:
                 'pengalaman':      {'score': exp_score,   'bobot': self.WEIGHT['pengalaman'],  'note': exp_note},
             },
             'catatan_ats': catatan,
-            'kriteria':    kriteria,
         }
 
     # ── HELPERS ───────────────────────────────────────────────────────────────
