@@ -42,13 +42,21 @@
 
 <!-- Legend -->
 <div class="d-flex flex-wrap gap-2 mb-3 small" id="legend-bar">
-  <span class="lbadge lbadge-Director">Director</span>
-  <span class="lbadge lbadge-Senior-Manager">Senior Manager</span>
+  <span class="lbadge lbadge-Corporate-Manajemen">Corporate Manajemen</span>
+  <span class="lbadge lbadge-Manajemen">Manajemen</span>
+  <span class="lbadge lbadge-Sr-Manager">Sr.Manager</span>
   <span class="lbadge lbadge-Manager">Manager</span>
-  <span class="lbadge lbadge-Senior-Supervisor">Senior Supervisor</span>
+  <span class="lbadge lbadge-Jr-Manager">Jr.Manager</span>
+  <span class="lbadge lbadge-Sr-Superintendent">Sr.Superintendent</span>
+  <span class="lbadge lbadge-Superintendent">Superintendent</span>
+  <span class="lbadge lbadge-Jr-Superintendent">Jr.Superintendent</span>
+  <span class="lbadge lbadge-Sr-Supervisor">Sr.Supervisor</span>
   <span class="lbadge lbadge-Supervisor">Supervisor</span>
-  <span class="lbadge lbadge-Senior-Staff">Senior Staff</span>
+  <span class="lbadge lbadge-Jr-Supervisor">Jr.Supervisor</span>
+  <span class="lbadge lbadge-Sr-Staff">Sr.Staff</span>
   <span class="lbadge lbadge-Staff">Staff</span>
+  <span class="lbadge lbadge-Jr-Staff">Jr.Staff</span>
+  <span class="lbadge lbadge-Crew">Crew</span>
 </div>
 
 <!-- Canvas -->
@@ -71,22 +79,38 @@
 
 <style>
 :root {
-  --c-director:  #5b21b6; --bg-director:  #f5f3ff;
-  --c-sm:        #b45309; --bg-sm:        #fffbeb;
-  --c-manager:   #1d4ed8; --bg-manager:   #eff6ff;
-  --c-ss:        #0369a1; --bg-ss:        #e0f2fe;
-  --c-supervisor:#4d7c0f; --bg-supervisor:#ecfccb;
-  --c-senstaff:  #0f766e; --bg-senstaff:  #f0fdfa;
-  --c-staff:     #475569; --bg-staff:     #f8fafc;
+  --c-corp-mgmt:     #5b21b6; --bg-corp-mgmt:     #f5f3ff;
+  --c-manajemen:     #7c3aed; --bg-manajemen:     #ede9fe;
+  --c-sr-manager:    #b45309; --bg-sr-manager:    #fffbeb;
+  --c-manager:       #1d4ed8; --bg-manager:       #eff6ff;
+  --c-jr-manager:    #1e40af; --bg-jr-manager:    #dbeafe;
+  --c-sr-super:      #0369a1; --bg-sr-super:      #e0f2fe;
+  --c-super:         #0e7490; --bg-super:         #cffafe;
+  --c-jr-super:      #0891b2; --bg-jr-super:      #e0f7fa;
+  --c-sr-supervisor: #4d7c0f; --bg-sr-supervisor: #ecfccb;
+  --c-supervisor:    #16a34a; --bg-supervisor:    #dcfce7;
+  --c-jr-supervisor: #15803d; --bg-jr-supervisor: #bbf7d0;
+  --c-sr-staff:      #0f766e; --bg-sr-staff:      #f0fdfa;
+  --c-staff:         #475569; --bg-staff:         #f8fafc;
+  --c-jr-staff:      #64748b; --bg-jr-staff:      #f1f5f9;
+  --c-crew:          #94a3b8; --bg-crew:          #f8fafc;
 }
 .lbadge { padding:3px 10px;border-radius:20px;font-weight:600;font-size:11px; }
-.lbadge-Director       { background:var(--bg-director);  color:var(--c-director); }
-.lbadge-Senior-Manager { background:var(--bg-sm);        color:var(--c-sm); }
-.lbadge-Manager        { background:var(--bg-manager);   color:var(--c-manager); }
-.lbadge-Senior-Supervisor { background:var(--bg-ss);     color:var(--c-ss); }
-.lbadge-Supervisor     { background:var(--bg-supervisor);color:var(--c-supervisor); }
-.lbadge-Senior-Staff   { background:var(--bg-senstaff);  color:var(--c-senstaff); }
-.lbadge-Staff          { background:var(--bg-staff);     color:var(--c-staff); }
+.lbadge-Corporate-Manajemen { background:var(--bg-corp-mgmt); color:var(--c-corp-mgmt); }
+.lbadge-Manajemen       { background:var(--bg-manajemen);    color:var(--c-manajemen); }
+.lbadge-Sr-Manager      { background:var(--bg-sr-manager);   color:var(--c-sr-manager); }
+.lbadge-Manager         { background:var(--bg-manager);      color:var(--c-manager); }
+.lbadge-Jr-Manager      { background:var(--bg-jr-manager);   color:var(--c-jr-manager); }
+.lbadge-Sr-Superintendent { background:var(--bg-sr-super);   color:var(--c-sr-super); }
+.lbadge-Superintendent  { background:var(--bg-super);        color:var(--c-super); }
+.lbadge-Jr-Superintendent { background:var(--bg-jr-super);   color:var(--c-jr-super); }
+.lbadge-Sr-Supervisor   { background:var(--bg-sr-supervisor);color:var(--c-sr-supervisor); }
+.lbadge-Supervisor      { background:var(--bg-supervisor);   color:var(--c-supervisor); }
+.lbadge-Jr-Supervisor   { background:var(--bg-jr-supervisor);color:var(--c-jr-supervisor); }
+.lbadge-Sr-Staff        { background:var(--bg-sr-staff);     color:var(--c-sr-staff); }
+.lbadge-Staff           { background:var(--bg-staff);        color:var(--c-staff); }
+.lbadge-Jr-Staff        { background:var(--bg-jr-staff);     color:var(--c-jr-staff); }
+.lbadge-Crew            { background:var(--bg-crew);         color:var(--c-crew); }
 
 /* ── Dept section ── */
 .dept-section { margin-bottom:40px; }
@@ -144,20 +168,36 @@
 .org-node .nt { font-size:11px;font-weight:700;color:#1e293b;line-height:1.3;margin-bottom:2px; }
 .org-node .nc { font-size:10px;color:#64748b;background:#f1f5f9;border-radius:20px;padding:1px 7px;margin-top:3px;display:inline-block; }
 
-.org-node.lvl-Director       { border-color:var(--c-director); }
-.org-node.lvl-Director .nl   { background:var(--bg-director);color:var(--c-director); }
-.org-node.lvl-Senior-Manager { border-color:var(--c-sm); }
-.org-node.lvl-Senior-Manager .nl { background:var(--bg-sm);color:var(--c-sm); }
-.org-node.lvl-Manager        { border-color:var(--c-manager); }
-.org-node.lvl-Manager .nl    { background:var(--bg-manager);color:var(--c-manager); }
-.org-node.lvl-Senior-Supervisor { border-color:var(--c-ss); }
-.org-node.lvl-Senior-Supervisor .nl { background:var(--bg-ss);color:var(--c-ss); }
-.org-node.lvl-Supervisor     { border-color:var(--c-supervisor); }
-.org-node.lvl-Supervisor .nl { background:var(--bg-supervisor);color:var(--c-supervisor); }
-.org-node.lvl-Senior-Staff   { border-color:var(--c-senstaff); }
-.org-node.lvl-Senior-Staff .nl { background:var(--bg-senstaff);color:var(--c-senstaff); }
-.org-node.lvl-Staff          { border-color:#cbd5e1; }
-.org-node.lvl-Staff .nl      { background:var(--bg-staff);color:var(--c-staff); }
+.org-node.lvl-Corporate-Manajemen { border-color:var(--c-corp-mgmt); }
+.org-node.lvl-Corporate-Manajemen .nl { background:var(--bg-corp-mgmt);color:var(--c-corp-mgmt); }
+.org-node.lvl-Manajemen       { border-color:var(--c-manajemen); }
+.org-node.lvl-Manajemen .nl   { background:var(--bg-manajemen);color:var(--c-manajemen); }
+.org-node.lvl-Sr\.Manager     { border-color:var(--c-sr-manager); }
+.org-node.lvl-Sr\.Manager .nl { background:var(--bg-sr-manager);color:var(--c-sr-manager); }
+.org-node.lvl-Manager         { border-color:var(--c-manager); }
+.org-node.lvl-Manager .nl     { background:var(--bg-manager);color:var(--c-manager); }
+.org-node.lvl-Jr\.Manager     { border-color:var(--c-jr-manager); }
+.org-node.lvl-Jr\.Manager .nl { background:var(--bg-jr-manager);color:var(--c-jr-manager); }
+.org-node.lvl-Sr\.Superintendent { border-color:var(--c-sr-super); }
+.org-node.lvl-Sr\.Superintendent .nl { background:var(--bg-sr-super);color:var(--c-sr-super); }
+.org-node.lvl-Superintendent  { border-color:var(--c-super); }
+.org-node.lvl-Superintendent .nl { background:var(--bg-super);color:var(--c-super); }
+.org-node.lvl-Jr\.Superintendent { border-color:var(--c-jr-super); }
+.org-node.lvl-Jr\.Superintendent .nl { background:var(--bg-jr-super);color:var(--c-jr-super); }
+.org-node.lvl-Sr\.Supervisor  { border-color:var(--c-sr-supervisor); }
+.org-node.lvl-Sr\.Supervisor .nl { background:var(--bg-sr-supervisor);color:var(--c-sr-supervisor); }
+.org-node.lvl-Supervisor      { border-color:var(--c-supervisor); }
+.org-node.lvl-Supervisor .nl  { background:var(--bg-supervisor);color:var(--c-supervisor); }
+.org-node.lvl-Jr\.Supervisor  { border-color:var(--c-jr-supervisor); }
+.org-node.lvl-Jr\.Supervisor .nl { background:var(--bg-jr-supervisor);color:var(--c-jr-supervisor); }
+.org-node.lvl-Sr\.Staff       { border-color:var(--c-sr-staff); }
+.org-node.lvl-Sr\.Staff .nl   { background:var(--bg-sr-staff);color:var(--c-sr-staff); }
+.org-node.lvl-Staff           { border-color:#cbd5e1; }
+.org-node.lvl-Staff .nl       { background:var(--bg-staff);color:var(--c-staff); }
+.org-node.lvl-Jr\.Staff       { border-color:var(--c-jr-staff); }
+.org-node.lvl-Jr\.Staff .nl   { background:var(--bg-jr-staff);color:var(--c-jr-staff); }
+.org-node.lvl-Crew            { border-color:var(--c-crew); }
+.org-node.lvl-Crew .nl        { background:var(--bg-crew);color:var(--c-crew); }
 
 /* ── Tree group ── */
 .tree-group {
@@ -211,7 +251,7 @@
 <script>
 const JSON_URL   = "{% url 'orgchart_json' chart.pk %}";
 const CSRF_TOKEN = "{{ csrf_token }}";
-const LEVEL_ORDER = ['Director','Senior Manager','Manager','Senior Supervisor','Superintendent','Supervisor','Senior Staff','Staff','Crew'];
+const LEVEL_ORDER = ['Corporate Manajemen','Manajemen','Sr.Manager','Manager','Jr.Manager','Sr.Superintendent','Superintendent','Jr.Superintendent','Sr.Supervisor','Supervisor','Jr.Supervisor','Sr.Staff','Staff','Jr.Staff','Crew'];
 
 let scale    = 1;
 let allNodes = {};

@@ -257,10 +257,21 @@ class Department(models.Model):
 
 class Position(models.Model):
     LEVEL_CHOICES = [
-        ('Staff', 'Staff'), ('Senior Staff', 'Senior Staff'),
-        ('Supervisor', 'Supervisor'), ('Manager', 'Manager'),
-        ('Senior Manager', 'Senior Manager'), ('General Manager', 'General Manager'),
-        ('Director', 'Director'),
+        ('Crew',                 'Crew'),
+        ('Jr.Staff',             'Jr.Staff'),
+        ('Staff',                'Staff'),
+        ('Sr.Staff',             'Sr.Staff'),
+        ('Jr.Supervisor',        'Jr.Supervisor'),
+        ('Supervisor',           'Supervisor'),
+        ('Sr.Supervisor',        'Sr.Supervisor'),
+        ('Jr.Superintendent',    'Jr.Superintendent'),
+        ('Superintendent',       'Superintendent'),
+        ('Sr.Superintendent',    'Sr.Superintendent'),
+        ('Jr.Manager',           'Jr.Manager'),
+        ('Manager',              'Manager'),
+        ('Sr.Manager',           'Sr.Manager'),
+        ('Manajemen',            'Manajemen'),
+        ('Corporate Manajemen',  'Corporate Manajemen'),
     ]
     PENDIDIKAN_CHOICES = [
         ('', 'Tidak Ditentukan'), ('SD', 'SD'), ('SMP', 'SMP'),

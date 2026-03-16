@@ -1,5 +1,14 @@
 from django.contrib import admin
 from django.http import JsonResponse
+
+def views_ping(request):
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+        return JsonResponse({'status': 'ok', 'db': 'ok', 'app': 'Ikira HRIS'})
+    except Exception as e:
+        return JsonResponse({'status': 'ok', 'db': 'error', 'detail': str(e)})
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -9,7 +18,7 @@ from django.http import HttpResponse
 import os
 
 urlpatterns = [
-    path('ping/', lambda r: JsonResponse({'status': 'ok', 'app': 'Ikira HRIS'}), name='ping'),
+    path('ping/', views_ping, name='ping'),
     path('admin/', admin.site.urls),
     path('', include('apps.core.urls')),
 
