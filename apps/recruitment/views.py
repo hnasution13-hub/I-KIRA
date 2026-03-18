@@ -90,8 +90,53 @@ def mprf_approve(request, pk):
 @login_required
 @addon_required('recruitment')
 def candidate_list(request):
-    candidates = Candidate.objects.select_related('mprf').order_by('-tanggal_melamar')
-    return render(request, 'recruitment/candidate_list.html', {'candidates': candidates})
+    from django.core.paginator import Paginator
+
+    qs = Candidate.objects.select_related('mprf')
+
+    # ── Filter: cari nama / email ─────────────────────────────────────────────
+    q_search = request.GET.get('q', '').strip()
+    if q_search:
+        from django.db.models import Q
+        qs = qs.filter(Q(nama__icontains=q_search) | Q(email__icontains=q_search))
+
+    # ── Filter: posisi dilamar ────────────────────────────────────────────────
+    q_jabatan = request.GET.get('jabatan', '').strip()
+    if q_jabatan:
+        qs = qs.filter(jabatan_dilamar__iexact=q_jabatan)
+
+    # ── Filter: status pipeline ───────────────────────────────────────────────
+    q_status = request.GET.get('status', '').strip()
+    if q_status:
+        qs = qs.filter(status=q_status)
+
+    # ── Urutkan ───────────────────────────────────────────────────────────────
+    sort = request.GET.get('sort', 'terbaru')
+    if sort == 'skor':
+        qs = qs.order_by('-ats_score', '-tanggal_melamar')
+    else:
+        qs = qs.order_by('-tanggal_melamar')
+
+    # ── Daftar posisi unik untuk dropdown ────────────────────────────────────
+    jabatan_list = (
+        Candidate.objects.values_list('jabatan_dilamar', flat=True)
+        .distinct().order_by('jabatan_dilamar')
+    )
+
+    # ── Pagination ────────────────────────────────────────────────────────────
+    paginator = Paginator(qs, 25)
+    page_obj  = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'recruitment/candidate_list.html', {
+        'candidates'    : page_obj,
+        'page_obj'      : page_obj,
+        'q_search'      : q_search,
+        'q_jabatan'     : q_jabatan,
+        'q_status'      : q_status,
+        'sort'          : sort,
+        'jabatan_list'  : jabatan_list,
+        'status_choices': Candidate.STATUS_CHOICES,
+    })
 
 
 @login_required
