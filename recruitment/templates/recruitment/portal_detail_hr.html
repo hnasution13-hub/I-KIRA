@@ -1,0 +1,239 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Profil Kandidat — {{ candidate.nama }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+    <a href="{% url 'candidate_detail' candidate.pk %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+    <div>
+      <h4 class="mb-0 fw-bold">Data Diri — {{ candidate.nama }}</h4>
+      <small class="text-muted">{{ candidate.jabatan_dilamar }}</small>
+    </div>
+    <div class="ms-auto d-flex gap-2 flex-wrap">
+      {% if not profile.is_reviewed %}
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="action" value="mark_reviewed">
+        <button class="btn btn-sm btn-success">
+          <i class="fas fa-check me-1"></i>Tandai Sudah Di-review
+        </button>
+      </form>
+      {% else %}
+      <span class="badge bg-success py-2 px-3">
+        <i class="fas fa-check me-1"></i>Di-review oleh {{ profile.reviewed_by }}
+      </span>
+      {% endif %}
+      {% if candidate.status == 'Hired' and profile.is_submitted %}
+      <form method="post" action="{% url 'candidate_promote' candidate.pk %}"
+            onsubmit="return confirm('Promote kandidat ini menjadi karyawan?')">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-primary">
+          <i class="fas fa-user-plus me-1"></i>Promote ke Karyawan
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Status pengisian #}
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center py-3">
+        <div class="display-6 fw-bold {% if profile.completion_pct >= 80 %}text-success{% elif profile.completion_pct >= 50 %}text-warning{% else %}text-danger{% endif %}">
+          {{ profile.completion_pct }}%
+        </div>
+        <small class="text-muted">Kelengkapan Data</small>
+        <div class="progress mt-2 mx-3" style="height:6px">
+          <div class="progress-bar bg-success" style="width:{{ profile.completion_pct }}%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center py-3">
+        {% if profile.is_submitted %}
+        <i class="fas fa-check-circle fa-2x text-success mb-1"></i>
+        <div class="small fw-semibold text-success">Form Terisi</div>
+        <small class="text-muted">{{ profile.submitted_at|date:"d M Y H:i" }}</small>
+        {% else %}
+        <i class="fas fa-clock fa-2x text-warning mb-1"></i>
+        <div class="small fw-semibold text-warning">Belum Diisi</div>
+        <small class="text-muted">Menunggu kandidat</small>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center py-3">
+        {% if profile.is_token_valid %}
+        <i class="fas fa-link fa-2x text-primary mb-1"></i>
+        <div class="small fw-semibold text-primary">Link Aktif</div>
+        <small class="text-muted">Exp: {{ profile.token_expires_at|date:"d M Y" }}</small>
+        {% else %}
+        <i class="fas fa-unlink fa-2x text-danger mb-1"></i>
+        <div class="small fw-semibold text-danger">Link Expired</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center py-3">
+        {% if profile.is_reviewed %}
+        <i class="fas fa-user-check fa-2x text-success mb-1"></i>
+        <div class="small fw-semibold text-success">Sudah Di-review</div>
+        <small class="text-muted">{{ profile.reviewed_by }}</small>
+        {% else %}
+        <i class="fas fa-eye fa-2x text-muted mb-1"></i>
+        <div class="small fw-semibold text-muted">Belum Di-review</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+
+      {# Data Pribadi #}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="fas fa-user me-2 text-danger"></i>Data Pribadi
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-borderless mb-0 small">
+            <tr><td class="text-muted ps-3">Tempat/Tgl Lahir</td>
+              <td>{{ profile.tempat_lahir|default:'-' }}, {{ profile.tanggal_lahir|date:"d M Y"|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">Jenis Kelamin</td><td>{{ profile.get_jenis_kelamin_display|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">Agama</td><td>{{ profile.agama|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">Pendidikan</td><td>{{ profile.pendidikan|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">Gol. Darah</td><td>{{ profile.golongan_darah|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">Status Nikah</td><td>{{ profile.status_nikah|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">Jumlah Anak</td><td>{{ profile.jumlah_anak }}</td></tr>
+            <tr><td class="text-muted ps-3">PTKP</td><td>{{ profile.ptkp|default:'-' }}</td></tr>
+          </table>
+        </div>
+      </div>
+
+      {# Dokumen Identitas #}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="fas fa-id-card me-2 text-danger"></i>Dokumen Identitas
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-borderless mb-0 small">
+            <tr><td class="text-muted ps-3">No. KTP</td><td>{{ profile.no_ktp|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">No. KK</td><td>{{ profile.no_kk|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">No. NPWP</td><td>{{ profile.no_npwp|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">BPJS Kes</td><td>{{ profile.no_bpjs_kes|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">BPJS TK</td><td>{{ profile.no_bpjs_tk|default:'-' }}</td></tr>
+          </table>
+        </div>
+      </div>
+
+      {# Rekening #}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="fas fa-university me-2 text-danger"></i>Rekening Bank
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-borderless mb-0 small">
+            <tr><td class="text-muted ps-3">Bank</td><td>{{ profile.nama_bank|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">No. Rekening</td><td>{{ profile.no_rek|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">Nama di Rekening</td><td>{{ profile.nama_rek|default:'-' }}</td></tr>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    <div class="col-lg-6">
+
+      {# Alamat #}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="fas fa-map-marker-alt me-2 text-danger"></i>Alamat
+        </div>
+        <div class="card-body small">
+          <p class="mb-1">{{ profile.alamat|default:'-' }}</p>
+          <p class="mb-1 text-muted">
+            RT {{ profile.rt|default:'-' }} / RW {{ profile.rw|default:'-' }},
+            {{ profile.kelurahan|default:'-' }}, {{ profile.kecamatan|default:'-' }}
+          </p>
+          <p class="mb-0 text-muted">
+            {{ profile.kabupaten|default:'-' }}, {{ profile.provinsi|default:'-' }}
+            {{ profile.kode_pos }}
+          </p>
+        </div>
+      </div>
+
+      {# Kontak Darurat #}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="fas fa-phone-alt me-2 text-danger"></i>Kontak Darurat
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-borderless mb-0 small">
+            <tr><td class="text-muted ps-3">Nama</td><td>{{ profile.nama_darurat|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">Hubungan</td><td>{{ profile.hub_darurat|default:'-' }}</td></tr>
+            <tr><td class="text-muted ps-3">No. HP</td><td>{{ profile.hp_darurat|default:'-' }}</td></tr>
+          </table>
+        </div>
+      </div>
+
+      {# Data Anak #}
+      {% if anak_list %}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="fas fa-child me-2 text-danger"></i>Data Anak
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0 small">
+            <thead class="table-light">
+              <tr><th>Ke-</th><th>Nama</th><th>Tgl Lahir</th><th>JK</th><th>BPJS Kes</th></tr>
+            </thead>
+            <tbody>
+              {% for anak in anak_list %}
+              <tr>
+                <td>{{ anak.urutan }}</td>
+                <td>{{ anak.nama }}</td>
+                <td>{{ anak.tgl_lahir|date:"d M Y"|default:'-' }}</td>
+                <td>{{ anak.jenis_kelamin|default:'-' }}</td>
+                <td>{{ anak.no_bpjs_kes|default:'-' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      {# Dokumen Upload #}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="fas fa-paperclip me-2 text-danger"></i>Dokumen Upload
+        </div>
+        <div class="card-body">
+          <div class="row g-2">
+            {% if profile.foto %}
+            <div class="col-4 text-center">
+              <img src="{{ profile.foto.url }}" class="img-thumbnail" style="max-height:80px">
+              <div class="small text-muted">Foto</div>
+            </div>
+            {% endif %}
+            {% for field, label in forloop_docs %}{% endfor %}
+            {% if profile.scan_ktp %}<div class="col-4 text-center">
+              <a href="{{ profile.scan_ktp.url }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                <i class="fas fa-file me-1"></i>KTP</a></div>{% endif %}
+            {% if profile.scan_ijazah %}<div class="col-4 text-center">
+              <a href="{{ profile.scan_ijazah.url }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                <i class="fas fa-file me-1"></i>Ijazah</a></div>{% endif %}
+            {% if profile.scan_skck %}<div class="col-4 text-center">
+              <a href="{{ profile.scan_skck.url }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                <i class="fas fa-file me-1"></i>SKCK</a></div>{% endif %}
+            {% if profile.scan_npwp %}<div class="col-4 text-center">
+              <a href="{{ profile.scan_npwp.url }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                <i class="fas fa-file me-1"></i>NPWP</a></div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

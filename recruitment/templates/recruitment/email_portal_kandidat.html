@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+      <tr><td style="background:#c40000;padding:28px 32px">
+        <h2 style="color:white;margin:0;font-size:20px">{{ app_name }}</h2>
+        <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Sistem Informasi SDM</p>
+      </td></tr>
+      <tr><td style="padding:32px">
+        <p style="color:#333;font-size:15px;margin-top:0">Yth. <strong>{{ candidate.nama }}</strong>,</p>
+        <p style="color:#555;font-size:14px;line-height:1.7">
+          Selamat! Anda telah terpilih sebagai kandidat untuk posisi
+          <strong>{{ candidate.jabatan_dilamar }}</strong>.
+        </p>
+        <p style="color:#555;font-size:14px;line-height:1.7">
+          Mohon lengkapi data diri Anda melalui link berikut ini:
+        </p>
+        <div style="text-align:center;margin:28px 0">
+          <a href="{{ form_url }}"
+             style="background:#c40000;color:white;padding:14px 36px;border-radius:6px;text-decoration:none;font-size:15px;font-weight:bold;display:inline-block">
+            📋 Isi Form Data Diri
+          </a>
+        </div>
+        <div style="background:#fff8e1;border:1px solid #ffc107;border-radius:6px;padding:14px 18px;margin-bottom:20px">
+          <p style="margin:0;color:#856404;font-size:13px">
+            ⏰ <strong>Link berlaku hingga {{ token_expires_at|date:"d M Y" }}</strong><br>
+            Setelah expired, hubungi HR untuk mendapatkan link baru.
+          </p>
+        </div>
+        <p style="color:#555;font-size:13px;line-height:1.7">
+          Data yang Anda isi akan digunakan untuk keperluan administrasi kepegawaian.
+          Pastikan semua data diisi dengan benar dan sesuai dokumen resmi.
+        </p>
+        <p style="color:#555;font-size:13px;line-height:1.7">
+          Jika ada pertanyaan, silakan balas email ini atau hubungi HR kami.
+        </p>
+        <p style="color:#333;font-size:14px;margin-bottom:0">
+          Salam,<br>
+          <strong>Tim HR — {{ app_name }}</strong>
+        </p>
+      </td></tr>
+      <tr><td style="background:#f8f9fa;padding:16px 32px;border-top:1px solid #e9ecef">
+        <p style="color:#999;font-size:11px;margin:0;text-align:center">
+          Email ini dikirim otomatis oleh sistem {{ app_name }}. Mohon tidak membalas jika tidak relevan.
+        </p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

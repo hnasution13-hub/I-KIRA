@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Form Data Diri — {{ candidate.nama }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background: #f4f6f9; }
+    .portal-header { background: #c40000; color: white; padding: 1.2rem 0; }
+    .section-card { border-left: 4px solid #c40000; }
+    .completion-bar { height: 8px; border-radius: 4px; }
+    .doc-preview { max-width: 120px; max-height: 120px; object-fit: cover; border-radius: 6px; }
+    .locked-overlay { opacity: 0.6; pointer-events: none; }
+  </style>
+</head>
+<body>
+
+<div class="portal-header mb-4">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3">
+      <i class="fas fa-user-edit fa-2x"></i>
+      <div>
+        <h5 class="mb-0 fw-bold">Form Data Diri Kandidat</h5>
+        <small class="opacity-75">Mohon lengkapi semua data dengan benar dan jujur</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  {% if messages %}
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {# Info Kandidat #}
+  <div class="card shadow-sm mb-4">
+    <div class="card-body py-3">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <h5 class="mb-1 fw-bold">{{ candidate.nama }}</h5>
+          <span class="text-muted small">{{ candidate.jabatan_dilamar }}</span>
+        </div>
+        <div class="col-md-6 text-md-end mt-2 mt-md-0">
+          <div class="mb-1 small text-muted">Kelengkapan Data</div>
+          <div class="progress completion-bar mb-1" style="width:200px;display:inline-block;">
+            <div class="progress-bar bg-success" style="width:{{ profile.completion_pct }}%"></div>
+          </div>
+          <span class="badge bg-success ms-2">{{ profile.completion_pct }}%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if is_locked %}
+  <div class="alert alert-success">
+    <i class="fas fa-lock me-2"></i>
+    Data Anda sudah terkunci karena status <strong>Hired</strong>. Hubungi HR untuk perubahan.
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" {% if is_locked %}class="locked-overlay"{% endif %}>
+    {% csrf_token %}
+
+    {# ── 1. DATA PRIBADI ─────────────────────────────────────────────────── #}
+    <div class="card shadow-sm mb-4 section-card">
+      <div class="card-header bg-white fw-semibold py-2">
+        <i class="fas fa-user me-2 text-danger"></i>Data Pribadi
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Tempat Lahir</label>
+            <input type="text" name="tempat_lahir" class="form-control form-control-sm"
+                   value="{{ profile.tempat_lahir }}" placeholder="Kota kelahiran">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Tanggal Lahir</label>
+            <input type="date" name="tanggal_lahir" class="form-control form-control-sm"
+                   value="{{ profile.tanggal_lahir|date:'Y-m-d'|default:'' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Jenis Kelamin</label>
+            <select name="jenis_kelamin" class="form-select form-select-sm">
+              <option value="">-- Pilih --</option>
+              <option value="L" {% if profile.jenis_kelamin == 'L' %}selected{% endif %}>Laki-laki</option>
+              <option value="P" {% if profile.jenis_kelamin == 'P' %}selected{% endif %}>Perempuan</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Agama</label>
+            <select name="agama" class="form-select form-select-sm">
+              <option value="">-- Pilih --</option>
+              {% for v,l in profile.AGAMA_CHOICES %}
+              <option value="{{ v }}" {% if profile.agama == v %}selected{% endif %}>{{ l }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Pendidikan Terakhir</label>
+            <select name="pendidikan" class="form-select form-select-sm">
+              <option value="">-- Pilih --</option>
+              {% for v,l in profile.PENDIDIKAN_CHOICES %}
+              <option value="{{ v }}" {% if profile.pendidikan == v %}selected{% endif %}>{{ l }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Golongan Darah</label>
+            <select name="golongan_darah" class="form-select form-select-sm">
+              <option value="">-- Pilih --</option>
+              {% for v,l in profile.GOLONGAN_DARAH_CHOICES %}
+              <option value="{{ v }}" {% if profile.golongan_darah == v %}selected{% endif %}>{{ l }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Status Pernikahan</label>
+            <select name="status_nikah" class="form-select form-select-sm" id="id_status_nikah">
+              <option value="">-- Pilih --</option>
+              {% for v,l in profile.STATUS_NIKAH_CHOICES %}
+              <option value="{{ v }}" {% if profile.status_nikah == v %}selected{% endif %}>{{ l }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3" id="row_jumlah_anak">
+            <label class="form-label small fw-semibold">Jumlah Anak</label>
+            <input type="number" name="jumlah_anak" class="form-control form-control-sm"
+                   value="{{ profile.jumlah_anak }}" min="0">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">PTKP</label>
+            <select name="ptkp" class="form-select form-select-sm">
+              <option value="">-- Pilih --</option>
+              {% for v,l in profile.PTKP_CHOICES %}
+              <option value="{{ v }}" {% if profile.ptkp == v %}selected{% endif %}>{{ l }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── 2. DOKUMEN IDENTITAS ─────────────────────────────────────────────── #}
+    <div class="card shadow-sm mb-4 section-card">
+      <div class="card-header bg-white fw-semibold py-2">
+        <i class="fas fa-id-card me-2 text-danger"></i>Dokumen Identitas
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">No. KTP <span class="text-danger">*</span></label>
+            <input type="text" name="no_ktp" class="form-control form-control-sm"
+                   value="{{ profile.no_ktp }}" placeholder="16 digit NIK KTP">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">No. KK</label>
+            <input type="text" name="no_kk" class="form-control form-control-sm"
+                   value="{{ profile.no_kk }}" placeholder="No. Kartu Keluarga">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">No. NPWP</label>
+            <input type="text" name="no_npwp" class="form-control form-control-sm"
+                   value="{{ profile.no_npwp }}" placeholder="xx.xxx.xxx.x-xxx.xxx">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">No. BPJS Kesehatan</label>
+            <input type="text" name="no_bpjs_kes" class="form-control form-control-sm"
+                   value="{{ profile.no_bpjs_kes }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">No. BPJS Ketenagakerjaan</label>
+            <input type="text" name="no_bpjs_tk" class="form-control form-control-sm"
+                   value="{{ profile.no_bpjs_tk }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── 3. REKENING ─────────────────────────────────────────────────────── #}
+    <div class="card shadow-sm mb-4 section-card">
+      <div class="card-header bg-white fw-semibold py-2">
+        <i class="fas fa-university me-2 text-danger"></i>Rekening Bank
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Nama Bank <span class="text-danger">*</span></label>
+            <input type="text" name="nama_bank" class="form-control form-control-sm"
+                   value="{{ profile.nama_bank }}" placeholder="contoh: BRI, BCA, Mandiri">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">No. Rekening <span class="text-danger">*</span></label>
+            <input type="text" name="no_rek" class="form-control form-control-sm"
+                   value="{{ profile.no_rek }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Nama di Rekening <span class="text-danger">*</span></label>
+            <input type="text" name="nama_rek" class="form-control form-control-sm"
+                   value="{{ profile.nama_rek }}" placeholder="Sesuai buku tabungan">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── 4. ALAMAT ───────────────────────────────────────────────────────── #}
+    <div class="card shadow-sm mb-4 section-card">
+      <div class="card-header bg-white fw-semibold py-2">
+        <i class="fas fa-map-marker-alt me-2 text-danger"></i>Alamat
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label small fw-semibold">Alamat Lengkap <span class="text-danger">*</span></label>
+            <textarea name="alamat" class="form-control form-control-sm" rows="2"
+                      placeholder="Nama jalan, nomor rumah, RT/RW, dll">{{ profile.alamat }}</textarea>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">RT</label>
+            <input type="text" name="rt" class="form-control form-control-sm" value="{{ profile.rt }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">RW</label>
+            <input type="text" name="rw" class="form-control form-control-sm" value="{{ profile.rw }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Kode Pos</label>
+            <input type="text" name="kode_pos" class="form-control form-control-sm" value="{{ profile.kode_pos }}">
+          </div>
+          <div class="col-md-5">
+            <label class="form-label small fw-semibold">Provinsi</label>
+            <select name="provinsi" class="form-select form-select-sm" id="id_provinsi">
+              <option value="">-- Pilih Provinsi --</option>
+              {% for prov in provinsi_list %}
+              <option value="{{ prov.pk }}" {% if profile.provinsi_id == prov.pk %}selected{% endif %}>
+                {{ prov.nama }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Kabupaten/Kota</label>
+            <select name="kabupaten" class="form-select form-select-sm" id="id_kabupaten">
+              <option value="">-- Pilih Kabupaten --</option>
+              {% for kab in kabupaten_list %}
+              <option value="{{ kab.pk }}" {% if profile.kabupaten_id == kab.pk %}selected{% endif %}>
+                {{ kab.nama }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Kecamatan</label>
+            <input type="text" name="kecamatan" class="form-control form-control-sm" value="{{ profile.kecamatan }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Kelurahan/Desa</label>
+            <input type="text" name="kelurahan" class="form-control form-control-sm" value="{{ profile.kelurahan }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── 5. KONTAK DARURAT ───────────────────────────────────────────────── #}
+    <div class="card shadow-sm mb-4 section-card">
+      <div class="card-header bg-white fw-semibold py-2">
+        <i class="fas fa-phone-alt me-2 text-danger"></i>Kontak Darurat
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Nama <span class="text-danger">*</span></label>
+            <input type="text" name="nama_darurat" class="form-control form-control-sm"
+                   value="{{ profile.nama_darurat }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Hubungan</label>
+            <input type="text" name="hub_darurat" class="form-control form-control-sm"
+                   value="{{ profile.hub_darurat }}" placeholder="Suami/Istri/Orang tua/dll">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">No. HP <span class="text-danger">*</span></label>
+            <input type="text" name="hp_darurat" class="form-control form-control-sm"
+                   value="{{ profile.hp_darurat }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── 6. DATA ANAK ────────────────────────────────────────────────────── #}
+    <div class="card shadow-sm mb-4 section-card" id="section-anak">
+      <div class="card-header bg-white fw-semibold py-2 d-flex justify-content-between">
+        <span><i class="fas fa-child me-2 text-danger"></i>Data Anak</span>
+        {% if not is_locked %}
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="tambahAnak()">
+          <i class="fas fa-plus me-1"></i>Tambah Anak
+        </button>
+        {% endif %}
+      </div>
+      <div class="card-body" id="anak-container">
+        {% if anak_list %}
+        {% for anak in anak_list %}
+        <div class="border rounded p-3 mb-2 anak-row" data-id="{{ anak.pk }}">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-1"><label class="small fw-semibold">Ke-</label>
+              <input type="number" class="form-control form-control-sm" name="anak_urutan_{{ anak.pk }}"
+                     value="{{ anak.urutan }}" readonly></div>
+            <div class="col-md-4"><label class="small fw-semibold">Nama</label>
+              <input type="text" class="form-control form-control-sm" name="anak_nama_{{ anak.pk }}"
+                     value="{{ anak.nama }}"></div>
+            <div class="col-md-2"><label class="small fw-semibold">Tgl Lahir</label>
+              <input type="date" class="form-control form-control-sm" name="anak_tgl_{{ anak.pk }}"
+                     value="{{ anak.tgl_lahir|date:'Y-m-d'|default:'' }}"></div>
+            <div class="col-md-2"><label class="small fw-semibold">JK</label>
+              <select class="form-select form-select-sm" name="anak_jk_{{ anak.pk }}">
+                <option value="">-</option>
+                <option value="L" {% if anak.jenis_kelamin == 'L' %}selected{% endif %}>L</option>
+                <option value="P" {% if anak.jenis_kelamin == 'P' %}selected{% endif %}>P</option>
+              </select></div>
+            <div class="col-md-2"><label class="small fw-semibold">BPJS Kes</label>
+              <input type="text" class="form-control form-control-sm" name="anak_bpjs_{{ anak.pk }}"
+                     value="{{ anak.no_bpjs_kes }}"></div>
+            {% if not is_locked %}
+            <div class="col-md-1">
+              <button type="button" class="btn btn-sm btn-outline-danger w-100"
+                      onclick="hapusAnak({{ anak.pk }}, this)">
+                <i class="fas fa-trash"></i></button></div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-muted small mb-0" id="no-anak-text">Belum ada data anak.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ── 7. UPLOAD DOKUMEN ───────────────────────────────────────────────── #}
+    <div class="card shadow-sm mb-4 section-card">
+      <div class="card-header bg-white fw-semibold py-2">
+        <i class="fas fa-paperclip me-2 text-danger"></i>Upload Dokumen
+        <small class="text-muted fw-normal ms-2">(JPG/PNG/PDF, maks 5MB)</small>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for field, label in forloop_docs %}
+          {% endfor %}
+          {# Manual loop karena Django template tidak support dict #}
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Foto</label>
+            {% if profile.foto %}<img src="{{ profile.foto.url }}" class="doc-preview d-block mb-1">{% endif %}
+            <input type="file" name="foto" class="form-control form-control-sm" accept="image/*">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Scan KTP</label>
+            {% if profile.scan_ktp %}<a href="{{ profile.scan_ktp.url }}" target="_blank" class="d-block mb-1 small text-primary"><i class="fas fa-file me-1"></i>Lihat file</a>{% endif %}
+            <input type="file" name="scan_ktp" class="form-control form-control-sm" accept="image/*,.pdf">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Scan Ijazah</label>
+            {% if profile.scan_ijazah %}<a href="{{ profile.scan_ijazah.url }}" target="_blank" class="d-block mb-1 small text-primary"><i class="fas fa-file me-1"></i>Lihat file</a>{% endif %}
+            <input type="file" name="scan_ijazah" class="form-control form-control-sm" accept="image/*,.pdf">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Scan SKCK</label>
+            {% if profile.scan_skck %}<a href="{{ profile.scan_skck.url }}" target="_blank" class="d-block mb-1 small text-primary"><i class="fas fa-file me-1"></i>Lihat file</a>{% endif %}
+            <input type="file" name="scan_skck" class="form-control form-control-sm" accept="image/*,.pdf">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Scan NPWP</label>
+            {% if profile.scan_npwp %}<a href="{{ profile.scan_npwp.url }}" target="_blank" class="d-block mb-1 small text-primary"><i class="fas fa-file me-1"></i>Lihat file</a>{% endif %}
+            <input type="file" name="scan_npwp" class="form-control form-control-sm" accept="image/*,.pdf">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if not is_locked %}
+    <div class="d-flex justify-content-end gap-2">
+      <button type="submit" class="btn btn-danger px-5">
+        <i class="fas fa-save me-2"></i>Simpan Data Diri
+      </button>
+    </div>
+    {% endif %}
+
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const TOKEN = '{{ profile.token }}';
+let anakCounter = {{ anak_list.count }} + 1;
+
+// Dynamic kabupaten load saat provinsi berubah
+document.getElementById('id_provinsi').addEventListener('change', function(){
+  const provId = this.value;
+  const kabSel = document.getElementById('id_kabupaten');
+  kabSel.innerHTML = '<option value="">-- Loading... --</option>';
+  if (!provId) { kabSel.innerHTML = '<option value="">-- Pilih Kabupaten --</option>'; return; }
+  fetch(`/wilayah/kabupaten/?provinsi=${provId}`)
+    .then(r => r.json())
+    .then(data => {
+      kabSel.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
+      data.forEach(k => {
+        kabSel.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
+      });
+    });
+});
+
+function tambahAnak() {
+  document.getElementById('no-anak-text')?.remove();
+  const urutan = anakCounter++;
+  const div = document.createElement('div');
+  div.className = 'border rounded p-3 mb-2 anak-row';
+  div.dataset.id = 'new_' + urutan;
+  div.innerHTML = `
+    <div class="row g-2 align-items-end">
+      <div class="col-md-1"><label class="small fw-semibold">Ke-</label>
+        <input type="number" class="form-control form-control-sm" value="${urutan}" readonly></div>
+      <div class="col-md-4"><label class="small fw-semibold">Nama</label>
+        <input type="text" class="form-control form-control-sm anak-nama" placeholder="Nama anak"></div>
+      <div class="col-md-2"><label class="small fw-semibold">Tgl Lahir</label>
+        <input type="date" class="form-control form-control-sm anak-tgl"></div>
+      <div class="col-md-2"><label class="small fw-semibold">JK</label>
+        <select class="form-select form-select-sm anak-jk">
+          <option value="">-</option><option value="L">L</option><option value="P">P</option>
+        </select></div>
+      <div class="col-md-2"><label class="small fw-semibold">BPJS Kes</label>
+        <input type="text" class="form-control form-control-sm anak-bpjs"></div>
+      <div class="col-md-1">
+        <button type="button" class="btn btn-sm btn-outline-secondary w-100"
+                onclick="simpanAnak(this, ${urutan})"><i class="fas fa-save"></i></button>
+        <button type="button" class="btn btn-sm btn-outline-danger w-100 mt-1"
+                onclick="this.closest('.anak-row').remove()"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+  document.getElementById('anak-container').appendChild(div);
+}
+
+function simpanAnak(btn, urutan) {
+  const row = btn.closest('.anak-row');
+  const nama = row.querySelector('.anak-nama').value.trim();
+  if (!nama) { alert('Nama anak wajib diisi'); return; }
+  const fd = new FormData();
+  fd.append('urutan', urutan);
+  fd.append('nama', nama);
+  fd.append('tgl_lahir', row.querySelector('.anak-tgl').value);
+  fd.append('jenis_kelamin', row.querySelector('.anak-jk').value);
+  fd.append('no_bpjs_kes', row.querySelector('.anak-bpjs').value);
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  fetch(`/recruitment/portal/${TOKEN}/anak/save/`, {method:'POST', body:fd})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) { row.dataset.id = d.id; btn.innerHTML = '<i class="fas fa-check text-success"></i>'; }
+      else alert(d.error || 'Gagal simpan');
+    });
+}
+
+function hapusAnak(anakPk, btn) {
+  if (!confirm('Hapus data anak ini?')) return;
+  const fd = new FormData();
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  fetch(`/recruitment/portal/${TOKEN}/anak/${anakPk}/delete/`, {method:'POST', body:fd})
+    .then(r => r.json())
+    .then(d => { if (d.ok) btn.closest('.anak-row').remove(); });
+}
+</script>
+</body>
+</html>

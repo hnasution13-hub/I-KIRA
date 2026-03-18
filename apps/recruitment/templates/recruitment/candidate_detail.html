@@ -34,6 +34,42 @@
             </button>
           </form>
           {% endif %}
+          {# ── Tombol kirim form data diri ───────────────────────────────── #}
+          {% if candidate.email %}
+            {% if candidate.profile %}
+              {% if candidate.profile.is_submitted %}
+                <a href="{% url 'candidate_profile_detail' candidate.pk %}" class="btn btn-sm btn-success">
+                  <i class="fas fa-check-circle me-1"></i>Form Terisi
+                  <span class="badge bg-white text-success ms-1">{{ candidate.profile.completion_pct }}%</span>
+                </a>
+              {% else %}
+                <a href="{% url 'candidate_profile_detail' candidate.pk %}" class="btn btn-sm btn-outline-warning">
+                  <i class="fas fa-hourglass-half me-1"></i>Menunggu Isi
+                </a>
+              {% endif %}
+              <a href="{% url 'candidate_profile_send' candidate.pk %}"
+                 class="btn btn-sm btn-outline-secondary"
+                 onclick="return confirm('Kirim ulang link form ke {{ candidate.email }}?')"
+                 title="Kirim ulang link">
+                <i class="fas fa-paper-plane"></i>
+              </a>
+            {% else %}
+              <a href="{% url 'candidate_profile_send' candidate.pk %}" class="btn btn-sm btn-outline-primary"
+                 onclick="return confirm('Kirim link form data diri ke {{ candidate.email }}?')">
+                <i class="fas fa-paper-plane me-1"></i>Kirim Form
+              </a>
+            {% endif %}
+          {% endif %}
+          {# Promote to Employee (hanya saat Hired + form sudah diisi) #}
+          {% if candidate.status == 'Hired' and candidate.profile and candidate.profile.is_submitted %}
+          <form method="post" action="{% url 'candidate_promote' candidate.pk %}" class="d-inline"
+                onsubmit="return confirm('Promote {{ candidate.nama }} jadi karyawan?')">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-primary">
+              <i class="fas fa-user-plus me-1"></i>Promote ke Karyawan
+            </button>
+          </form>
+          {% endif %}
         </div>
       </div>
     </div>
