@@ -753,8 +753,11 @@ a{color:inherit;}
     </div>
 
     {% if user.is_superuser %}
-    <a href="{% url 'portal_qa_access' %}" class="tb-btn" title="Buka Portal (QA)" target="_blank" aria-label="Buka portal karyawan (QA)">
+    <a href="{% url 'portal_qa_access' %}" class="tb-btn" title="Preview Portal Karyawan (QA)" target="_blank" aria-label="Buka portal karyawan (QA)">
       <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+    </a>
+    <a href="{% url 'candidate_portal_qa' %}" class="tb-btn" title="Preview Portal Kandidat (QA)" target="_blank" aria-label="Buka portal kandidat (QA)">
+      <i class="fas fa-user-tie" aria-hidden="true"></i>
     </a>
     <div class="tb-divider" aria-hidden="true"></div>
 

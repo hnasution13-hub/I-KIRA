@@ -22,6 +22,9 @@ urlpatterns = [
     path('candidates/<int:pk>/profile/', views_portal.candidate_profile_detail, name='candidate_profile_detail'),
     path('candidates/<int:pk>/promote/', views_portal.candidate_promote, name='candidate_promote'),
 
+    # Portal Kandidat — QA (superuser preview)
+    path('portal/qa/', views_portal.candidate_portal_qa, name='candidate_portal_qa'),
+
     # Portal Kandidat — PUBLIC (no login)
     path('portal/<uuid:token>/', views_portal.candidate_portal_form, name='candidate_portal_form'),
     path('portal/<uuid:token>/anak/save/', views_portal.portal_anak_save, name='portal_anak_save'),

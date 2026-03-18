@@ -424,3 +424,34 @@ def candidate_promote(request, pk):
         logger.error(f'Gagal promote kandidat {candidate.pk} ke employee: {e}')
         messages.error(request, f'Gagal promote: {e}')
         return redirect('candidate_detail', pk=pk)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  QA — SUPERUSER PREVIEW PORTAL KANDIDAT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def candidate_portal_qa(request):
+    """
+    Superuser klik icon portal kandidat di topbar → redirect ke form portal
+    kandidat pertama yang ada, atau tampilkan halaman pilih kandidat.
+    """
+    if not request.user.is_superuser:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden('Akses ditolak.')
+
+    from .models_profile import CandidateProfile
+
+    # Cari profile yang sudah ada
+    profile = CandidateProfile.objects.order_by('-created_at').first()
+
+    if profile:
+        # Regenerate token agar selalu fresh untuk QA
+        profile.regenerate_token()
+        return redirect('candidate_portal_form', token=profile.token)
+
+    # Belum ada profile sama sekali — tampilkan halaman pilih kandidat
+    candidates = Candidate.objects.order_by('-created_at')[:20]
+    return render(request, 'recruitment/portal_qa_select.html', {
+        'candidates': candidates,
+    })
