@@ -1,0 +1,486 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Analytics — HRIS SmartDesk{% endblock %}
+{% block breadcrumb %}Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Layout ── */
+.an-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+.an-title h4 { margin:0; font-weight:700; font-size:1.25rem; }
+.an-title small { color:var(--muted); font-size:.78rem; }
+.an-actions { display:flex; gap:8px; }
+
+/* ── KPI Strip ── */
+.kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+@media(max-width:768px){ .kpi-strip { grid-template-columns:repeat(2,1fr); } }
+.kpi-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+.kpi-val  { font-size:1.8rem; font-weight:700; line-height:1; }
+.kpi-lbl  { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-top:4px; }
+
+/* ── Chart Cards ── */
+.chart-card { background:var(--bg2); border:1px solid var(--border); border-radius:14px; overflow:hidden; height:100%; }
+.chart-card-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.chart-card-header h6 { margin:0; font-size:.85rem; font-weight:600; }
+.chart-card-body { padding:18px; }
+.chart-wrap { position:relative; }
+
+/* ── Section Label ── */
+.section-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin:28px 0 12px; border-left:3px solid #2563eb; padding-left:10px; }
+
+/* ── Donut legend ── */
+.donut-legend { margin-top:14px; }
+.donut-legend-item { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:.78rem; }
+.donut-dot { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:7px; flex-shrink:0; }
+
+/* ── Rekap bulan summary ── */
+.rekap-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.rekap-item { border-radius:8px; padding:10px 12px; text-align:center; }
+.rekap-item .rval { font-size:1.3rem; font-weight:700; line-height:1; }
+.rekap-item .rlbl { font-size:.68rem; margin-top:3px; opacity:.75; }
+
+/* ── Print ── */
+@media print {
+  .an-actions, .sidebar, nav, .btn { display:none !important; }
+  body, .main-content { background:#fff !important; color:#111 !important; }
+  .chart-card, .kpi-card { border:1px solid #ddd !important; background:#fff !important; break-inside:avoid; }
+  .chart-card-header h6, .kpi-lbl, .section-label { color:#555 !important; }
+  .kpi-val { color:#111 !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Header ── #}
+<div class="an-header">
+  <div class="an-title">
+    <h4><i class="fas fa-chart-bar me-2" style="color:#60a5fa;"></i>Analytics</h4>
+    <small>Executive Dashboard — Data per {% now "d F Y" %} &bull; {{ company.nama|default:"Perusahaan" }}</small>
+  </div>
+  <div class="an-actions">
+    <a href="{% url 'dashboard' %}" class="btn btn-sm" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:.78rem;">
+      <i class="fas fa-arrow-left me-1"></i>Dashboard
+    </a>
+    <button onclick="window.print()" class="btn btn-sm" style="background:#2563eb;color:#fff;border:none;font-size:.78rem;">
+      <i class="fas fa-print me-1"></i>Export / Print PDF
+    </button>
+  </div>
+</div>
+
+{# ── KPI Strip ── #}
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-val text-primary">{{ total_karyawan|default:"0" }}</div>
+    <div class="kpi-lbl"><i class="fas fa-users me-1"></i>Karyawan Aktif</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val" style="color:#22c55e;">{{ total_hadir_hari|default:"0" }}</div>
+    <div class="kpi-lbl"><i class="fas fa-check-circle me-1"></i>Hadir Hari Ini</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val text-warning">{{ cuti_pending|default:"0" }}</div>
+    <div class="kpi-lbl"><i class="fas fa-clock me-1"></i>Cuti Pending</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val text-danger">{{ kontrak_expiring|default:"0" }}</div>
+    <div class="kpi-lbl"><i class="fas fa-file-contract me-1"></i>Kontrak Hampir Habis</div>
+  </div>
+</div>
+
+{# ── Section: Workforce ── #}
+<div class="section-label">Workforce Overview</div>
+<div class="row g-3 mb-3">
+
+  {# Headcount per Dept #}
+  <div class="col-12 col-lg-7">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <h6><i class="fas fa-sitemap me-2" style="color:#60a5fa;"></i>Headcount per Departemen</h6>
+      </div>
+      <div class="chart-card-body">
+        <div class="chart-wrap" style="height:260px;">
+          {% if chart_hc_data %}
+          <canvas id="hcChart"></canvas>
+          {% else %}
+          <div class="text-center text-muted py-5"><i class="fas fa-sitemap fa-2x mb-2 d-block opacity-25"></i>Belum ada data</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Komposisi PKWT #}
+  <div class="col-12 col-lg-5">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <h6><i class="fas fa-id-card me-2" style="color:#f59e0b;"></i>Komposisi Status Karyawan</h6>
+        <span style="font-size:.72rem;color:var(--muted);">{{ total_karyawan }} aktif</span>
+      </div>
+      <div class="chart-card-body">
+        <div style="max-width:180px;margin:0 auto;">
+          {% if chart_pkwt_data %}
+          <canvas id="pkwtChart"></canvas>
+          {% else %}
+          <div class="text-center text-muted py-5"><i class="fas fa-id-card fa-2x mb-2 d-block opacity-25"></i>Belum ada data</div>
+          {% endif %}
+        </div>
+        <div class="donut-legend" id="pkwtLegend"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Section: Absensi ── #}
+<div class="section-label">Absensi & Kehadiran</div>
+<div class="row g-3 mb-3">
+
+  {# Trend 7 Hari #}
+  <div class="col-12 col-lg-8">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <h6><i class="fas fa-chart-line me-2" style="color:#22c55e;"></i>Trend Absensi 7 Hari Terakhir</h6>
+      </div>
+      <div class="chart-card-body">
+        <div class="chart-wrap" style="height:240px;">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Rekap Bulan + Tahun #}
+  <div class="col-12 col-lg-4">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <h6><i class="fas fa-calendar-check me-2" style="color:#a78bfa;"></i>Rekap Absensi</h6>
+      </div>
+      <div class="chart-card-body">
+        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Bulan Ini</div>
+        <div class="rekap-grid mb-4">
+          {% with r=rekap_bulan_ini %}
+          <div class="rekap-item" style="background:rgba(34,197,94,.12);">
+            <div class="rval" style="color:#22c55e;">{{ r.Hadir|default:"0" }}</div>
+            <div class="rlbl" style="color:#22c55e;">Hadir</div>
+          </div>
+          <div class="rekap-item" style="background:rgba(245,158,11,.12);">
+            <div class="rval" style="color:#f59e0b;">{{ r.Izin|default:"0" }}</div>
+            <div class="rlbl" style="color:#f59e0b;">Izin</div>
+          </div>
+          <div class="rekap-item" style="background:rgba(59,130,246,.12);">
+            <div class="rval" style="color:#3b82f6;">{{ r.Sakit|default:"0" }}</div>
+            <div class="rlbl" style="color:#3b82f6;">Sakit</div>
+          </div>
+          <div class="rekap-item" style="background:rgba(168,85,247,.12);">
+            <div class="rval" style="color:#a855f7;">{{ r.Cuti|default:"0" }}</div>
+            <div class="rlbl" style="color:#a855f7;">Cuti</div>
+          </div>
+          <div class="rekap-item" style="background:rgba(6,182,212,.12);">
+            <div class="rval" style="color:#06b6d4;">{{ r.WFH|default:"0" }}</div>
+            <div class="rlbl" style="color:#06b6d4;">WFH</div>
+          </div>
+          <div class="rekap-item" style="background:rgba(239,68,68,.12);">
+            <div class="rval" style="color:#ef4444;">{{ r|get_item:"Tidak Hadir"|default:"0" }}</div>
+            <div class="rlbl" style="color:#ef4444;">Absen</div>
+          </div>
+          {% endwith %}
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Tahun Ini</div>
+        <div class="rekap-grid">
+          {% with r=rekap_tahun_ini %}
+          <div class="rekap-item" style="background:rgba(34,197,94,.08);">
+            <div class="rval" style="color:#22c55e;">{{ r.Hadir|default:"0" }}</div>
+            <div class="rlbl" style="color:#22c55e;">Hadir</div>
+          </div>
+          <div class="rekap-item" style="background:rgba(245,158,11,.08);">
+            <div class="rval" style="color:#f59e0b;">{{ r.Izin|default:"0" }}</div>
+            <div class="rlbl" style="color:#f59e0b;">Izin</div>
+          </div>
+          <div class="rekap-item" style="background:rgba(239,68,68,.08);">
+            <div class="rval" style="color:#ef4444;">{{ r|get_item:"Tidak Hadir"|default:"0" }}</div>
+            <div class="rlbl" style="color:#ef4444;">Absen</div>
+          </div>
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Attendance Rate per Dept #}
+  <div class="col-12">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <h6><i class="fas fa-user-check me-2" style="color:#06b6d4;"></i>Attendance Rate per Departemen — Bulan Ini</h6>
+        <span style="font-size:.72rem;color:var(--muted);">
+          <span style="color:#22c55e;">●</span> ≥90%
+          <span style="color:#f59e0b;margin-left:8px;">●</span> 75–89%
+          <span style="color:#ef4444;margin-left:8px;">●</span> &lt;75%
+        </span>
+      </div>
+      <div class="chart-card-body">
+        <div class="chart-wrap" style="height:220px;">
+          {% if chart_att_data %}
+          <canvas id="attChart"></canvas>
+          {% else %}
+          <div class="text-center text-muted py-5"><i class="fas fa-user-check fa-2x mb-2 d-block opacity-25"></i>Belum ada data absensi bulan ini</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Section: Keuangan & Kontrak ── #}
+<div class="section-label">Keuangan & Kontrak</div>
+<div class="row g-3 mb-3">
+
+  {# Labor Cost #}
+  <div class="col-12 col-lg-6">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <h6><i class="fas fa-money-bill-wave me-2" style="color:#22c55e;"></i>Labor Cost per Departemen</h6>
+      </div>
+      <div class="chart-card-body">
+        <div class="chart-wrap" style="height:240px;">
+          {% if chart_lc_data %}
+          <canvas id="lcChart"></canvas>
+          {% else %}
+          <div class="text-center text-muted py-5"><i class="fas fa-money-bill-wave fa-2x mb-2 d-block opacity-25"></i>Belum ada data gaji</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Turnover + Status Kontrak #}
+  <div class="col-12 col-lg-6">
+    <div class="row g-3 h-100">
+      <div class="col-12">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h6><i class="fas fa-sign-out-alt me-2" style="color:#ef4444;"></i>Turnover / Attrition (6 Bulan)</h6>
+          </div>
+          <div class="chart-card-body">
+            <div class="chart-wrap" style="height:160px;">
+              <canvas id="turnoverChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h6><i class="fas fa-file-contract me-2" style="color:#60a5fa;"></i>Status Perjanjian Kerja</h6>
+          </div>
+          <div class="chart-card-body d-flex align-items-center gap-4">
+            {% if chart_contract_data %}
+            <div style="width:120px;flex-shrink:0;"><canvas id="contractChart"></canvas></div>
+            <div class="donut-legend flex-grow-1" id="contractLegend"></div>
+            {% else %}
+            <div class="text-muted text-center w-100 py-3"><i class="fas fa-file-contract fa-2x mb-2 d-block opacity-25"></i>Belum ada data</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Section: Rekrutmen ── #}
+<div class="section-label">Rekrutmen Pipeline</div>
+<div class="row g-3 mb-3">
+  <div class="col-12 col-lg-8">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <h6><i class="fas fa-funnel-dollar me-2" style="color:#a78bfa;"></i>Status Kandidat — Recruitment Pipeline</h6>
+      </div>
+      <div class="chart-card-body">
+        <div class="chart-wrap" style="height:220px;">
+          {% if chart_rec_data %}
+          <canvas id="recChart"></canvas>
+          {% else %}
+          <div class="text-center text-muted py-5"><i class="fas fa-user-tie fa-2x mb-2 d-block opacity-25"></i>Belum ada data kandidat</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <h6><i class="fas fa-map-marked-alt me-2" style="color:#22d3ee;"></i>Populasi per Provinsi</h6>
+      </div>
+      <div class="chart-card-body">
+        {% if chart_prov_data %}
+        <div style="max-width:160px;margin:0 auto;"><canvas id="provChart"></canvas></div>
+        <div class="donut-legend mt-3" id="provLegend"></div>
+        {% else %}
+        <div class="text-center text-muted py-5"><i class="fas fa-map-marked-alt fa-2x mb-2 d-block opacity-25"></i>Data provinsi belum tersedia</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Footer print ── #}
+<div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:32px;padding-top:16px;border-top:1px solid var(--border);">
+  HRIS SmartDesk &bull; {{ company.nama|default:"" }} &bull; Digenerate {% now "d F Y H:i" %} WIB
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const PALETTE = [
+  '#3b82f6','#22c55e','#f59e0b','#ef4444','#a855f7',
+  '#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6',
+];
+const CHART_OPT = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{
+    legend:{display:false},
+    tooltip:{backgroundColor:'#1a1a2e',titleColor:'#f0f0f0',bodyColor:'#c8c8c8',borderColor:'#333',borderWidth:1}
+  },
+  scales:{
+    x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#888',font:{size:10}}},
+    y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#888',font:{size:10}},beginAtZero:true}
+  }
+};
+
+function buildDonut(canvasId, legendId, labels, data, colors) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  colors = colors || labels.map((_,i) => PALETTE[i % PALETTE.length]);
+  const total = data.reduce((a,b)=>a+b,0);
+  new Chart(ctx, {
+    type:'doughnut',
+    data:{labels, datasets:[{data, backgroundColor:colors, borderWidth:2, borderColor:'#181825', hoverOffset:5}]},
+    options:{cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${Math.round(c.raw/total*100)}%)`}}}}
+  });
+  const leg = document.getElementById(legendId);
+  if (!leg) return;
+  leg.innerHTML = labels.map((lbl,i) => `
+    <div class="donut-legend-item">
+      <span><span class="donut-dot" style="background:${colors[i]};"></span>${lbl}</span>
+      <span style="font-weight:600;">${data[i]} <span style="color:var(--muted);font-weight:400;">(${Math.round(data[i]/total*100)}%)</span></span>
+    </div>`).join('');
+}
+
+// ── 1. Headcount per Dept
+{% if chart_hc_data %}
+(()=>{
+  const ctx = document.getElementById('hcChart');
+  if(!ctx) return;
+  const labels = {{ chart_hc_labels|safe }};
+  const data   = {{ chart_hc_data|safe }};
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:data.map((_,i)=>PALETTE[i%PALETTE.length]+'cc'),borderRadius:6,borderSkipped:false}]},
+    options:{...CHART_OPT,plugins:{...CHART_OPT.plugins,tooltip:{...CHART_OPT.plugins.tooltip,callbacks:{label:c=>` ${c.raw} karyawan`}}}}
+  });
+})();
+{% endif %}
+
+// ── 2. Komposisi Status Karyawan
+{% if chart_pkwt_data %}
+buildDonut('pkwtChart','pkwtLegend',{{ chart_pkwt_labels|safe }},{{ chart_pkwt_data|safe }});
+{% endif %}
+
+// ── 3. Trend Absensi 7 Hari
+(()=>{
+  const ctx = document.getElementById('trendChart');
+  if(!ctx) return;
+  new Chart(ctx,{
+    type:'line',
+    data:{labels:{{ absen_7hari_labels|safe }},datasets:{{ absen_7hari_datasets|safe }}},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,position:'top',labels:{color:'#aaa',usePointStyle:true,pointStyleWidth:8,font:{size:10}}},
+        tooltip:{backgroundColor:'#1a1a2e',titleColor:'#f0f0f0',bodyColor:'#c8c8c8',borderColor:'#333',borderWidth:1}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#888',font:{size:10}}},
+        y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#888',font:{size:10},stepSize:1},beginAtZero:true}
+      }
+    }
+  });
+})();
+
+// ── 4. Attendance Rate per Dept
+{% if chart_att_data %}
+(()=>{
+  const ctx = document.getElementById('attChart');
+  if(!ctx) return;
+  const labels = {{ chart_att_labels|safe }};
+  const data   = {{ chart_att_data|safe }};
+  const colors = data.map(v => v>=90?'#22c55ecc':v>=75?'#f59e0bcc':'#ef4444cc');
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6}]},
+    options:{...CHART_OPT,
+      plugins:{...CHART_OPT.plugins,tooltip:{...CHART_OPT.plugins.tooltip,callbacks:{label:c=>` ${c.raw}% hadir`}}},
+      scales:{...CHART_OPT.scales,y:{...CHART_OPT.scales.y,max:100,ticks:{color:'#888',font:{size:10},callback:v=>v+'%'}}}
+    }
+  });
+})();
+{% endif %}
+
+// ── 5. Labor Cost
+{% if chart_lc_data %}
+(()=>{
+  const ctx = document.getElementById('lcChart');
+  if(!ctx) return;
+  const labels = {{ chart_lc_labels|safe }};
+  const data   = {{ chart_lc_data|safe }};
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:'#22c55e44',borderColor:'#22c55e',borderWidth:1.5,borderRadius:6}]},
+    options:{...CHART_OPT,
+      plugins:{...CHART_OPT.plugins,tooltip:{...CHART_OPT.plugins.tooltip,callbacks:{label:c=>` Rp ${Math.round(c.raw).toLocaleString('id-ID')}`}}},
+      scales:{...CHART_OPT.scales,y:{...CHART_OPT.scales.y,ticks:{color:'#888',font:{size:10},callback:v=>'Rp '+(v>=1000000?(v/1000000).toFixed(0)+'jt':v.toLocaleString('id-ID'))}}}
+    }
+  });
+})();
+{% endif %}
+
+// ── 6. Turnover
+(()=>{
+  const ctx = document.getElementById('turnoverChart');
+  if(!ctx) return;
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels:{{ chart_turnover_labels|safe }},datasets:[{label:'Keluar',data:{{ chart_turnover_data|safe }},backgroundColor:'#ef444466',borderColor:'#ef4444',borderWidth:1.5,borderRadius:6}]},
+    options:{...CHART_OPT,plugins:{...CHART_OPT.plugins,tooltip:{...CHART_OPT.plugins.tooltip,callbacks:{label:c=>` ${c.raw} orang keluar`}}}}
+  });
+})();
+
+// ── 7. Status Kontrak
+{% if chart_contract_data %}
+buildDonut('contractChart','contractLegend',{{ chart_contract_labels|safe }},{{ chart_contract_data|safe }});
+{% endif %}
+
+// ── 8. Recruitment Pipeline
+{% if chart_rec_data %}
+(()=>{
+  const ctx = document.getElementById('recChart');
+  if(!ctx) return;
+  const labels = {{ chart_rec_labels|safe }};
+  const data   = {{ chart_rec_data|safe }};
+  const SC = {'Screening':'#60a5fa','Psikotes':'#a78bfa','Interview HR':'#f59e0b','Interview User':'#fb923c','Medical Check':'#34d399','Offering':'#22d3ee','Hired':'#22c55e','Rejected':'#ef4444','Withdrawn':'#6b7280'};
+  const colors = labels.map(l=>SC[l]||'#888');
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:1.5,borderRadius:6}]},
+    options:{...CHART_OPT,plugins:{...CHART_OPT.plugins,tooltip:{...CHART_OPT.plugins.tooltip,callbacks:{label:c=>` ${c.raw} kandidat`}}}}
+  });
+})();
+{% endif %}
+
+// ── 9. Populasi per Provinsi
+{% if chart_prov_data %}
+buildDonut('provChart','provLegend',{{ chart_prov_labels|safe }},{{ chart_prov_data|safe }});
+{% endif %}
+</script>
+{% endblock %}

@@ -1,12 +1,14 @@
 from django.urls import path
 from . import views
+from . import views_analytics
 
 urlpatterns = [
     path('', views.landing_view, name='home'),
     path('landing/', views.landing_view, name='landing'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('dashboard/', views.dashboard, name='dashboard'),
+    path("dashboard/", views_analytics.dashboard, name="dashboard"),
+    path("analytics/", views_analytics.analytics_dashboard, name="analytics_dashboard"),
     path('profile/', views.profile, name='profile'),
     path('change-password/', views.change_password, name='change_password'),
 
