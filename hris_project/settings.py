@@ -144,6 +144,26 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ── Storage: Cloudinary ───────────────────────────────────────────────────────
+_CLOUDINARY_NAME   = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+_CLOUDINARY_KEY    = os.environ.get('CLOUDINARY_API_KEY', '')
+_CLOUDINARY_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '')
+
+if _CLOUDINARY_NAME and _CLOUDINARY_KEY and _CLOUDINARY_SECRET:
+    import cloudinary
+    cloudinary.config(
+        cloud_name = _CLOUDINARY_NAME,
+        api_key    = _CLOUDINARY_KEY,
+        api_secret = _CLOUDINARY_SECRET,
+        secure     = True,
+    )
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _CLOUDINARY_NAME,
+        'API_KEY':    _CLOUDINARY_KEY,
+        'API_SECRET': _CLOUDINARY_SECRET,
+    }
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST Framework
