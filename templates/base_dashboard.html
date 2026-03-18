@@ -333,6 +333,14 @@ a{color:inherit;}
   .tb-divider{display:none;}
 }
 {% block extra_css %}{% endblock %}
+/* ── Global Print CSS ── */
+@media print {
+  .skip-nav,.sidebar,.topbar,.tb-btn,.sb-toggle,
+  [class*="tb-"],[class*="sb-"]:not(.sb-logo) { display:none !important; }
+  .main-wrap { margin:0 !important; padding:16px !important; width:100% !important; }
+  body { background:#fff !important; color:#111 !important; }
+  * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+}
 </style>
 {% block extra_head %}{% endblock %}
 </head>
