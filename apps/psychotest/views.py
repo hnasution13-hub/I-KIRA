@@ -90,8 +90,16 @@ def soal_bank_delete(request, pk):
 @login_required
 @addon_required('psychotest')
 def session_list(request):
-    sessions = PsikotesSession.objects.select_related('candidate').order_by('-created_at')
-    return render(request, 'psychotest/session_list.html', {'sessions': sessions})
+    sessions = PsikotesSession.objects.select_related(
+        'candidate', 'employee'
+    ).order_by('-created_at')
+    tujuan = request.GET.get('tujuan', '')
+    if tujuan:
+        sessions = sessions.filter(tujuan=tujuan)
+    return render(request, 'psychotest/session_list.html', {
+        'sessions': sessions,
+        'tujuan':   tujuan,
+    })
 
 
 @login_required
@@ -109,14 +117,22 @@ def session_create(request, candidate_pk):
         from datetime import timedelta
         expired_days = int(request.POST.get('expired_days', 7))
 
+        company = getattr(request, 'company', None)
+        if not company and request.user.is_superuser:
+            from apps.core.models import Company
+            company = Company.objects.first()
+
         session = PsikotesSession.objects.create(
+            company=company,
             candidate=candidate,
+            tujuan='rekrutmen',
             paket=paket,
             expired_at=timezone.now() + timedelta(days=expired_days),
             durasi_logika=int(request.POST.get('durasi_logika', 15)),
             durasi_verbal=int(request.POST.get('durasi_verbal', 15)),
             durasi_numerik=int(request.POST.get('durasi_numerik', 15)),
             durasi_disc=int(request.POST.get('durasi_disc', 20)),
+            durasi_kraepelin=int(request.POST.get('durasi_kraepelin', 30)),
             created_by=request.user.get_full_name() or request.user.username,
         )
 
@@ -126,6 +142,52 @@ def session_create(request, candidate_pk):
 
     return render(request, 'psychotest/session_create.html', {
         'candidate': candidate,
+        'kategori_choices': SoalBank.KATEGORI_CHOICES,
+    })
+
+
+@login_required
+@addon_required('psychotest')
+def session_create_employee(request, employee_pk):
+    """HR buat sesi psikotes basic untuk karyawan."""
+    from apps.employees.models import Employee
+    employee = get_object_or_404(Employee, pk=employee_pk)
+
+    if request.method == 'POST':
+        paket = request.POST.getlist('paket')
+        if not paket:
+            messages.error(request, 'Pilih minimal satu paket tes.')
+            return redirect('psychotest_create_employee', employee_pk=employee_pk)
+
+        from datetime import timedelta
+        expired_days = int(request.POST.get('expired_days', 7))
+        tujuan = request.POST.get('tujuan', 'berkala')
+
+        company = getattr(request, 'company', None)
+        if not company and request.user.is_superuser:
+            from apps.core.models import Company
+            company = Company.objects.first()
+
+        session = PsikotesSession.objects.create(
+            company=company,
+            employee=employee,
+            tujuan=tujuan,
+            paket=paket,
+            expired_at=timezone.now() + timedelta(days=expired_days),
+            durasi_logika=int(request.POST.get('durasi_logika', 15)),
+            durasi_verbal=int(request.POST.get('durasi_verbal', 15)),
+            durasi_numerik=int(request.POST.get('durasi_numerik', 15)),
+            durasi_disc=int(request.POST.get('durasi_disc', 20)),
+            durasi_kraepelin=int(request.POST.get('durasi_kraepelin', 30)),
+            created_by=request.user.get_full_name() or request.user.username,
+        )
+
+        link_full = request.build_absolute_uri(f'/psychotest/tes/{session.token}/')
+        messages.success(request, f'Sesi psikotes berhasil dibuat. Link: {link_full}')
+        return redirect('employee_detail', pk=employee_pk)
+
+    return render(request, 'psychotest/session_create.html', {
+        'employee':        employee,
         'kategori_choices': SoalBank.KATEGORI_CHOICES,
     })
 

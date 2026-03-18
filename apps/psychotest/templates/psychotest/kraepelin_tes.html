@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tes Kraepelin — i-Kira</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#0f1117; color:#f0f0f0; font-family:'Courier New',monospace; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
+
+/* Topbar */
+.topbar { background:#1a1d27; border-bottom:1px solid #2a2d3a; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.topbar-left { display:flex; align-items:center; gap:12px; }
+.progress-label { font-size:.78rem; color:#888; }
+.progress-bar-wrap { width:200px; height:6px; background:#2a2d3a; border-radius:99px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:#4f46e5; border-radius:99px; transition:width .3s; }
+
+/* Timer */
+.timer-wrap { display:flex; align-items:center; gap:8px; }
+.timer-circle { width:48px; height:48px; border-radius:50%; border:3px solid #4f46e5; display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; transition:border-color .3s; }
+.timer-circle.warning { border-color:#f59e0b; color:#f59e0b; }
+.timer-circle.danger  { border-color:#ef4444; color:#ef4444; }
+
+/* Baris info */
+.baris-info { font-size:.82rem; color:#aaa; }
+
+/* Main area */
+.main { flex:1; display:flex; align-items:center; justify-content:center; padding:20px; overflow:hidden; }
+.tes-container { display:flex; gap:24px; align-items:flex-start; max-width:100%; }
+
+/* Kolom angka */
+.kolom-angka { display:flex; flex-direction:column; gap:0; }
+.digit-pair { display:flex; align-items:center; position:relative; }
+.digit-top { font-size:1.5rem; font-weight:700; width:44px; text-align:center; color:#f0f0f0; line-height:2; }
+.digit-top.active-pair { color:#60a5fa; }
+.input-cell { width:40px; height:40px; background:#1e2030; border:1px solid #3a3d4a; border-radius:6px; text-align:center; font-size:1.3rem; font-weight:700; color:#4ade80; font-family:'Courier New',monospace; outline:none; transition:border-color .15s, background .15s; -moz-appearance:textfield; }
+.input-cell::-webkit-inner-spin-button { display:none; }
+.input-cell:focus { border-color:#4f46e5; background:#252840; }
+.input-cell.correct { background:#0d2a1a; border-color:#22c55e; }
+.input-cell.wrong   { background:#2a0d0d; border-color:#ef4444; }
+.input-cell:disabled { opacity:.4; }
+
+/* Layout kolom horizontal */
+.row-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.digits-row  { display:flex; gap:4px; }
+.answers-row { display:flex; gap:4px; margin-left:0; }
+.spacer { width:44px; } /* spacer untuk digit pertama yang tidak punya jawaban di kiri */
+
+/* Bottom bar */
+.bottombar { background:#1a1d27; border-top:1px solid #2a2d3a; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.hint { font-size:.75rem; color:#555; }
+.peserta-label { font-size:.75rem; color:#555; }
+
+/* Selesai overlay */
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:100; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+.overlay.show { display:flex; }
+.overlay h3 { font-size:1.5rem; font-weight:700; }
+.overlay p { color:#aaa; font-size:.9rem; }
+.btn-done { background:#4f46e5; color:#fff; border:none; border-radius:10px; padding:12px 32px; font-size:1rem; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div>
+      <div class="progress-label">Baris <span id="barisNow">{{ baris_mulai }}</span> / {{ jumlah_baris }}</div>
+      <div class="progress-bar-wrap mt-1">
+        <div class="progress-bar-fill" id="progressFill" style="width:{{ baris_mulai|add:'-1' }}0%;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="timer-wrap">
+    <div class="timer-circle" id="timerCircle">{{ detik_per_baris }}</div>
+    <div class="baris-info" id="statusLabel">Siap...</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="row-wrap" id="rowWrap">
+    <!-- Dirender oleh JS -->
+  </div>
+</div>
+
+<div class="bottombar">
+  <div class="hint"><kbd>0-9</kbd> isi jawaban &nbsp;|&nbsp; <kbd>Enter</kbd> lanjut manual</div>
+  <div class="peserta-label">{{ peserta_nama }}</div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div style="text-align:center;">
+    <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
+    <h3>Tes Selesai!</h3>
+    <p>Semua {{ jumlah_baris }} baris telah dikerjakan.</p>
+    <a href="{% url 'kraepelin_selesai' sesi.token %}" class="btn-done mt-3">Lihat Hasil →</a>
+  </div>
+</div>
+
+<script>
+const KOLOM      = {{ kolom_json|safe }};
+const BARIS_MULAI = {{ baris_mulai }};
+const JUMLAH_BARIS = {{ jumlah_baris }};
+const DIGIT_PER_BARIS = {{ digit_per_baris }};
+const DETIK = {{ detik_per_baris }};
+const SUBMIT_URL = "{% url 'kraepelin_submit_baris' sesi.token %}";
+const SELESAI_URL = "{% url 'kraepelin_selesai' sesi.token %}";
+
+let currentBaris = BARIS_MULAI;
+let timerInterval = null;
+let sisaDetik = DETIK;
+let jawaban = [];  // jawaban baris ini
+let currentCol = 0;
+
+// ── Render baris ──────────────────────────────────────────────────────────────
+function renderBaris(barisIdx) {
+  const angka = KOLOM[barisIdx]; // array digit_per_baris+1 angka
+  const wrap  = document.getElementById('rowWrap');
+  wrap.innerHTML = '';
+
+  // Row angka
+  const digitsRow = document.createElement('div');
+  digitsRow.className = 'digits-row';
+  for (let i = 0; i < angka.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'digit-top';
+    d.id = `d${i}`;
+    d.textContent = angka[i];
+    digitsRow.appendChild(d);
+  }
+  wrap.appendChild(digitsRow);
+
+  // Row input jawaban (digit_per_baris buah — antara setiap 2 angka)
+  const answersRow = document.createElement('div');
+  answersRow.className = 'answers-row';
+  // Spacer untuk angka pertama
+  const sp = document.createElement('div');
+  sp.style.width = '44px';
+  answersRow.appendChild(sp);
+
+  for (let i = 0; i < DIGIT_PER_BARIS; i++) {
+    const inp = document.createElement('input');
+    inp.type = 'tel';
+    inp.maxLength = 1;
+    inp.className = 'input-cell';
+    inp.id = `inp${i}`;
+    inp.dataset.col = i;
+    inp.setAttribute('inputmode', 'numeric');
+    inp.addEventListener('input', onInput);
+    inp.addEventListener('keydown', onKeydown);
+    answersRow.appendChild(inp);
+  }
+  wrap.appendChild(answersRow);
+
+  // Reset state
+  jawaban    = [];
+  currentCol = 0;
+  focusCol(0);
+  highlightPair(0);
+}
+
+function focusCol(col) {
+  const inp = document.getElementById(`inp${col}`);
+  if (inp && !inp.disabled) inp.focus();
+}
+
+function highlightPair(col) {
+  document.querySelectorAll('.digit-top').forEach(d => d.classList.remove('active-pair'));
+  const d1 = document.getElementById(`d${col}`);
+  const d2 = document.getElementById(`d${col+1}`);
+  if (d1) d1.classList.add('active-pair');
+  if (d2) d2.classList.add('active-pair');
+}
+
+function onInput(e) {
+  const inp = e.target;
+  const col = parseInt(inp.dataset.col);
+  const val = inp.value.replace(/\D/g, '');
+
+  if (val === '') { inp.value = ''; return; }
+
+  const digit = parseInt(val.slice(-1));
+  inp.value = digit;
+
+  // Record jawaban
+  while (jawaban.length <= col) jawaban.push(null);
+  jawaban[col] = digit;
+
+  // Highlight feedback (akan di-update setelah submit)
+  // Pindah ke input berikutnya
+  const next = col + 1;
+  if (next < DIGIT_PER_BARIS) {
+    currentCol = next;
+    focusCol(next);
+    highlightPair(next);
+  }
+}
+
+function onKeydown(e) {
+  if (e.key === 'Enter') {
+    submitBaris(true); // manual next
+  }
+}
+
+// ── Timer ─────────────────────────────────────────────────────────────────────
+function startTimer() {
+  sisaDetik = DETIK;
+  updateTimerUI();
+
+  timerInterval = setInterval(() => {
+    sisaDetik--;
+    updateTimerUI();
+    if (sisaDetik <= 0) {
+      clearInterval(timerInterval);
+      submitBaris(false);
+    }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const el = document.getElementById('timerCircle');
+  el.textContent = sisaDetik;
+  el.className = 'timer-circle';
+  if (sisaDetik <= 5)       el.classList.add('danger');
+  else if (sisaDetik <= 10) el.classList.add('warning');
+}
+
+// ── Submit baris ──────────────────────────────────────────────────────────────
+async function submitBaris(manual) {
+  clearInterval(timerInterval);
+  disableAllInputs();
+
+  // Kumpulkan jawaban — null → skip (tidak dihitung)
+  const jawabanBersih = jawaban.filter(j => j !== null && j !== undefined);
+
+  document.getElementById('statusLabel').textContent = 'Menyimpan...';
+
+  try {
+    const res = await fetch(SUBMIT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ baris: currentBaris, jawaban: jawabanBersih }),
+    });
+    const data = await res.json();
+
+    if (data.semua_selesai || currentBaris >= JUMLAH_BARIS) {
+      document.getElementById('overlay').classList.add('show');
+      return;
+    }
+  } catch(e) {
+    console.error('Submit error:', e);
+  }
+
+  // Lanjut baris berikutnya
+  currentBaris++;
+  updateProgress();
+  renderBaris(currentBaris - 1);
+  startTimer();
+}
+
+function disableAllInputs() {
+  document.querySelectorAll('.input-cell').forEach(el => el.disabled = true);
+}
+
+function updateProgress() {
+  document.getElementById('barisNow').textContent = currentBaris;
+  document.getElementById('statusLabel').textContent = `Baris ${currentBaris}`;
+  const pct = ((currentBaris - 1) / JUMLAH_BARIS * 100).toFixed(1);
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderBaris(currentBaris - 1);
+updateProgress();
+startTimer();
+</script>
+</body>
+</html>

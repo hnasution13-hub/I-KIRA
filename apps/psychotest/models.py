@@ -21,10 +21,11 @@ from datetime import timedelta
 
 class SoalBank(models.Model):
     KATEGORI_CHOICES = [
-        ('logika',  'Logika'),
-        ('verbal',  'Verbal'),
-        ('numerik', 'Numerik'),
-        ('disc',    'DISC Personality'),
+        ('logika',     'Logika'),
+        ('verbal',     'Verbal'),
+        ('numerik',    'Numerik'),
+        ('disc',       'DISC Personality'),
+        ('kraepelin',  'Kraepelin'),
     ]
     TIPE_CHOICES = [
         ('pilihan_ganda', 'Pilihan Ganda'),
@@ -87,16 +88,32 @@ class PsikotesSession(models.Model):
         ('expired',   'Kadaluarsa'),
     ]
 
-    company    = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='psychotest_sessions', verbose_name='Perusahaan', null=True, blank=True)
+    TUJUAN_CHOICES = [
+        ('rekrutmen', 'Rekrutmen'),
+        ('berkala',   'Evaluasi Berkala'),
+        ('promosi',   'Promosi Jabatan'),
+        ('evaluasi',  'Evaluasi Kinerja'),
+    ]
+
+    company     = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='psychotest_sessions', verbose_name='Perusahaan', null=True, blank=True)
     candidate   = models.ForeignKey(
         'recruitment.Candidate',
         on_delete=models.CASCADE,
-        related_name='psychotest_sessions'
+        related_name='psychotest_sessions',
+        null=True, blank=True,
     )
+    employee    = models.ForeignKey(
+        'employees.Employee',
+        on_delete=models.CASCADE,
+        related_name='psychotest_sessions',
+        null=True, blank=True,
+        verbose_name='Karyawan',
+    )
+    tujuan      = models.CharField(max_length=20, choices=TUJUAN_CHOICES, default='rekrutmen', blank=True)
     token       = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     paket       = models.JSONField(
         default=list,
-        help_text='List kategori yang diujikan, e.g. ["logika","verbal","numerik","disc"]'
+        help_text='List kategori, e.g. ["logika","verbal","numerik","disc","kraepelin"]'
     )
     status      = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     expired_at  = models.DateTimeField(default=default_expired)
@@ -105,11 +122,12 @@ class PsikotesSession(models.Model):
     created_by  = models.CharField(max_length=100, blank=True)
     created_at  = models.DateTimeField(auto_now_add=True)
 
-    # Durasi per kategori (menit) — bisa dikustom saat buat sesi
-    durasi_logika   = models.IntegerField(default=15)
-    durasi_verbal   = models.IntegerField(default=15)
-    durasi_numerik  = models.IntegerField(default=15)
-    durasi_disc     = models.IntegerField(default=20)
+    # Durasi per kategori (menit)
+    durasi_logika    = models.IntegerField(default=15)
+    durasi_verbal    = models.IntegerField(default=15)
+    durasi_numerik   = models.IntegerField(default=15)
+    durasi_disc      = models.IntegerField(default=20)
+    durasi_kraepelin = models.IntegerField(default=30)
 
     class Meta:
         verbose_name = 'Sesi Psikotes'
@@ -117,7 +135,22 @@ class PsikotesSession(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Psikotes — {self.candidate.nama} ({self.get_status_display()})"
+        peserta = self.get_peserta_nama()
+        return f"Psikotes — {peserta} ({self.get_status_display()})"
+
+    def get_peserta(self):
+        return self.candidate or self.employee
+
+    def get_peserta_nama(self):
+        p = self.get_peserta()
+        return p.nama if p else '-'
+
+    def get_peserta_url(self):
+        if self.candidate:
+            return f'/recruitment/candidates/{self.candidate.pk}/'
+        if self.employee:
+            return f'/employees/{self.employee.pk}/'
+        return '#' 
 
     @property
     def is_expired(self):
@@ -380,3 +413,151 @@ class OnboardingChecklist(models.Model):
         fields = [self.ori_perkenalan, self.ori_sop, self.ori_fasilitas, self.ori_sistem]
         done = sum(1 for f in fields if f)
         return {'done': done, 'total': len(fields), 'pct': round(done / len(fields) * 100)}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# KRAEPELIN
+# ─────────────────────────────────────────────────────────────────────────────
+
+class KraepelinSession(models.Model):
+    """Sesi Tes Kraepelin — kandidat atau karyawan."""
+    STATUS_CHOICES = [
+        ('pending',   'Belum Dikerjakan'),
+        ('started',   'Sedang Dikerjakan'),
+        ('completed', 'Selesai'),
+        ('expired',   'Kadaluarsa'),
+    ]
+    TUJUAN_CHOICES = [
+        ('rekrutmen', 'Rekrutmen'),
+        ('berkala',   'Evaluasi Berkala'),
+        ('promosi',   'Promosi Jabatan'),
+        ('evaluasi',  'Evaluasi Kinerja'),
+    ]
+
+    company     = models.ForeignKey(Company, on_delete=models.CASCADE,
+                                    related_name='kraepelin_sessions', null=True, blank=True)
+    candidate   = models.ForeignKey('recruitment.Candidate', on_delete=models.CASCADE,
+                                    related_name='kraepelin_sessions', null=True, blank=True)
+    employee    = models.ForeignKey('employees.Employee', on_delete=models.CASCADE,
+                                    related_name='kraepelin_sessions', null=True, blank=True)
+    tujuan      = models.CharField(max_length=20, choices=TUJUAN_CHOICES, default='rekrutmen')
+    token       = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    status      = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
+    # Konfigurasi tes
+    jumlah_baris    = models.IntegerField(default=50, help_text='Jumlah baris (default 50)')
+    digit_per_baris = models.IntegerField(default=60, help_text='Digit per baris (default 60)')
+    detik_per_baris = models.IntegerField(default=30, help_text='Detik per baris (default 30)')
+
+    # Seed untuk generate angka — reproducible
+    seed        = models.IntegerField(default=0)
+
+    expired_at  = models.DateTimeField(default=default_expired)
+    started_at  = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_by  = models.CharField(max_length=100, blank=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Sesi Kraepelin'
+        verbose_name_plural = 'Sesi Kraepelin'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        peserta = self.get_peserta_nama()
+        return f"Kraepelin — {peserta} ({self.get_status_display()})"
+
+    def get_peserta(self):
+        return self.candidate or self.employee
+
+    def get_peserta_nama(self):
+        p = self.get_peserta()
+        return p.nama if p else '-'
+
+    def get_peserta_url(self):
+        if self.candidate:
+            return f'/recruitment/candidates/{self.candidate.pk}/'
+        if self.employee:
+            return f'/employees/{self.employee.pk}/'
+        return '#'
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expired_at
+
+    @property
+    def is_accessible(self):
+        return self.status in ('pending', 'started') and not self.is_expired
+
+    @property
+    def link(self):
+        return f'/psychotest/kraepelin/{self.token}/'
+
+    def get_seed(self):
+        """Generate seed dari token jika belum diset."""
+        if not self.seed:
+            self.seed = int(str(self.token).replace('-', '')[:8], 16) % (2**31)
+            self.save(update_fields=['seed'])
+        return self.seed
+
+
+class KraepelinRowResult(models.Model):
+    """Hasil per baris tes Kraepelin."""
+    session     = models.ForeignKey(KraepelinSession, on_delete=models.CASCADE,
+                                    related_name='row_results')
+    baris       = models.IntegerField(verbose_name='Nomor Baris (1-based)')
+    # Jawaban kandidat — list angka dipisah koma, e.g. "7,5,8,..."
+    jawaban     = models.TextField(blank=True)
+    # Jawaban benar — digenerate dari seed, disimpan untuk verifikasi
+    kunci       = models.TextField(blank=True)
+    # Statistik baris
+    dikerjakan  = models.IntegerField(default=0, help_text='Jumlah kolom yang dijawab')
+    benar       = models.IntegerField(default=0)
+    salah       = models.IntegerField(default=0)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Hasil Baris Kraepelin'
+        ordering = ['baris']
+        unique_together = ('session', 'baris')
+
+    def __str__(self):
+        return f"Baris {self.baris} — {self.session}"
+
+
+class KraepelinResult(models.Model):
+    """Hasil akhir tes Kraepelin — auto-dihitung saat selesai."""
+    session     = models.OneToOneField(KraepelinSession, on_delete=models.CASCADE,
+                                       related_name='result')
+    candidate   = models.ForeignKey('recruitment.Candidate', on_delete=models.CASCADE,
+                                    related_name='kraepelin_results', null=True, blank=True)
+    employee    = models.ForeignKey('employees.Employee', on_delete=models.CASCADE,
+                                    related_name='kraepelin_results', null=True, blank=True)
+
+    # Skor utama
+    skor_kecepatan   = models.FloatField(default=0, help_text='Rata-rata kolom dikerjakan per baris')
+    skor_ketelitian  = models.FloatField(default=0, help_text='% jawaban benar dari yang dikerjakan')
+    skor_konsistensi = models.FloatField(default=0, help_text='100 - (std_dev kecepatan / mean * 100)')
+    skor_ketahanan   = models.FloatField(default=0, help_text='Perbandingan kecepatan paruh akhir vs awal')
+    skor_total       = models.IntegerField(default=0, help_text='Skor gabungan 0-100')
+    grade            = models.CharField(max_length=2, blank=True)
+
+    # Detail JSON: kecepatan per baris, error per baris, dll
+    detail      = models.JSONField(default=dict)
+    catatan_hr  = models.TextField(blank=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Hasil Kraepelin'
+        verbose_name_plural = 'Hasil Kraepelin'
+
+    def __str__(self):
+        peserta = self.candidate.nama if self.candidate else (self.employee.nama if self.employee else '-')
+        return f"Kraepelin — {peserta} — {self.skor_total}"
+
+    def compute_grade(self):
+        s = self.skor_total
+        if s >= 80: return 'A'
+        if s >= 65: return 'B'
+        if s >= 50: return 'C'
+        return 'D'

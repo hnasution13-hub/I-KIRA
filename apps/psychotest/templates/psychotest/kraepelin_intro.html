@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tes Kraepelin — i-Kira</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+body { background:#f4f6f9; font-family:'Inter',sans-serif; }
+.card { border-radius:16px; border:none; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+.step-item { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid #f0f0f0; }
+.step-item:last-child { border-bottom:none; }
+.step-num { width:32px; height:32px; border-radius:50%; background:#4f46e5; color:#fff; display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:700; flex-shrink:0; }
+.stat-box { background:#f8f9ff; border:1px solid #e8eaff; border-radius:10px; padding:14px; text-align:center; }
+.stat-box .val { font-size:1.6rem; font-weight:700; color:#4f46e5; line-height:1; }
+.stat-box .lbl { font-size:.72rem; color:#888; margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="container py-5" style="max-width:640px;">
+  <div class="text-center mb-4">
+    <div style="width:64px;height:64px;background:#4f46e5;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+      <i class="fas fa-brain" style="color:#fff;font-size:1.6rem;"></i>
+    </div>
+    <h4 class="fw-bold mb-1">Tes Kraepelin</h4>
+    <p class="text-muted mb-0">Halo, <strong>{{ peserta_nama }}</strong>. Baca petunjuk di bawah sebelum memulai.</p>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body p-4">
+      <div class="row g-3 mb-4">
+        <div class="col-4">
+          <div class="stat-box">
+            <div class="val">{{ sesi.jumlah_baris }}</div>
+            <div class="lbl">Jumlah Baris</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-box">
+            <div class="val">{{ sesi.digit_per_baris }}</div>
+            <div class="lbl">Digit per Baris</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-box">
+            <div class="val">{{ sesi.detik_per_baris }}d</div>
+            <div class="lbl">Waktu per Baris</div>
+          </div>
+        </div>
+      </div>
+
+      <h6 class="fw-bold mb-3"><i class="fas fa-list-ol me-2 text-primary"></i>Petunjuk Pengerjaan</h6>
+
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div><strong>Lihat dua angka yang berdampingan</strong> — jumlahkan keduanya, ambil satuan hasilnya saja.<br>
+        <small class="text-muted">Contoh: 7 + 8 = 15 → tulis <strong>5</strong></small></div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div><strong>Isi jawaban dari atas ke bawah</strong> di kolom yang tersedia, secepat mungkin.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div><strong>Timer berjalan otomatis</strong> per baris. Setelah {{ sesi.detik_per_baris }} detik, baris berikutnya tampil secara otomatis.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div><strong>Tidak bisa kembali</strong> ke baris sebelumnya. Fokus dan kerjakan sebaik mungkin.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">5</div>
+        <div><strong>Jangan tutup tab</strong> selama tes berlangsung. Tes akan dilanjutkan dari baris terakhir jika terjadi gangguan.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-grid">
+    <a href="{% url 'kraepelin_tes' sesi.token %}" class="btn btn-primary btn-lg" style="background:#4f46e5;border:none;border-radius:10px;padding:14px;">
+      <i class="fas fa-play me-2"></i>Mulai Tes Sekarang
+    </a>
+  </div>
+  <p class="text-center text-muted mt-3" style="font-size:.78rem;">
+    <i class="fas fa-clock me-1"></i>Estimasi total waktu: {{ total_waktu|floatformat:0 }} detik (~{{ sesi.jumlah_baris }} baris × {{ sesi.detik_per_baris }}d)
+  </p>
+</div>
+</body>
+</html>
