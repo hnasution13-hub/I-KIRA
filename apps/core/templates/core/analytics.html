@@ -1,15 +1,15 @@
 {% extends 'base_dashboard.html' %}
 {% load attendance_filters %}
-{% block title %}Analytics — i-Kira{% endblock %}
+{% block title %}Analytics — HRIS SmartDesk{% endblock %}
 {% block breadcrumb %}Analytics{% endblock %}
 
 {% block extra_css %}
-<style>
+
 .an-page { display:flex; flex-direction:column; gap:24px; }
 
 .an-header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; }
 .an-header-left h4 { margin:0 0 3px; font-size:1.15rem; font-weight:700; }
-.an-header-left small { color:var(--muted); font-size:.76rem; }
+.an-header-left small { font-size:.76rem; color:var(--muted); }
 .an-header-right { display:flex; gap:8px; flex-shrink:0; }
 
 .kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
@@ -47,79 +47,15 @@
 .att-legend span { display:flex; align-items:center; gap:4px; }
 .att-dot { width:8px; height:8px; border-radius:50%; }
 
-/* ── Print CSS khusus analytics ── */
 @media print {
-  /* Sembunyikan elemen non-konten */
-  .an-header-right,
-  .skip-nav,
-  .sidebar, .topbar,
-  [class*="tb-"],
-  [class*="sb-"] { display:none !important; }
-
-  /* Layout full width tanpa margin sidebar */
-  .main-wrap {
-    margin: 0 !important;
-    padding: 12px 16px !important;
-    width: 100% !important;
-    min-height: auto !important;
-  }
-
-  body { background: #fff !important; color: #111 !important; font-size: 11px; }
-
-  /* Paksa warna tercetak */
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-
-  /* Jangan potong di tengah elemen */
-  .kpi-strip, .kpi-card, .cc, .row, .rekap-grid { break-inside: avoid; }
-  .section-divider { break-after: avoid; }
-
-  /* KPI strip — 4 kolom di print */
-  .kpi-strip { grid-template-columns: repeat(4,1fr) !important; gap:8px !important; }
-  .kpi-card { padding: 12px 14px !important; border: 1px solid #ddd !important; background: #fff !important; }
-  .kpi-val { font-size: 1.4rem !important; }
-  .kpi-lbl { color: #555 !important; }
-
-  /* Section divider */
-  .section-divider { color: #555 !important; margin: 8px 0 4px !important; }
-  .section-divider::after { background: #ddd !important; }
-
-  /* Chart card */
-  .cc { border: 1px solid #ddd !important; background: #fff !important; border-radius: 8px !important; }
-  .cc-head { border-bottom: 1px solid #eee !important; padding: 10px 14px !important; }
-  .cc-head h6 { color: #333 !important; font-size: .78rem !important; }
-  .cc-body { padding: 12px 14px !important; }
-
-  /* Chart heights — lebih pendek di print agar muat per halaman */
-  .chart-box[style*="250px"] { height: 200px !important; }
-  .chart-box[style*="220px"] { height: 180px !important; }
-  .chart-box[style*="230px"] { height: 180px !important; }
-  .chart-box[style*="210px"] { height: 170px !important; }
-  .chart-box[style*="200px"] { height: 160px !important; }
-  .chart-box[style*="145px"] { height: 120px !important; }
-
-  /* Donut legend */
-  .dn-legend .dn-row { font-size: .72rem; }
-  .dn-name { color: #333 !important; }
-  .dn-val { color: #111 !important; }
-  .dn-pct { color: #666 !important; }
-
-  /* Rekap tiles */
-  .rekap-tile { border: 1px solid #eee !important; }
-  .rekap-tile-val { font-size: 1rem !important; }
-  .rekap-tile-lbl { opacity: 1 !important; }
-  .rekap-section-label { color: #555 !important; }
-
-  /* Footer */
-  .an-footer { border-top: 1px solid #ddd !important; color: #666 !important; }
-
-  /* Row Bootstrap — pastikan tidak break */
-  .row { display: flex !important; flex-wrap: wrap !important; }
-  .col-12.col-lg-7, .col-12.col-lg-8 { width: 58% !important; flex: 0 0 58% !important; }
-  .col-12.col-lg-5, .col-12.col-lg-4 { width: 40% !important; flex: 0 0 40% !important; }
-  .col-12.col-lg-6 { width: 49% !important; flex: 0 0 49% !important; }
-  .col-12:not([class*="col-lg"]) { width: 100% !important; flex: 0 0 100% !important; }
+  .an-header-right,[class*="sidebar"],[class*="topbar"],.btn{display:none!important;}
+  body,.main-wrap{background:#fff!important;color:#111!important;}
+  .cc,.kpi-card{border:1px solid #ddd!important;background:#fff!important;break-inside:avoid;}
+  .cc-head h6,.kpi-lbl,.section-divider{color:#555!important;}
+  .section-divider::after{background:#ddd!important;}
+  .an-page{gap:16px;}
 }
-</style>
+
 {% endblock %}
 
 {% block content %}
@@ -315,8 +251,8 @@
     </div>
   </div>
 
-  <div class="an-footer" style="text-align:center;font-size:.7rem;color:var(--muted);padding-top:12px;border-top:1px solid var(--border);">
-    i-Kira &bull; {{ company.nama|default:"" }} &bull; Digenerate {% now "d F Y, H:i" %} WIB
+  <div style="text-align:center;font-size:.7rem;color:var(--muted);padding-top:12px;border-top:1px solid var(--border);">
+    HRIS SmartDesk &bull; {{ company.nama|default:"" }} &bull; Digenerate {% now "d F Y, H:i" %} WIB
   </div>
 
 </div>
@@ -351,7 +287,8 @@ function buildDonut(canvasId, legendId, labels, data, colors) {
   const labels={{ chart_hc_labels|safe }},data={{ chart_hc_data|safe }};
   new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:data.map((_,i)=>PALETTE[i%PALETTE.length]+'cc'),borderRadius:5,borderSkipped:false}]},
     options:{...BASE_OPT,plugins:{...BASE_OPT.plugins,tooltip:{...TT,callbacks:{label:c=>` ${c.raw} karyawan`}}}}});
-})();{% endif %}
+})();
+{% endif %}
 
 {% if chart_pkwt_data %}buildDonut('pkwtChart','pkwtLegend',{{ chart_pkwt_labels|safe }},{{ chart_pkwt_data|safe }});{% endif %}
 
@@ -365,17 +302,20 @@ function buildDonut(canvasId, legendId, labels, data, colors) {
 {% if chart_att_data %}
 (()=>{ const el=document.getElementById('attChart'); if(!el) return;
   const labels={{ chart_att_labels|safe }},data={{ chart_att_data|safe }};
-  new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:data.map(v=>v>=90?'#22c55ecc':v>=75?'#f59e0bcc':'#ef4444cc'),borderRadius:5}]},
+  const colors=data.map(v=>v>=90?'#22c55ecc':v>=75?'#f59e0bcc':'#ef4444cc');
+  new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:5}]},
     options:{...BASE_OPT,plugins:{...BASE_OPT.plugins,tooltip:{...TT,callbacks:{label:c=>` ${c.raw}% hadir`}}},
       scales:{...BASE_OPT.scales,y:{...BASE_OPT.scales.y,max:100,ticks:{color:TICK,font:{size:10},callback:v=>v+'%'}}}}});
-})();{% endif %}
+})();
+{% endif %}
 
 {% if chart_lc_data %}
 (()=>{ const el=document.getElementById('lcChart'); if(!el) return;
   new Chart(el,{type:'bar',data:{labels:{{ chart_lc_labels|safe }},datasets:[{data:{{ chart_lc_data|safe }},backgroundColor:'#22c55e44',borderColor:'#22c55e',borderWidth:1.5,borderRadius:5}]},
     options:{...BASE_OPT,plugins:{...BASE_OPT.plugins,tooltip:{...TT,callbacks:{label:c=>` Rp ${Math.round(c.raw).toLocaleString('id-ID')}`}}},
       scales:{...BASE_OPT.scales,y:{...BASE_OPT.scales.y,ticks:{color:TICK,font:{size:10},callback:v=>'Rp '+(v>=1e6?(v/1e6).toFixed(0)+'jt':v.toLocaleString('id-ID'))}}}}});
-})();{% endif %}
+})();
+{% endif %}
 
 (()=>{ const el=document.getElementById('turnoverChart'); if(!el) return;
   new Chart(el,{type:'bar',data:{labels:{{ chart_turnover_labels|safe }},datasets:[{data:{{ chart_turnover_data|safe }},backgroundColor:'#ef444455',borderColor:'#ef4444',borderWidth:1.5,borderRadius:5}]},
@@ -391,7 +331,8 @@ function buildDonut(canvasId, legendId, labels, data, colors) {
   const colors=labels.map(l=>SC[l]||'#888');
   new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors.map(c=>c+'88'),borderColor:colors,borderWidth:1.5,borderRadius:5}]},
     options:{...BASE_OPT,plugins:{...BASE_OPT.plugins,tooltip:{...TT,callbacks:{label:c=>` ${c.raw} kandidat`}}}}});
-})();{% endif %}
+})();
+{% endif %}
 
 {% if chart_prov_data %}buildDonut('provChart','provLegend',{{ chart_prov_labels|safe }},{{ chart_prov_data|safe }});{% endif %}
 </script>
