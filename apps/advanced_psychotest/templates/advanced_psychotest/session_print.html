@@ -46,7 +46,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #333
                 <h4 class="mb-0 fw-bold">
                     <i class="fas fa-flask me-2"></i>Laporan Advanced Psychometric Test
                 </h4>
-                <small class="opacity-75">HRIS SmartDesk — Dicetak: {% now "d/m/Y H:i" %}</small>
+                <small class="opacity-75">i-Kira — Dicetak: {% now "d/m/Y H:i" %}</small>
             </div>
             <div class="text-end">
                 <div class="fw-bold fs-5">{{ session.get_peserta_nama }}</div>
@@ -193,7 +193,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #333
     {% endif %}{% endwith %}{% endif %}
 
     <div class="text-muted text-center py-3" style="font-size:.8rem;border-top:1px solid #eee;margin-top:20px;">
-        Dokumen ini digenerate otomatis oleh HRIS SmartDesk — {{ session.get_peserta_nama }} — {{ session.completed_at|date:"d/m/Y H:i"|default:"" }}
+        Dokumen ini digenerate otomatis oleh i-Kira — {{ session.get_peserta_nama }} — {{ session.completed_at|date:"d/m/Y H:i"|default:"" }}
     </div>
 
 </div>

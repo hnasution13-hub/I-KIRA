@@ -1,5 +1,5 @@
 """
-Number utility functions untuk HRIS SmartDesk
+Number utility functions untuk i-Kira
 """
 
 

@@ -1,5 +1,5 @@
 """
-Middleware Multi-Tenant HRIS SmartDesk
+Middleware Multi-Tenant i-Kira
 Inject request.company dan request.user_role_level dari user yang login.
 
 Hierarki:

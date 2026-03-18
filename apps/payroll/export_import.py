@@ -181,7 +181,7 @@ def download_template_import_salary():
 
     ws.merge_cells(f'A1:{get_column_letter(ncol)}1')
     c = ws['A1']
-    c.value     = 'TEMPLATE IMPORT DATA UPAH & BENEFIT — HRIS SmartDesk'
+    c.value     = 'TEMPLATE IMPORT DATA UPAH & BENEFIT — i-Kira'
     c.font      = Font(bold=True, size=14, color=C_WHITE)
     c.fill      = PatternFill('solid', fgColor=C_NAVY)
     c.alignment = Alignment(horizontal='center', vertical='center')

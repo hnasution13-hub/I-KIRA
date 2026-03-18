@@ -39,7 +39,7 @@ def kirim_email_sesi_kandidat(session, request=None):
 
     expired_str = session.expired_at.strftime('%d %B %Y pukul %H:%M')
 
-    subject = f'[HRIS SmartDesk] Undangan Tes Psikometri — {paket_label}'
+    subject = f'[i-Kira] Undangan Tes Psikometri — {paket_label}'
 
     message = f"""Yth. {candidate.nama},
 
@@ -60,7 +60,7 @@ Petunjuk:
 Apabila ada pertanyaan, silakan hubungi tim HR kami.
 
 Salam,
-Tim HR — HRIS SmartDesk
+Tim HR — i-Kira
 """
 
     html_message = f"""
@@ -74,7 +74,7 @@ Tim HR — HRIS SmartDesk
   <!-- Header -->
   <div style="background:#7b1fa2;padding:28px 32px;">
     <h2 style="margin:0;color:#fff;font-size:1.3rem;">📋 Undangan Tes Psikometri</h2>
-    <p style="margin:6px 0 0;color:#e1bee7;font-size:.9rem;">HRIS SmartDesk</p>
+    <p style="margin:6px 0 0;color:#e1bee7;font-size:.9rem;">i-Kira</p>
   </div>
 
   <!-- Body -->
@@ -133,7 +133,7 @@ Tim HR — HRIS SmartDesk
   <!-- Footer -->
   <div style="background:#f5f5f5;padding:16px 32px;text-align:center;
               font-size:.8rem;color:#aaa;">
-    Email ini dikirim otomatis oleh HRIS SmartDesk.<br>
+    Email ini dikirim otomatis oleh i-Kira.<br>
     Jangan balas email ini. Hubungi HR jika ada pertanyaan.
   </div>
 </div>
@@ -192,7 +192,7 @@ def kirim_email_sesi_karyawan(session, request=None):
     }
     tujuan_label = TUJUAN_LABEL.get(session.tujuan, session.tujuan)
 
-    subject = f'[HRIS SmartDesk] Jadwal Psikotes — {tujuan_label}'
+    subject = f'[i-Kira] Jadwal Psikotes — {tujuan_label}'
 
     message = f"""Yth. {employee.nama},
 
@@ -207,7 +207,7 @@ Detail:
 Kerjakan sebelum batas waktu di atas.
 
 Salam,
-Tim HR — HRIS SmartDesk
+Tim HR — i-Kira
 """
 
     html_message = f"""
@@ -219,7 +219,7 @@ Tim HR — HRIS SmartDesk
             box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;">
   <div style="background:#1565c0;padding:28px 32px;">
     <h2 style="margin:0;color:#fff;font-size:1.3rem;">🏢 Psikotes Karyawan</h2>
-    <p style="margin:6px 0 0;color:#bbdefb;font-size:.9rem;">{tujuan_label} — HRIS SmartDesk</p>
+    <p style="margin:6px 0 0;color:#bbdefb;font-size:.9rem;">{tujuan_label} — i-Kira</p>
   </div>
   <div style="padding:28px 32px;">
     <p style="color:#424242;">Yth. <strong>{employee.nama}</strong>,</p>
@@ -250,7 +250,7 @@ Tim HR — HRIS SmartDesk
     </p>
   </div>
   <div style="background:#f5f5f5;padding:16px 32px;text-align:center;font-size:.8rem;color:#aaa;">
-    Email otomatis HRIS SmartDesk — jangan balas email ini.
+    Email otomatis i-Kira — jangan balas email ini.
   </div>
 </div>
 </body>

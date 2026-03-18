@@ -1,7 +1,7 @@
 """
 utils/approval_engine.py
 ========================
-Engine terpusat untuk approval workflow HRIS SmartDesk.
+Engine terpusat untuk approval workflow i-Kira.
 
 Cara pakai:
     from utils.approval_engine import ApprovalEngine, get_approval_chain_display

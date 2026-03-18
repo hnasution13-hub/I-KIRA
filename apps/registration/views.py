@@ -1,7 +1,7 @@
 """
 apps/registration/views.py
 ===========================
-Self-service registrasi akun Demo & Trial HRIS SmartDesk.
+Self-service registrasi akun Demo & Trial i-Kira.
 """
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -221,7 +221,7 @@ def _send_welcome_email(email, nama, username, password, paket, company, trial_s
     from django.template.loader import render_to_string
 
     paket_label = 'Demo' if paket == 'demo' else 'Trial'
-    subject = f'[HRIS SmartDesk] Akun {paket_label} Anda Siap!'
+    subject = f'[i-Kira] Akun {paket_label} Anda Siap!'
 
     body = render_to_string('registration/email_welcome.html', {
         'nama'        : nama,

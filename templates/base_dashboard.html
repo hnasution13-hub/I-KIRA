@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}Dashboard{% endblock %} — HRIS SmartDesk</title>
+<title>{% block title %}Dashboard{% endblock %} — i-Kira</title>
 <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -350,7 +350,7 @@ a{color:inherit;}
     <img id="sbLogoImg" alt="Logo" class="sb-logo-img" style="display:none;">
     <div class="sb-logo-fallback" id="sbLogoFallback">H</div>
     <div class="sb-logo-text">
-      <div class="sb-logo-name">HRIS SmartDesk</div>
+      <div class="sb-logo-name">i-Kira</div>
       <div class="sb-logo-sub">Enterprise Edition</div>
     </div>
   </a>
@@ -367,7 +367,7 @@ a{color:inherit;}
         <a href="{% url 'dashboard' %}" class="sb-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
           <i class="sb-item-ico fas fa-chart-line"></i><span class="sb-item-lbl">Overview</span>
         </a>
-        <a href="{% url 'analytics_dashboard' %}" class="sb-item {% if request.resolver_match.url_name == 'analytics_dashboard' %}active{% endif %}">
+        <a href="{% url 'report_attendance' %}" class="sb-item {% if request.resolver_match.url_name == 'report_attendance' %}active{% endif %}">
           <i class="sb-item-ico fas fa-chart-bar"></i><span class="sb-item-lbl">Analytics</span>
         </a>
       </div>
@@ -566,7 +566,7 @@ a{color:inherit;}
         <a href="{% url 'report_list' %}" class="sb-item {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}">
           <i class="sb-item-ico fas fa-grip"></i><span class="sb-item-lbl">Overview Laporan</span>
         </a>
-        <a href="{% url 'analytics_dashboard' %}" class="sb-item {% if request.resolver_match.url_name == 'analytics_dashboard' %}active{% endif %}">
+        <a href="{% url 'report_attendance' %}" class="sb-item {% if request.resolver_match.url_name == 'report_attendance' %}active{% endif %}">
           <i class="sb-item-ico fas fa-calendar-check"></i><span class="sb-item-lbl">Laporan Absensi</span>
         </a>
         <a href="{% url 'report_employee' %}" class="sb-item {% if request.resolver_match.url_name == 'report_employee' %}active{% endif %}">

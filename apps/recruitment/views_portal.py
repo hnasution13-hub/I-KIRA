@@ -70,7 +70,7 @@ def _send_portal_email(candidate, profile, request):
         'candidate': candidate,
         'form_url': form_url,
         'token_expires_at': profile.token_expires_at,
-        'app_name': getattr(settings, 'APP_NAME', 'HRIS SmartDesk'),
+        'app_name': getattr(settings, 'APP_NAME', 'i-Kira'),
     }
 
     try:
@@ -206,7 +206,7 @@ def _notify_hr_submitted(candidate, profile, request):
         f"telah melengkapi form data diri.\n\n"
         f"Kelengkapan data: {profile.completion_pct}%\n\n"
         f"Review di: {detail_url}\n\n"
-        f"— HRIS SmartDesk"
+        f"— i-Kira"
     )
     try:
         send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, hr_emails)

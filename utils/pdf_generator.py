@@ -1,5 +1,5 @@
 """
-PDF generator untuk HRIS SmartDesk
+PDF generator untuk i-Kira
 Menggunakan reportlab
 """
 from reportlab.lib.pagesizes import A4

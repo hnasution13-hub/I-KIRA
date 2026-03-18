@@ -1,5 +1,5 @@
 """
-Custom template filters untuk HRIS SmartDesk.
+Custom template filters untuk i-Kira.
 Filter ini menggantikan penggunaan |split yang tidak ada di Django bawaan.
 
 Cara pakai di template:

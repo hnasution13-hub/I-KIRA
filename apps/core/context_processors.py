@@ -4,7 +4,7 @@ from django.conf import settings
 def global_context(request):
     """Context global tersedia di semua template."""
     context = {
-        'APP_NAME':    getattr(settings, 'APP_NAME', 'HRIS-SmartDesk'),
+        'APP_NAME':    getattr(settings, 'APP_NAME', 'i-Kira'),
         'APP_VERSION': getattr(settings, 'APP_VERSION', '1.0.0'),
         'BRAND_COLOR': getattr(settings, 'BRAND_COLOR', '#e63329'),
     }

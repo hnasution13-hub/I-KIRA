@@ -1,5 +1,5 @@
 """
-Email sender utility untuk HRIS SmartDesk
+Email sender utility untuk i-Kira
 """
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -30,7 +30,7 @@ def send_leave_notification(leave, action='submitted'):
     context = {
         'leave': leave,
         'employee': leave.employee,
-        'app_name': getattr(settings, 'APP_NAME', 'HRIS SmartDesk'),
+        'app_name': getattr(settings, 'APP_NAME', 'i-Kira'),
     }
 
     recipient = []

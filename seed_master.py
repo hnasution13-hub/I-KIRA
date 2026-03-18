@@ -1,5 +1,5 @@
 """
-seed_combined.py — HRIS SmartDesk
+seed_combined.py — i-Kira
 Script interaktif gabungan untuk seed data master + generate absensi.
 
 Menu:
@@ -1865,7 +1865,7 @@ def menu_seed_kontrak():
 
 def main_menu():
     while True:
-        header('HRIS SmartDesk — Seed Data')
+        header('i-Kira — Seed Data')
 
         n_company = Company.objects.count()
         n_dept    = Department.objects.count()
@@ -2394,7 +2394,7 @@ def menu_seed_asset():
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description='HRIS SmartDesk — Seed Data')
+    parser = argparse.ArgumentParser(description='i-Kira — Seed Data')
     parser.add_argument('--company',    action='store_true', help='Langsung ke menu tambah company')
     parser.add_argument('--department', action='store_true', help='Langsung ke menu tambah department')
     parser.add_argument('--jabatan',    action='store_true', help='Langsung ke menu tambah jabatan manual')

@@ -173,7 +173,7 @@ def download_template_import(company=None):
     # Baris 1: Judul
     ws.merge_cells(f'A1:{get_column_letter(ncol)}1')
     c           = ws['A1']
-    c.value     = 'TEMPLATE IMPORT DATA KARYAWAN — HRIS SmartDesk'
+    c.value     = 'TEMPLATE IMPORT DATA KARYAWAN — i-Kira'
     c.font      = Font(bold=True, size=14, color=C_WHITE)
     c.fill      = PatternFill('solid', fgColor=C_NAVY)
     c.alignment = Alignment(horizontal='center', vertical='center')
@@ -286,7 +286,7 @@ def download_template_import(company=None):
         ('Template ini digunakan untuk mengimport DATA KARYAWAN milik satu Tenant tertentu.', False, None, 10),
         ('', False, None, 10),
         ('PERBEDAAN "Tenant" vs "Vendor/Outsourcing":', True, C_ORANGE, 11),
-        ('  Tenant          : Perusahaan yang berlangganan HRIS SmartDesk (pemilik data).', False, None, 10),
+        ('  Tenant          : Perusahaan yang berlangganan i-Kira (pemilik data).', False, None, 10),
         ('                    Contoh: PT Tambang Raya, PT Maju Sejahtera', False, None, 10),
         ('  Vendor/Outsourcing: Perusahaan penyedia karyawan outsourcing/sub-kon.', False, None, 10),
         ('                    Ini BUKAN nama tenant. Kolom ini opsional, isi hanya jika', False, None, 10),

@@ -1,5 +1,5 @@
 """
-Validator functions untuk HRIS SmartDesk
+Validator functions untuk i-Kira
 """
 import re
 from django.core.exceptions import ValidationError

@@ -1,5 +1,5 @@
 """
-Date utility functions untuk HRIS SmartDesk
+Date utility functions untuk i-Kira
 """
 from datetime import date, datetime, timedelta
 import calendar

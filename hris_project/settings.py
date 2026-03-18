@@ -187,9 +187,9 @@ REST_FRAMEWORK = {
 
 # OpenAPI / Swagger docs (drf-spectacular)
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'HRIS SmartDesk API',
+    'TITLE': 'i-Kira HRIS API',
     'DESCRIPTION': (
-        'REST API untuk HRIS SmartDesk. '
+        'REST API untuk i-Kira HRIS. '
         'Autentikasi menggunakan JWT Bearer token. '
         'Dapatkan token via POST /api/token/ dengan username & password.'
     ),
@@ -218,9 +218,9 @@ else:
 # CORS_ALLOW_ALL_ORIGINS = True  # DIHAPUS — BUG-018
 
 # App Config
-APP_NAME = 'HRIS-SmartDesk'
+APP_NAME = 'i-Kira'
 APP_VERSION = '1.0.0'
-COMPANY_NAME = 'SmartDesk Technology'
+COMPANY_NAME = 'i-Kira'
 TRIAL_DAYS = 30
 
 # Colors (untuk template)

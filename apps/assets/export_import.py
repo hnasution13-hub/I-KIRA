@@ -72,7 +72,7 @@ def download_template_import_asset(company=None):
     # Baris 1: Judul
     ws.merge_cells(f'A1:{get_column_letter(ncol)}1')
     c           = ws['A1']
-    c.value     = 'TEMPLATE IMPORT DATA ASET — HRIS SmartDesk'
+    c.value     = 'TEMPLATE IMPORT DATA ASET — i-Kira'
     c.font      = Font(bold=True, size=14, color=C_WHITE)
     c.fill      = PatternFill('solid', fgColor=C_NAVY)
     c.alignment = Alignment(horizontal='center', vertical='center')
@@ -177,7 +177,7 @@ def download_template_import_asset(company=None):
     # ── Sheet 3: Petunjuk ─────────────────────────────────────────────────────
     ws3 = wb.create_sheet('Petunjuk')
     PETUNJUK = [
-        ('PETUNJUK IMPORT DATA ASET — HRIS SmartDesk',            True,  C_NAVY,   14),
+        ('PETUNJUK IMPORT DATA ASET — i-Kira',            True,  C_NAVY,   14),
         ('',                                                        False, None,     10),
         ('A. PERSIAPAN',                                            True,  C_GREEN,  11),
         ('1. Pastikan data Lokasi dan Vendor sudah ada di sistem (menu Asset > Lokasi / Vendor).', False, None, 10),

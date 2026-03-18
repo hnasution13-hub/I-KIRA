@@ -1,5 +1,5 @@
 """
-Decorators akses berbasis role — HRIS SmartDesk.
+Decorators akses berbasis role — i-Kira.
 
 Hierarki bypass:
   Developer (is_superuser, company=None) → bypass SEMUA decorator

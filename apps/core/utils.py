@@ -1,5 +1,5 @@
 """
-Utility helpers untuk multi-tenant HRIS SmartDesk.
+Utility helpers untuk multi-tenant i-Kira.
 """
 
 

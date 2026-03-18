@@ -1,5 +1,5 @@
 """
-Excel export generator untuk HRIS SmartDesk
+Excel export generator untuk i-Kira
 Menggunakan openpyxl
 """
 import openpyxl
