@@ -12,7 +12,11 @@ class Migration(migrations.Migration):
             model_name='offeringletter',
             name='status_karyawan',
             field=models.CharField(
-                choices=[('PKWT', 'PKWT (Kontrak)'), ('PKWTT', 'PKWTT (Permanen)'), ('PHL', 'PHL (Harian Lepas)')],
+                choices=[
+                    ('PKWT',  'PKWT (Kontrak)'),
+                    ('PKWTT', 'PKWTT (Permanen)'),
+                    ('PHL',   'PHL (Harian Lepas)'),
+                ],
                 default='PKWT',
                 max_length=10,
                 verbose_name='Status Karyawan',
