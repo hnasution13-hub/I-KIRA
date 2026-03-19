@@ -35,11 +35,9 @@ def send_leave_notification(leave, action='submitted'):
 
     recipient = []
     if action == 'submitted':
-        # Kirim ke HR
         hr_emails = getattr(settings, 'HR_EMAIL_LIST', [])
         recipient = hr_emails
     else:
-        # Kirim ke karyawan
         if leave.employee.email:
             recipient = [leave.employee.email]
 
@@ -71,12 +69,6 @@ def send_contract_expiry_warning(contract, days_remaining):
     if not hr_emails:
         return False
 
-    context = {
-        'contract': contract,
-        'employee': contract.employee,
-        'days_remaining': days_remaining,
-    }
-
     try:
         body = (
             f"Kontrak karyawan {contract.employee.nama} ({contract.employee.nik})\n"
@@ -94,21 +86,36 @@ def send_contract_expiry_warning(contract, days_remaining):
 
 
 def send_payslip_email(payroll_detail):
-    """Kirim slip gaji ke email karyawan."""
+    """Kirim slip gaji ke email karyawan dengan template HTML."""
     employee = payroll_detail.employee
     if not employee.email:
+        logger.warning(f"send_payslip_email: employee {employee.nik} tidak punya email")
         return False
 
     subject = f'[HRIS] Slip Gaji {payroll_detail.payroll.periode} - {employee.nama}'
+    context = {
+        'employee': employee,
+        'payroll_detail': payroll_detail,
+        'app_name': getattr(settings, 'APP_NAME', 'i-Kira'),
+    }
     try:
-        body = (
+        html_content = render_to_string('emails/payslip_notification.html', context)
+        plain_body = (
             f"Yth. {employee.nama},\n\n"
-            f"Terlampir slip gaji Anda untuk periode {payroll_detail.payroll.periode}.\n"
+            f"Slip gaji periode {payroll_detail.payroll.periode} telah tersedia.\n"
             f"Gaji Bersih: Rp {payroll_detail.gaji_bersih:,.0f}\n\n"
-            f"Hubungi HR jika ada pertanyaan.\n\n"
+            f"Login ke i-Kira untuk melihat detail lengkap.\n\n"
             f"Salam,\nTim HR"
         )
-        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [employee.email])
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[employee.email],
+        )
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+        logger.info(f"Payslip email sent to {employee.email} (periode={payroll_detail.payroll.periode})")
         return True
     except Exception as e:
         logger.error(f"Failed to send payslip email to {employee.email}: {e}")

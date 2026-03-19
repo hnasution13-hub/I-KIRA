@@ -27,3 +27,5 @@ services:
         sync: false
       - key: DEFAULT_FROM_EMAIL
         value: onboarding@resend.dev
+      - key: HR_EMAIL_LIST
+        sync: false

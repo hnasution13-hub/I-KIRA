@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<style>
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;margin:0;padding:0;}
+  .wrap{max-width:560px;margin:30px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);}
+  .header{background:#1a73e8;padding:28px 36px;}
+  .header h2{margin:0 0 4px;color:#fff;font-size:1.2rem;}
+  .header p{margin:0;color:rgba(255,255,255,.8);font-size:.875rem;}
+  .body{padding:28px 36px;}
+  .body p{color:#444;font-size:.9rem;line-height:1.6;}
+  .info-box{background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;padding:16px 20px;margin:20px 0;}
+  .info-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:.875rem;}
+  .info-row:last-child{border-bottom:none;padding-bottom:0;}
+  .info-label{color:#888;}
+  .info-val{font-weight:600;color:#333;}
+  .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:600;}
+  .badge-pending{background:#fff3cd;color:#856404;}
+  .footer{background:#f8f9fa;padding:16px 36px;text-align:center;font-size:.75rem;color:#999;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h2>📋 Pengajuan Cuti Baru</h2>
+    <p>{{ app_name }} — Notifikasi HR</p>
+  </div>
+  <div class="body">
+    <p>Terdapat pengajuan cuti baru yang memerlukan persetujuan Anda.</p>
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Karyawan</span>
+        <span class="info-val">{{ employee.nama }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">NIK</span>
+        <span class="info-val">{{ employee.nik }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Jabatan</span>
+        <span class="info-val">{{ employee.jabatan }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Tipe Cuti</span>
+        <span class="info-val">{{ leave.tipe_cuti }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Tanggal Mulai</span>
+        <span class="info-val">{{ leave.tanggal_mulai }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Tanggal Selesai</span>
+        <span class="info-val">{{ leave.tanggal_selesai }}</span>
+      </div>
+      {% if leave.keterangan %}
+      <div class="info-row">
+        <span class="info-label">Keterangan</span>
+        <span class="info-val">{{ leave.keterangan }}</span>
+      </div>
+      {% endif %}
+      <div class="info-row">
+        <span class="info-label">Status</span>
+        <span class="info-val"><span class="badge badge-pending">Menunggu Persetujuan</span></span>
+      </div>
+    </div>
+    <p style="font-size:.825rem;color:#888;">Silakan login ke {{ app_name }} untuk memproses pengajuan ini.</p>
+  </div>
+  <div class="footer">Email otomatis dari {{ app_name }} — jangan balas email ini.</div>
+</div>
+</body>
+</html>

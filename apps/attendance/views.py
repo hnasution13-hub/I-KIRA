@@ -8,6 +8,7 @@ from django.db.models import Sum
 from .models import Attendance, Leave
 from .forms import LeaveForm, OvertimeForm  # FIX BUG-011: gunakan form untuk validasi
 from apps.employees.models import Employee
+from utils.email_sender import send_leave_notification
 from apps.core.utils import get_company_qs, get_employee_related_qs
 from apps.core.decorators import hr_required, manager_required
 from datetime import date, datetime, time
@@ -74,7 +75,8 @@ def leave_form(request):
     if request.method == 'POST':
         form = LeaveForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            leave = form.save()
+            send_leave_notification(leave, action='submitted')
             messages.success(request, 'Pengajuan cuti berhasil dikirim.')
             return redirect('leave_list')
         else:
@@ -105,6 +107,7 @@ def leave_approve(request, pk):
 
     catatan = request.POST.get('catatan_approval', '')
     engine.approve(leave, request.user, catatan=catatan)
+    send_leave_notification(leave, action='approved')
     messages.success(request, f'Cuti {leave.employee.nama} disetujui.')
     return redirect('leave_list')
 
@@ -130,6 +133,7 @@ def leave_reject(request, pk):
 
     catatan = request.POST.get('catatan_approval', '')
     engine.reject(leave, request.user, catatan=catatan)
+    send_leave_notification(leave, action='rejected')
     messages.warning(request, f'Cuti {leave.employee.nama} ditolak.')
 
 

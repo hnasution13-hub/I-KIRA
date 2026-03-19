@@ -284,3 +284,8 @@ TRIAL_DURASI_HARI = 30          # Durasi default trial (hari)
 SITE_URL    = os.environ.get('SITE_URL',    'http://localhost:8000')
 SALES_WA    = os.environ.get('SALES_WA',    '6281234567890')
 SALES_EMAIL = os.environ.get('SALES_EMAIL', 'sales@hris-smartdesk.com')
+
+# Daftar email HR yang menerima notifikasi cuti & kontrak
+# Isi env var HR_EMAIL_LIST dengan format: hr@perusahaan.com,manager@perusahaan.com
+_hr_emails = os.environ.get('HR_EMAIL_LIST', '')
+HR_EMAIL_LIST = [e.strip() for e in _hr_emails.split(',') if e.strip()]

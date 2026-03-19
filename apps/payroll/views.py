@@ -13,6 +13,13 @@ from apps.employees.models import Employee, JobSite
 from apps.core.utils import get_company_qs, get_employee_related_qs
 from apps.attendance.models import Attendance, Holiday
 from apps.core.decorators import hr_required, manager_required
+from utils.email_sender import send_payslip_email
+from utils.email_sender import send_payslip_email
+from utils.email_sender import send_payslip_email
+from utils.email_sender import send_payslip_email
+from utils.email_sender import send_payslip_email
+from utils.email_sender import send_payslip_email
+from utils.email_sender import send_payslip_email
 from utils.payroll_calculator import PayrollCalculator
 
 
@@ -327,7 +334,14 @@ def payroll_detail(request, pk):
             payroll.status = 'PAID'
             payroll.payment_date = date.today()
             payroll.save()
-            messages.success(request, 'Payroll ditandai sudah dibayar.')
+            # Kirim slip gaji ke semua karyawan yang punya email
+            sent, skipped = 0, 0
+            for detail in details:
+                if send_payslip_email(detail):
+                    sent += 1
+                else:
+                    skipped += 1
+            messages.success(request, f'Payroll ditandai sudah dibayar. Slip gaji terkirim ke {sent} karyawan ({skipped} tanpa email).')
         return redirect('payroll_detail', pk=pk)
 
     site_summaries = payroll.site_summaries.all()
