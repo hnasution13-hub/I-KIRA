@@ -22,11 +22,31 @@ def profile_doc_path(instance, filename):
     return f'candidate_profile/{instance.candidate_id}/{field_name}_{filename}'
 
 
-def _doc_upload(subdir):
-    def _path(instance, filename):
-        ext = filename.rsplit('.', 1)[-1]
-        return f'candidate_profile/{instance.candidate_id}/{subdir}.{ext}'
-    return _path
+# Fungsi upload individual — menggantikan closure _doc_upload
+# Django migration serializer tidak bisa serialize fungsi hasil closure
+def upload_foto(instance, filename):
+    ext = filename.rsplit('.', 1)[-1]
+    return f'candidate_profile/{instance.candidate_id}/foto.{ext}'
+
+
+def upload_ktp(instance, filename):
+    ext = filename.rsplit('.', 1)[-1]
+    return f'candidate_profile/{instance.candidate_id}/ktp.{ext}'
+
+
+def upload_ijazah(instance, filename):
+    ext = filename.rsplit('.', 1)[-1]
+    return f'candidate_profile/{instance.candidate_id}/ijazah.{ext}'
+
+
+def upload_skck(instance, filename):
+    ext = filename.rsplit('.', 1)[-1]
+    return f'candidate_profile/{instance.candidate_id}/skck.{ext}'
+
+
+def upload_npwp(instance, filename):
+    ext = filename.rsplit('.', 1)[-1]
+    return f'candidate_profile/{instance.candidate_id}/npwp.{ext}'
 
 
 def default_token_expires():
@@ -125,15 +145,15 @@ class CandidateProfile(models.Model):
     hp_darurat      = models.CharField(max_length=20, blank=True, verbose_name='No. HP Darurat')
 
     # ── Upload Dokumen ────────────────────────────────────────────────────────
-    foto            = models.ImageField(upload_to=_doc_upload('foto'),
+    foto            = models.ImageField(upload_to=upload_foto,
                                         null=True, blank=True, verbose_name='Foto')
-    scan_ktp        = models.FileField(upload_to=_doc_upload('ktp'),
+    scan_ktp        = models.FileField(upload_to=upload_ktp,
                                        null=True, blank=True, verbose_name='Scan KTP')
-    scan_ijazah     = models.FileField(upload_to=_doc_upload('ijazah'),
+    scan_ijazah     = models.FileField(upload_to=upload_ijazah,
                                        null=True, blank=True, verbose_name='Scan Ijazah')
-    scan_skck       = models.FileField(upload_to=_doc_upload('skck'),
+    scan_skck       = models.FileField(upload_to=upload_skck,
                                        null=True, blank=True, verbose_name='Scan SKCK')
-    scan_npwp       = models.FileField(upload_to=_doc_upload('npwp'),
+    scan_npwp       = models.FileField(upload_to=upload_npwp,
                                        null=True, blank=True, verbose_name='Scan NPWP')
 
     created_at      = models.DateTimeField(auto_now_add=True)

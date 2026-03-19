@@ -203,7 +203,8 @@ class PsikotesResult(models.Model):
     candidate   = models.OneToOneField(
         'recruitment.Candidate',
         on_delete=models.CASCADE,
-        related_name='psychotest_result'
+        related_name='psychotest_result',
+        null=True, blank=True,
     )
 
     # Skor per kategori (0-100)
