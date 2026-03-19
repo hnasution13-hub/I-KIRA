@@ -243,7 +243,9 @@ if _RESEND_API_KEY:
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@i-kira.com')
+# Sementara pakai onboarding@resend.dev sampai domain i-kira.com diverifikasi di Resend
+# Setelah domain siap, ubah env var DEFAULT_FROM_EMAIL ke: noreply@i-kira.com
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'onboarding@resend.dev')
 
 # Django auth redirect override
 LOGIN_URL = '/login/'
