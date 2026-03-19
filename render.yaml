@@ -23,3 +23,7 @@ services:
         value: 628XXXXXXXXXX
       - key: SALES_EMAIL
         value: sales@ikira.id
+      - key: RESEND_API_KEY
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: noreply@i-kira.com

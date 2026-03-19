@@ -230,16 +230,20 @@ BRAND_COLOR = '#c40000'
 CONTRACT_EXPIRY_WARNING_DAYS = 30
 PROBATION_END_WARNING_DAYS = 14
 
-# ── Email (console untuk development, ganti ke SMTP di production) ────────────
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@hris-smartdesk.com'
-# Untuk production, ganti ke:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+# ── Email ─────────────────────────────────────────────────────────────────────
+# Production: kirim via Resend API (anymail)
+# Development/fallback: console backend jika RESEND_API_KEY tidak di-set
+_RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+
+if _RESEND_API_KEY:
+    EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+    ANYMAIL = {
+        'RESEND_API_KEY': _RESEND_API_KEY,
+    }
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@i-kira.com')
 
 # Django auth redirect override
 LOGIN_URL = '/login/'
