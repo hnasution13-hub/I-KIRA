@@ -165,7 +165,7 @@ def periode_create(request):
 
 @login_required
 def periode_edit(request, pk):
-    p = get_object_or_404(PeriodePenilaian, pk=pk)
+    p = get_object_or_404(PeriodePenilaian, pk=pk, **({'company': request.company} if request.company else {}))
     if request.method == 'POST':
         p.nama            = request.POST['nama']
         p.tipe            = request.POST['tipe']
@@ -182,8 +182,7 @@ def periode_edit(request, pk):
 @login_required
 @require_POST
 def periode_delete(request, pk):
-    p = get_object_or_404(PeriodePenilaian, pk=pk)
-    p.delete()
+    p = get_object_or_404(PeriodePenilaian, pk=pk, **({'company': request.company} if request.company else {}))
     messages.success(request, 'Periode dihapus.')
     return redirect('periode_list')
 
@@ -223,7 +222,7 @@ def kpi_template_create(request):
 
 @login_required
 def kpi_template_edit(request, pk):
-    tmpl = get_object_or_404(KPITemplate, pk=pk)
+    tmpl = get_object_or_404(KPITemplate, pk=pk, **({'company': request.company} if request.company else {}))
     if request.method == 'POST':
         tmpl.nama      = request.POST['nama']
         tmpl.deskripsi = request.POST.get('deskripsi', '')
@@ -287,8 +286,8 @@ def penilaian_create(request):
     if request.method == 'POST':
         emp_id     = request.POST['employee_id']
         periode_id = request.POST['periode_id']
-        employee   = get_object_or_404(Employee, pk=emp_id)
-        periode    = get_object_or_404(PeriodePenilaian, pk=periode_id)
+        employee   = get_object_or_404(Employee, pk=emp_id, **({'company': request.company} if request.company else {}))
+        periode    = get_object_or_404(PeriodePenilaian, pk=periode_id, **({'company': request.company} if request.company else {}))
 
         if PenilaianKaryawan.objects.filter(employee=employee, periode=periode).exists():
             messages.error(request, f'Penilaian {employee.nama} untuk periode {periode.nama} sudah ada.')
@@ -350,7 +349,7 @@ def penilaian_create(request):
 def penilaian_detail(request, pk):
     penilaian = get_object_or_404(
         PenilaianKaryawan.objects.select_related('employee', 'periode', 'atasan'),
-        pk=pk,
+        pk=pk, **({'company': request.company} if request.company else {})
     )
     kpi_items    = penilaian.kpi_items.all()
     review_items = penilaian.review_items.all()
@@ -377,7 +376,7 @@ def penilaian_detail(request, pk):
 
 @login_required
 def penilaian_input_kpi(request, pk):
-    penilaian = get_object_or_404(PenilaianKaryawan, pk=pk)
+    penilaian = get_object_or_404(PenilaianKaryawan, pk=pk, **({'company': request.company} if request.company else {}))
     if penilaian.status not in ['draft', 'rejected']:
         messages.warning(request, 'Penilaian tidak bisa diedit pada status ini.')
         return redirect('penilaian_detail', pk=pk)
@@ -422,8 +421,7 @@ def penilaian_review_atasan(request, pk):
     Atasan mengisi review kualitatif & approve/reject via ApprovalEngine.
     Akses: HR, atasan jabatan (dari ApprovalMatrix / hierarki), atau developer.
     """
-    penilaian = get_object_or_404(PenilaianKaryawan, pk=pk)
-    engine    = _approval_engine(penilaian)
+    penilaian = get_object_or_404(PenilaianKaryawan, pk=pk, **({'company': request.company} if request.company else {}))
 
     if not engine.can_approve(request.user):
         messages.error(request, 'Anda tidak berwenang mereview penilaian ini.')
@@ -485,8 +483,7 @@ def penilaian_review_atasan(request, pk):
 @login_required
 @require_POST
 def penilaian_delete(request, pk):
-    p = get_object_or_404(PenilaianKaryawan, pk=pk)
-    p.delete()
+    p = get_object_or_404(PenilaianKaryawan, pk=pk, **({'company': request.company} if request.company else {}))
     messages.success(request, 'Penilaian dihapus.')
     return redirect('penilaian_list')
 
@@ -498,7 +495,7 @@ def penilaian_delete(request, pk):
 @login_required
 @require_POST
 def kpi_item_add(request, penilaian_pk):
-    penilaian = get_object_or_404(PenilaianKaryawan, pk=penilaian_pk)
+    penilaian = get_object_or_404(PenilaianKaryawan, pk=penilaian_pk, **({'company': request.company} if request.company else {}))
     KPIItem.objects.create(
         penilaian = penilaian,
         nama_kpi  = request.POST.get('nama_kpi', 'KPI Baru'),
@@ -514,7 +511,7 @@ def kpi_item_add(request, penilaian_pk):
 @login_required
 @require_POST
 def kpi_item_delete(request, pk):
-    item = get_object_or_404(KPIItem, pk=pk)
+    item = get_object_or_404(KPIItem, pk=pk, penilaian__company=request.company) if request.company else get_object_or_404(KPIItem, pk=pk)
     penilaian_pk = item.penilaian_id
     item.delete()
     messages.success(request, 'KPI dihapus.')

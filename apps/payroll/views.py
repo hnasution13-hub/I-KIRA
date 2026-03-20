@@ -43,7 +43,7 @@ def salary_list(request):
 @login_required
 @hr_required
 def salary_form(request, employee_id=None):
-    employee = get_object_or_404(Employee, pk=employee_id) if employee_id else None
+    employee = get_object_or_404(Employee, pk=employee_id, **({'company': request.company} if request.company else {})) if employee_id else None
     instance = None
     if employee:
         try:
@@ -53,7 +53,7 @@ def salary_form(request, employee_id=None):
 
     if request.method == 'POST':
         emp_id = request.POST.get('employee_id') or employee_id
-        emp = get_object_or_404(Employee, pk=emp_id)
+        emp = get_object_or_404(Employee, pk=emp_id, **({'company': request.company} if request.company else {}))
 
         def intval(key):
             try: return int(request.POST.get(key, 0) or 0)
@@ -320,7 +320,7 @@ def payroll_generate(request):
 @login_required
 @hr_required
 def payroll_detail(request, pk):
-    payroll = get_object_or_404(Payroll, pk=pk)
+    payroll = get_object_or_404(Payroll, pk=pk, **({'company': request.company} if request.company else {}))
     details = PayrollDetail.objects.filter(payroll=payroll).select_related(
         'employee', 'employee__department', 'employee__jabatan', 'employee__job_site'
     )
@@ -439,7 +439,7 @@ def payroll_site_summary(request):
 @login_required
 @hr_required
 def payslip(request, detail_pk):
-    detail = get_object_or_404(PayrollDetail, pk=detail_pk)
+    detail = get_object_or_404(PayrollDetail, pk=detail_pk, payroll__company=request.company) if request.company else get_object_or_404(PayrollDetail, pk=detail_pk)
     # FIX P1: Gunakan template standalone tanpa sidebar untuk cetak
     return render(request, 'payroll/payslip_print.html', {'detail': detail})
 
@@ -451,8 +451,7 @@ def export_payroll_rekap_excel(request, pk):
     from openpyxl.styles import Font, PatternFill, Alignment
     from django.http import HttpResponse
 
-    payroll = get_object_or_404(Payroll, pk=pk)
-    details = payroll.details.select_related('employee__department', 'employee__jabatan').order_by('employee__nama')
+    payroll = get_object_or_404(Payroll, pk=pk, **({'company': request.company} if request.company else {}))
 
     wb = openpyxl.Workbook()
     ws = wb.active

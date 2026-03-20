@@ -89,7 +89,7 @@ def sp_create(request):
     violation  = None
     violation_id = request.GET.get('violation') or request.POST.get('violation_id')
     if violation_id:
-        violation = get_object_or_404(Violation, pk=violation_id)
+        violation = get_object_or_404(Violation, pk=violation_id, **({'company': request.company} if request.company else {}))
 
     # Employee dari violation atau dari GET param
     employee   = None
@@ -97,7 +97,7 @@ def sp_create(request):
     if violation:
         employee = violation.employee
     elif employee_id:
-        employee = get_object_or_404(Employee, pk=employee_id)
+        employee = get_object_or_404(Employee, pk=employee_id, **({'company': request.company} if request.company else {}))
 
     # Hitung SP aktif & saran level
     sp_aktif        = _get_sp_aktif(employee) if employee else []
@@ -184,7 +184,7 @@ def sp_create(request):
 
 @login_required
 def sp_detail(request, pk):
-    sp      = get_object_or_404(SuratPeringatan, pk=pk)
+    sp      = get_object_or_404(SuratPeringatan, pk=pk, **({'company': request.company} if request.company else {}))
     history = SuratPeringatan.objects.filter(
         employee=sp.employee
     ).order_by('tanggal_sp')
@@ -199,8 +199,7 @@ def sp_detail(request, pk):
 
 @login_required
 def sp_print(request, pk):
-    sp = get_object_or_404(SuratPeringatan, pk=pk)
-    return render(request, 'industrial/sp_print.html', {'sp': sp})
+    sp = get_object_or_404(SuratPeringatan, pk=pk, **({'company': request.company} if request.company else {}))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -265,7 +264,7 @@ def surat_phk_list(request):
 def surat_phk_create(request):
     company = _get_company(request)
     pb_id   = request.GET.get('pb') or request.POST.get('pb_id')
-    pb      = get_object_or_404(PerjanjianBersama, pk=pb_id) if pb_id else None
+    pb      = get_object_or_404(PerjanjianBersama, pk=pb_id, **({'company': request.company} if request.company else {})) if pb_id else None
 
     # Cegah duplikat
     if pb and hasattr(pb, 'surat_phk'):
@@ -331,13 +330,13 @@ def surat_phk_create(request):
 
 @login_required
 def surat_phk_detail(request, pk):
-    surat = get_object_or_404(SuratPHK, pk=pk)
+    surat = get_object_or_404(SuratPHK, pk=pk, **({'company': request.company} if request.company else {}))
     return render(request, 'industrial/surat_phk_detail.html', {'surat': surat})
 
 
 @login_required
 def surat_phk_print(request, pk):
-    surat = get_object_or_404(SuratPHK, pk=pk)
+    surat = get_object_or_404(SuratPHK, pk=pk, **({'company': request.company} if request.company else {}))
     return render(request, 'industrial/surat_phk_print.html', {'surat': surat})
 
 
@@ -363,7 +362,7 @@ def skk_list(request):
 def skk_create(request):
     company     = _get_company(request)
     employee_id = request.GET.get('employee') or request.POST.get('employee_id')
-    employee    = get_object_or_404(Employee, pk=employee_id) if employee_id else None
+    employee    = get_object_or_404(Employee, pk=employee_id, **({'company': request.company} if request.company else {})) if employee_id else None
 
     if request.method == 'POST' and employee:
         try:
@@ -412,11 +411,11 @@ def skk_create(request):
 
 @login_required
 def skk_detail(request, pk):
-    skk = get_object_or_404(SuratKeteranganKerja, pk=pk)
+    skk = get_object_or_404(SuratKeteranganKerja, pk=pk, **({'company': request.company} if request.company else {}))
     return render(request, 'industrial/skk_detail.html', {'skk': skk})
 
 
 @login_required
 def skk_print(request, pk):
-    skk = get_object_or_404(SuratKeteranganKerja, pk=pk)
+    skk = get_object_or_404(SuratKeteranganKerja, pk=pk, **({'company': request.company} if request.company else {}))
     return render(request, 'industrial/skk_print.html', {'skk': skk})

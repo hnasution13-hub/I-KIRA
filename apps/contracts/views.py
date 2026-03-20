@@ -16,15 +16,15 @@ def contract_list(request):
 
 @login_required
 def contract_detail(request, pk):
-    contract = get_object_or_404(Contract, pk=pk)
+    contract = get_object_or_404(Contract, pk=pk, **({'company': request.company} if request.company else {}))
     return render(request, 'contracts/contract_detail.html', {'contract': contract})
 
 
 @login_required
 def contract_form(request, pk=None):
-    instance = get_object_or_404(Contract, pk=pk) if pk else None
+    instance = get_object_or_404(Contract, pk=pk, **({'company': request.company} if pk and request.company else {})) if pk else None
     if request.method == 'POST':
-        emp = get_object_or_404(Employee, pk=request.POST.get('employee'))
+        emp = get_object_or_404(Employee, pk=request.POST.get('employee'), **({'company': request.company} if request.company else {}))
         data = {
             'employee': emp,
             'tipe_kontrak': request.POST.get('tipe_kontrak'),
@@ -75,7 +75,7 @@ def contract_expiring(request):
 @login_required
 def contract_renew(request, pk):
     """Perpanjang kontrak: buat kontrak baru pre-filled dari kontrak lama, tandai lama sebagai Renewed."""
-    old_contract = get_object_or_404(Contract, pk=pk)
+    old_contract = get_object_or_404(Contract, pk=pk, **({'company': request.company} if request.company else {}))
 
     if request.method == 'POST':
         emp = old_contract.employee
@@ -108,7 +108,7 @@ def contract_renew(request, pk):
 @login_required
 @hr_required
 def contract_delete(request, pk):
-    contract = get_object_or_404(Contract, pk=pk)
+    contract = get_object_or_404(Contract, pk=pk, **({'company': request.company} if request.company else {}))
     if request.method == 'POST':
         nama = contract.employee.nama
         contract.delete()

@@ -27,14 +27,17 @@ logger = logging.getLogger(__name__)
 @login_required
 @addon_required('recruitment')
 def mprf_list(request):
+    company = getattr(request, 'company', None)
     mprfs = ManpowerRequest.objects.select_related('department', 'jabatan').order_by('-created_at')
+    if company:
+        mprfs = mprfs.filter(company=company)
     return render(request, 'recruitment/manpower_list.html', {'mprfs': mprfs})
 
 
 @login_required
 @addon_required('recruitment')
 def mprf_form(request, pk=None):
-    instance = get_object_or_404(ManpowerRequest, pk=pk) if pk else None
+    instance = get_object_or_404(ManpowerRequest, pk=pk, **({'company': request.company} if pk and request.company else {})) if pk else None
 
     from apps.core.models import Company
     company = getattr(request, 'company', None)
@@ -75,7 +78,7 @@ def mprf_form(request, pk=None):
 @login_required
 @manager_required
 def mprf_approve(request, pk):
-    mprf = get_object_or_404(ManpowerRequest, pk=pk)
+    mprf = get_object_or_404(ManpowerRequest, pk=pk, **({'company': request.company} if request.company else {}))
     mprf.status = 'Approved'
     mprf.approved_by = request.user.get_full_name() or request.user.username
     from django.utils import timezone
@@ -95,6 +98,9 @@ def candidate_list(request):
     from django.core.paginator import Paginator
 
     qs = Candidate.objects.select_related('mprf')
+    company = getattr(request, 'company', None)
+    if company:
+        qs = qs.filter(mprf__company=company)
 
     # ── Filter: cari nama / email ─────────────────────────────────────────────
     q_search = request.GET.get('q', '').strip()
@@ -144,7 +150,7 @@ def candidate_list(request):
 @login_required
 @addon_required('recruitment')
 def candidate_form(request, pk=None):
-    instance = get_object_or_404(Candidate, pk=pk) if pk else None
+    instance = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if pk and request.company else {})) if pk else None
     if request.method == 'POST':
         data = {
             'mprf_id': request.POST.get('mprf') or None,
@@ -187,7 +193,7 @@ def candidate_detail(request, pk):
     )
     from utils.psychotest_seed import DISC_DESKRIPSI
 
-    candidate = get_object_or_404(Candidate, pk=pk)
+    candidate = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if request.company else {}))
 
     # ── Psikotes ──────────────────────────────────────────────────────────────
     psy_session = (
@@ -298,7 +304,7 @@ def candidate_detail(request, pk):
 
 @login_required
 def candidate_print(request, pk):
-    candidate = get_object_or_404(Candidate, pk=pk)
+    candidate = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if request.company else {}))
     return render(request, 'recruitment/candidate_print.html', {'candidate': candidate})
 
 
@@ -306,8 +312,7 @@ def candidate_print(request, pk):
 @require_POST
 def candidate_update_status(request, pk):
     """Update status kandidat — dengan auto-close MPRF & notifikasi."""
-    candidate = get_object_or_404(Candidate, pk=pk)
-    status = request.POST.get('status', '').strip()
+    candidate = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if request.company else {}))
     valid_statuses = dict(Candidate.STATUS_CHOICES)
 
     if status and status in valid_statuses:
@@ -354,14 +359,17 @@ def candidate_update_status(request, pk):
 @login_required
 @addon_required('recruitment')
 def offering_list(request):
+    company = getattr(request, 'company', None)
     offerings = OfferingLetter.objects.select_related('candidate', 'template').order_by('-tanggal_surat')
+    if company:
+        offerings = offerings.filter(candidate__mprf__company=company)
     return render(request, 'recruitment/offering_list.html', {'offerings': offerings})
 
 
 @login_required
 @hr_required
 def offering_form(request, pk=None):
-    instance = get_object_or_404(OfferingLetter, pk=pk) if pk else None
+    instance = get_object_or_404(OfferingLetter, pk=pk, **({'candidate__mprf__company': request.company} if pk and request.company else {})) if pk else None
     setting = CompanySetting.get()
     templates = OfferingTemplate.objects.all()
     default_tpl = templates.filter(is_default=True).first()
@@ -440,7 +448,7 @@ def offering_print(request, pk):
     """Render halaman print/preview offering letter."""
     ol = get_object_or_404(
         OfferingLetter.objects.select_related('candidate', 'template', 'department'),
-        pk=pk
+        pk=pk, **({'candidate__mprf__company': request.company} if request.company else {})
     )
     setting = CompanySetting.get()
     tpl = ol.template or OfferingTemplate.objects.filter(is_default=True).first()
@@ -460,8 +468,7 @@ def offering_print(request, pk):
 @require_POST
 def offering_update_status(request, pk):
     """Update status offering letter (Accepted/Rejected/Sent)."""
-    ol = get_object_or_404(OfferingLetter, pk=pk)
-    new_status = request.POST.get('status', '').strip()
+    ol = get_object_or_404(OfferingLetter, pk=pk, **({'candidate__mprf__company': request.company} if request.company else {}))
     valid = [s[0] for s in OfferingLetter.STATUS_CHOICES]
     if new_status in valid:
         ol.status = new_status

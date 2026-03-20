@@ -31,7 +31,7 @@ def attendance_list(request):
 @login_required
 def check_in(request):
     if request.method == 'POST':
-        emp = get_object_or_404(Employee, pk=request.POST.get('employee'))
+        emp = get_object_or_404(Employee, pk=request.POST.get('employee'), **({'company': request.company} if request.company else {}))
         now = datetime.now()
         # FIX BUG-003: Gunakan select_for_update() + atomic transaction
         # untuk mencegah race condition saat dua request bersamaan
@@ -90,7 +90,7 @@ def leave_form(request):
 @require_POST
 @manager_required
 def leave_approve(request, pk):
-    leave = get_object_or_404(Leave, pk=pk)
+    leave = get_object_or_404(Leave, pk=pk, employee__company=request.company) if request.company else get_object_or_404(Leave, pk=pk)
     if leave.status != 'Pending':
         messages.warning(request, 'Cuti ini sudah diproses sebelumnya.')
         return redirect('leave_list')
@@ -116,7 +116,7 @@ def leave_approve(request, pk):
 @require_POST
 @manager_required
 def leave_reject(request, pk):
-    leave = get_object_or_404(Leave, pk=pk)
+    leave = get_object_or_404(Leave, pk=pk, employee__company=request.company) if request.company else get_object_or_404(Leave, pk=pk)
     if leave.status != 'Pending':
         messages.warning(request, 'Cuti ini sudah diproses sebelumnya.')
         return redirect('leave_list')
@@ -141,7 +141,7 @@ def leave_reject(request, pk):
 @login_required
 def leave_detail(request, pk):
     """Detail cuti + approval chain karyawan tersebut."""
-    leave = get_object_or_404(Leave, pk=pk)
+    leave = get_object_or_404(Leave, pk=pk, employee__company=request.company) if request.company else get_object_or_404(Leave, pk=pk)
     from utils.approval_engine import get_approval_chain_display, ApprovalEngine
     approval_chain = get_approval_chain_display(leave.employee, 'leave')
     engine = ApprovalEngine(
@@ -161,7 +161,7 @@ def leave_detail(request, pk):
 @require_POST
 def overtime_approve(request, pk):
     """Approve lembur via ApprovalEngine."""
-    att = get_object_or_404(Attendance, pk=pk)
+    att = get_object_or_404(Attendance, pk=pk, employee__company=request.company) if request.company else get_object_or_404(Attendance, pk=pk)
     from utils.approval_engine import ApprovalEngine
     engine = ApprovalEngine(
         company=att.employee.company,
@@ -182,7 +182,7 @@ def overtime_approve(request, pk):
 @require_POST
 def overtime_reject(request, pk):
     """Reject lembur via ApprovalEngine."""
-    att = get_object_or_404(Attendance, pk=pk)
+    att = get_object_or_404(Attendance, pk=pk, employee__company=request.company) if request.company else get_object_or_404(Attendance, pk=pk)
     from utils.approval_engine import ApprovalEngine
     engine = ApprovalEngine(
         company=att.employee.company,
@@ -410,7 +410,7 @@ def overtime_recalculate(request):
 @hr_required
 def overtime_form(request, pk=None):
     """Input / edit lembur manual pada data absensi."""
-    instance = get_object_or_404(Attendance, pk=pk) if pk else None
+    instance = get_object_or_404(Attendance, pk=pk, employee__company=request.company) if (pk and request.company) else (get_object_or_404(Attendance, pk=pk) if pk else None)
 
     if request.method == 'POST':
         form = OvertimeForm(request.POST)

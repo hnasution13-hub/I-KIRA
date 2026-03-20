@@ -34,17 +34,16 @@ def violation_list(request):
 
 @login_required
 def violation_detail(request, pk):
-    violation = get_object_or_404(Violation, pk=pk)
-    return render(request, 'industrial/violation_detail.html', {'violation': violation})
+    violation = get_object_or_404(Violation, pk=pk, **({'company': request.company} if request.company else {}))
 
 
 @login_required
 @hr_required
 def violation_form(request, pk=None):
-    instance = get_object_or_404(Violation, pk=pk) if pk else None
+    instance = get_object_or_404(Violation, pk=pk, **({'company': request.company} if pk and request.company else {})) if pk else None
 
     if request.method == 'POST':
-        employee = get_object_or_404(Employee, pk=request.POST.get('employee'))
+        employee = get_object_or_404(Employee, pk=request.POST.get('employee'), **({'company': request.company} if request.company else {}))
         data = {
             'employee'         : employee,
             'tipe_pelanggaran' : request.POST.get('tipe_pelanggaran'),
@@ -100,7 +99,7 @@ def severance_calculator(request):
             messages.error(request, 'Pilih karyawan terlebih dahulu.')
             return redirect('severance_calculator')
 
-        employee    = get_object_or_404(Employee, pk=emp_id)
+        employee    = get_object_or_404(Employee, pk=emp_id, **({'company': request.company} if request.company else {}))
         tanggal_phk = request.POST.get('tanggal_phk', '').strip()
         alasan_phk  = request.POST.get('alasan_phk', 'PHK Perusahaan')
         dasar_pasal = request.POST.get('dasar_pasal', '').strip()
@@ -215,7 +214,7 @@ def severance_calculator(request):
 
 @login_required
 def severance_detail(request, pk):
-    severance = get_object_or_404(Severance, pk=pk)
+    severance = get_object_or_404(Severance, pk=pk, **({'company': request.company} if request.company else {}))
     return render(request, 'industrial/severance_detail.html', {'severance': severance})
 
 
@@ -254,7 +253,7 @@ def pb_create(request):
     severance    = None
 
     if severance_id:
-        severance = get_object_or_404(Severance, pk=severance_id)
+        severance = get_object_or_404(Severance, pk=severance_id, **({'company': request.company} if request.company else {}))
 
     # ── STEP 2: Form komponen ──────────────────────────────────────────────
     if request.method == 'POST' and severance and 'step' in request.POST:
@@ -394,7 +393,7 @@ def pb_create(request):
 @login_required
 @hr_required
 def pb_edit(request, pk):
-    pb        = get_object_or_404(PerjanjianBersama, pk=pk)
+    pb        = get_object_or_404(PerjanjianBersama, pk=pk, **({'company': request.company} if request.company else {}))
     severance = pb.severance
 
     if request.method == 'POST':
@@ -462,9 +461,8 @@ def pb_detail(request, pk):
     pb = get_object_or_404(
         PerjanjianBersama.objects.select_related(
             'employee', 'company', 'severance'
-        ), pk=pk
+        ), pk=pk, **({'company': request.company} if request.company else {})
     )
-    return render(request, 'industrial/pb_detail.html', {'pb': pb})
 
 
 @login_required
@@ -473,8 +471,7 @@ def pb_print(request, pk):
     pb = get_object_or_404(
         PerjanjianBersama.objects.select_related(
             'employee', 'company', 'severance'
-        ), pk=pk
+        ), pk=pk, **({'company': request.company} if request.company else {})
     )
-    pasal_info = PASAL_MAP.get(pb.dasar_pasal)
     pb.dasar_pasal_label = pasal_info['label'] if pasal_info else pb.dasar_pasal
     return render(request, 'industrial/pb_print.html', {'pb': pb})
