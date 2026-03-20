@@ -14,12 +14,6 @@ from apps.core.utils import get_company_qs, get_employee_related_qs
 from apps.attendance.models import Attendance, Holiday
 from apps.core.decorators import hr_required, manager_required
 from utils.email_sender import send_payslip_email
-from utils.email_sender import send_payslip_email
-from utils.email_sender import send_payslip_email
-from utils.email_sender import send_payslip_email
-from utils.email_sender import send_payslip_email
-from utils.email_sender import send_payslip_email
-from utils.email_sender import send_payslip_email
 from utils.payroll_calculator import PayrollCalculator
 
 
