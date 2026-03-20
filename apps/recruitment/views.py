@@ -150,16 +150,6 @@ def candidate_list(request):
 @login_required
 @addon_required('recruitment')
 def candidate_form(request, pk=None):
-    try:
-        return _candidate_form_inner(request, pk)
-    except Exception as _e:
-        import traceback as _tb
-        logger.error('candidate_form error [pk=%s method=%s]: %s -- %s',
-                     pk, request.method, _e, _tb.format_exc())
-        raise
-
-
-def _candidate_form_inner(request, pk=None):
     instance = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if pk and request.company else {})) if pk else None
     if request.method == 'POST':
         data = {
@@ -324,6 +314,7 @@ def candidate_update_status(request, pk):
     """Update status kandidat — dengan auto-close MPRF & notifikasi."""
     candidate = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if request.company else {}))
     valid_statuses = dict(Candidate.STATUS_CHOICES)
+    status = request.POST.get('status', '').strip()
 
     if status and status in valid_statuses:
         candidate.status = status
@@ -480,6 +471,7 @@ def offering_update_status(request, pk):
     """Update status offering letter (Accepted/Rejected/Sent)."""
     ol = get_object_or_404(OfferingLetter, pk=pk, **({'candidate__mprf__company': request.company} if request.company else {}))
     valid = [s[0] for s in OfferingLetter.STATUS_CHOICES]
+    new_status = request.POST.get('status', '').strip()
     if new_status in valid:
         ol.status = new_status
         ol.save(update_fields=['status'])
