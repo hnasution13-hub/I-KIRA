@@ -160,9 +160,10 @@ if _CLOUDINARY_NAME and _CLOUDINARY_KEY and _CLOUDINARY_SECRET:
     )
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': _CLOUDINARY_NAME,
-        'API_KEY':    _CLOUDINARY_KEY,
-        'API_SECRET': _CLOUDINARY_SECRET,
+        'CLOUD_NAME':    _CLOUDINARY_NAME,
+        'API_KEY':       _CLOUDINARY_KEY,
+        'API_SECRET':    _CLOUDINARY_SECRET,
+        'RESOURCE_TYPE': 'raw',  # FIX: izinkan upload PDF, DOCX, XLSX, dll
     }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
