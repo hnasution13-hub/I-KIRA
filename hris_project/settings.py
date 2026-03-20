@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'drf_spectacular',  # API docs / OpenAPI
+    'anymail',          # Email via Resend API
     # Local apps
     'apps.core',
     'apps.employees',
