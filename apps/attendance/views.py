@@ -541,6 +541,9 @@ def attendance_bulk(request):
 
     existing = {
         a.employee_id: a
+        for a in Attendance.objects.filter(tanggal=tgl_view, employee__company=company)
+    } if company else {
+        a.employee_id: a
         for a in Attendance.objects.filter(tanggal=tgl_view)
     }
 

@@ -68,4 +68,6 @@ class LocationHierarchyView(LoginRequiredMixin, ListView):
     context_object_name = 'locations'
 
     def get_queryset(self):
-        return Location.objects.filter(parent__isnull=True).prefetch_related('children')
+        company = getattr(self.request, 'company', None)
+        qs = Location.objects.filter(parent__isnull=True).prefetch_related('children')
+        return qs.filter(company=company) if company else qs

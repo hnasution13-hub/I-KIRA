@@ -86,5 +86,9 @@ class CategoryCustomDeleteView(LoginRequiredMixin, DeleteView):
 @login_required
 def load_subcategories(request):
     parent_id = request.GET.get('parent_id')
-    categories = Category.objects.filter(parent_id=parent_id).values('id', 'name', 'code')
+    company = getattr(request, 'company', None)
+    qs = Category.objects.filter(parent_id=parent_id)
+    if company:
+        qs = qs.filter(company=company)
+    categories = qs.values('id', 'name', 'code')
     return JsonResponse(list(categories), safe=False)
