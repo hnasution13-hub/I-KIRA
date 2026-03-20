@@ -1863,6 +1863,260 @@ def menu_seed_kontrak():
 #  MENU UTAMA
 # ══════════════════════════════════════════════════════════════════════════════
 
+def menu_seed_salary_benefit():
+    header('SEED SALARY BENEFIT (Upah & Tunjangan)')
+    from apps.payroll.models import SalaryBenefit
+
+    targets = pilih_companies('Seed salary benefit untuk company')
+    if not targets:
+        return
+
+    company_ids  = [c.pk for c in targets]
+    employees    = list(Employee.objects.filter(company__in=company_ids, status='Aktif')
+                        .select_related('jabatan'))
+    existing_ids = set(SalaryBenefit.objects.filter(
+        employee__in=[e.pk for e in employees]
+    ).values_list('employee_id', flat=True))
+    targets_emp  = [e for e in employees if e.pk not in existing_ids]
+
+    info(f'{len(employees)} karyawan aktif, {len(existing_ids)} sudah punya SalaryBenefit.')
+    if not targets_emp:
+        warn('Semua karyawan sudah punya SalaryBenefit.')
+        return
+    info(f'{len(targets_emp)} karyawan akan di-seed.')
+
+    print(f'\n{C}  Konfigurasi default:{RST}')
+    jenis_idx    = pilih_menu(['bulanan', 'mingguan', 'harian'], title='Jenis Pengupahan')
+    jenis_map    = ['bulanan', 'mingguan', 'harian']
+    jenis        = jenis_map[jenis_idx]
+    hari_idx     = pilih_menu(['5 Hari (Senin–Jumat)', '6 Hari (Senin–Sabtu)'], title='Hari Kerja')
+    hari_kerja   = 5 if hari_idx == 0 else 6
+    status_idx   = pilih_menu(['reguler', 'all_in'], title='Status Gaji')
+    status_gaji  = 'reguler' if status_idx == 0 else 'all_in'
+    pph_tangggung = confirm('PPh21 ditanggung perusahaan?')
+
+    print(f'\n{C}  Range tunjangan (% dari gaji pokok) — isi 0,0 untuk skip:{RST}')
+    def _pct_range(label, d1, d2):
+        while True:
+            try:
+                a = int(input_prompt(f'  {label} min %', default=str(d1)))
+                b = int(input_prompt(f'  {label} max %', default=str(d2)))
+                if a < 0 or b < 0 or a > b: err('Range tidak valid.'); continue
+                return a, b
+            except ValueError: err('Angka saja.')
+
+    pct_jabatan    = _pct_range('Tunjangan Jabatan',        5, 20)
+    pct_tinggal    = _pct_range('Tunjangan Tempat Tinggal', 0, 15)
+    pct_keahlian   = _pct_range('Tunjangan Keahlian',       0, 10)
+    pct_komunikasi = _pct_range('Tunjangan Komunikasi',     0,  5)
+    pct_kesehatan  = _pct_range('Tunjangan Kesehatan',      0,  5)
+    pct_transport  = _pct_range('Tunjangan Transport',      3, 10)
+    pct_makan      = _pct_range('Tunjangan Makan',          2,  8)
+    pct_site       = _pct_range('Tunjangan Site',           0, 20)
+    pct_kehadiran  = _pct_range('Tunjangan Kehadiran',      0,  5)
+
+    print()
+    if not confirm(f'Generate SalaryBenefit untuk {len(targets_emp)} karyawan?'):
+        warn('Dibatalkan.'); return
+
+    def _calc(gaji, pct_range):
+        a, b = pct_range
+        if a == 0 and b == 0: return 0
+        pct = random.randint(a, b)
+        return round(gaji * pct / 100 / 1000) * 1000
+
+    bulk = []
+    for emp in targets_emp:
+        gaji = int(emp.gaji_pokok) if emp.gaji_pokok else 3_000_000
+        bulk.append(SalaryBenefit(
+            employee                   = emp,
+            jenis_pengupahan           = jenis,
+            hari_kerja_per_minggu      = hari_kerja,
+            status_gaji                = status_gaji,
+            gaji_pokok                 = gaji,
+            tunjangan_jabatan          = _calc(gaji, pct_jabatan),
+            tunjangan_tempat_tinggal   = _calc(gaji, pct_tinggal),
+            tunjangan_keahlian         = _calc(gaji, pct_keahlian),
+            tunjangan_komunikasi       = _calc(gaji, pct_komunikasi),
+            tunjangan_kesehatan        = _calc(gaji, pct_kesehatan),
+            tunjangan_transport        = _calc(gaji, pct_transport),
+            tunjangan_makan            = _calc(gaji, pct_makan),
+            tunjangan_site             = _calc(gaji, pct_site),
+            tunjangan_kehadiran        = _calc(gaji, pct_kehadiran),
+            pph21_ditanggung_perusahaan= pph_tangggung,
+            # BPJS otomatis (0 = hitung dari gaji pokok sesuai PP 36/2021)
+            bpjs_ketenagakerjaan_override = 0,
+            bpjs_kesehatan_override       = 0,
+            # Lembur otomatis (0 = gaji_pokok/173)
+            lembur_tarif_per_jam          = 0,
+            # Potongan absensi otomatis (0 = upah harian)
+            potongan_absensi              = 0,
+            potongan_lainnya              = 0,
+        ))
+
+    SalaryBenefit.objects.bulk_create(bulk, ignore_conflicts=True)
+    ok(f'{len(bulk)} SalaryBenefit berhasil dibuat.')
+    info('BPJS & lembur dihitung otomatis saat generate payroll.')
+
+
+def menu_seed_candidate_profile():
+    header('SEED PROFIL LENGKAP KANDIDAT')
+    from apps.recruitment.models import Candidate
+    from apps.recruitment.models_profile import CandidateProfile, CandidateAnak
+
+    targets = pilih_companies('Seed profil kandidat untuk company')
+    if not targets:
+        return
+
+    company_ids = [c.pk for c in targets]
+    candidates  = list(Candidate.objects.filter(mprf__company__in=company_ids))
+    # kandidat tanpa mprf (company tidak ter-filter) — ambil semua jika tidak ada
+    if not candidates:
+        candidates = list(Candidate.objects.all())
+
+    existing_ids = set(CandidateProfile.objects.filter(
+        candidate__in=[c.pk for c in candidates]
+    ).values_list('candidate_id', flat=True))
+    targets_cand = [c for c in candidates if c.pk not in existing_ids]
+
+    info(f'{len(candidates)} kandidat, {len(existing_ids)} sudah punya profil.')
+    if not targets_cand:
+        warn('Semua kandidat sudah punya profil.')
+        return
+    info(f'{len(targets_cand)} kandidat akan di-seed profil.')
+
+    if not confirm('Lanjutkan?'):
+        warn('Dibatalkan.'); return
+
+    _BANK      = ['BCA','BRI','BNI','Mandiri','BSI','CIMB Niaga','Danamon','BTN']
+    _AGAMA     = ['Islam','Islam','Islam','Kristen','Katolik','Hindu','Buddha']
+    _GOLDAR    = ['A','B','AB','O','A','O','B','O']
+    _ST_NIKAH  = ['Lajang','Lajang','Menikah','Menikah','Cerai']
+    _PTKP_L    = ['TK/0','K/0','K/1','K/2']
+    _PTKP_P    = ['TK/0','TK/0','K/0','K/1']
+    _PEND      = ['SMA/SMK','SMA/SMK','D3','D4/S1','D4/S1','S2']
+    _JALAN     = ['Jl. Merdeka','Jl. Sudirman','Jl. Ahmad Yani','Jl. Diponegoro',
+                  'Jl. Pahlawan','Jl. Pemuda','Jl. Kartini','Jl. Veteran']
+    _KELURAHAN = ['Kebayoran','Menteng','Tebet','Gambir','Senen','Lowokwaru','Blimbing']
+    _KECAMATAN = ['Kebayoran Baru','Menteng','Tebet','Gambir','Senen','Lowokwaru','Blimbing']
+    _HUB       = ['Istri','Suami','Ayah','Ibu','Kakak','Adik','Saudara']
+    _NAMA_DAR_L = ['Budi','Ahmad','Hendra','Agus','Wahyu']
+    _NAMA_DAR_P = ['Sari','Dewi','Rina','Ani','Wati']
+    _ANAK_L    = ['Bima','Arjuna','Raka','Dafa','Farhan']
+    _ANAK_P    = ['Naura','Kirana','Azahra','Nabila','Salsabila']
+
+    bulk_profile = []
+    bulk_anak    = []
+
+    for cand in targets_cand:
+        # Deteksi gender dari nama — heuristic sederhana
+        nama_lower = cand.nama.lower().split()[0] if cand.nama else ''
+        jk = 'P' if any(n in nama_lower for n in ['sari','dewi','putri','rina','ani',
+             'wati','fitri','nita','yuni','mega','novia','indah','ratna','ayu',
+             'bunga','dina','gita','hana','ira','julia','lina','mira','nisa']) else 'L'
+
+        st_nikah  = random.choice(_ST_NIKAH)
+        jml_anak  = random.randint(0, 3) if st_nikah == 'Menikah' else 0
+        tgl_lahir = date(random.randint(1980, 2000), random.randint(1,12), random.randint(1,28))
+        ptkp      = random.choice(_PTKP_L if jk == 'L' else _PTKP_P)
+        kota      = random.choice(_KOTA)
+        hub       = random.choice(_HUB)
+        pool_dar  = _NAMA_DAR_L if random.random() < 0.5 else _NAMA_DAR_P
+        nama_dar  = random.choice(pool_dar) + ' ' + random.choice(_NAMA_BELAKANG)
+
+        p = CandidateProfile(
+            candidate       = cand,
+            is_submitted    = True,
+            is_reviewed     = random.random() < 0.6,
+            tempat_lahir    = kota,
+            tanggal_lahir   = tgl_lahir,
+            jenis_kelamin   = jk,
+            agama           = random.choice(_AGAMA),
+            pendidikan      = random.choice(_PEND),
+            golongan_darah  = random.choice(_GOLDAR),
+            status_nikah    = st_nikah,
+            jumlah_anak     = jml_anak,
+            ptkp            = ptkp,
+            no_ktp          = ''.join([str(random.randint(0,9)) for _ in range(16)]),
+            no_kk           = ''.join([str(random.randint(0,9)) for _ in range(16)]),
+            no_npwp         = f'{random.randint(10,99)}.{random.randint(100,999)}.{random.randint(100,999)}.{random.randint(1,9)}-{random.randint(100,999)}.{random.randint(100,999)}',
+            no_bpjs_kes     = ''.join([str(random.randint(0,9)) for _ in range(13)]),
+            no_bpjs_tk      = ''.join([str(random.randint(0,9)) for _ in range(11)]),
+            no_rek          = ''.join([str(random.randint(0,9)) for _ in range(random.randint(10,13))]),
+            nama_bank       = random.choice(_BANK),
+            nama_rek        = cand.nama,
+            alamat          = f'{random.choice(_JALAN)} No.{random.randint(1,99)}',
+            rt              = f'{random.randint(1,20):03d}',
+            rw              = f'{random.randint(1,10):03d}',
+            kode_pos        = str(random.randint(10000, 99999)),
+            kecamatan       = random.choice(_KECAMATAN),
+            kelurahan       = random.choice(_KELURAHAN),
+            nama_darurat    = nama_dar,
+            hub_darurat     = hub,
+            hp_darurat      = f'08{random.randint(100000000, 999999999)}',
+        )
+        bulk_profile.append(p)
+
+        for urutan in range(1, jml_anak + 1):
+            jk_anak = random.choice(['L','P'])
+            bulk_anak.append((cand, urutan,
+                random.choice(_ANAK_L if jk_anak == 'L' else _ANAK_P),
+                jk_anak,
+                date(random.randint(2005,2020), random.randint(1,12), random.randint(1,28))))
+
+    CandidateProfile.objects.bulk_create(bulk_profile, ignore_conflicts=True)
+    ok(f'{len(bulk_profile)} profil kandidat berhasil dibuat.')
+
+    # Buat anak setelah profil tersimpan (butuh PK)
+    if bulk_anak:
+        profile_map = {p.candidate_id: p for p in
+                       CandidateProfile.objects.filter(candidate__in=[c.pk for c in targets_cand])}
+        anak_bulk = []
+        for cand, urutan, nama, jk_anak, tgl in bulk_anak:
+            prof = profile_map.get(cand.pk)
+            if prof:
+                anak_bulk.append(CandidateAnak(
+                    profile=prof, urutan=urutan, nama=nama,
+                    jenis_kelamin=jk_anak, tgl_lahir=tgl,
+                    no_bpjs_kes=''.join([str(random.randint(0,9)) for _ in range(13)])
+                ))
+        if anak_bulk:
+            CandidateAnak.objects.bulk_create(anak_bulk, ignore_conflicts=True)
+            ok(f'{len(anak_bulk)} data anak kandidat berhasil dibuat.')
+
+
+def menu_seed_lengkap():
+    header('SEED LENGKAP — ALL IN ONE')
+    info('Jalankan semua seed secara berurutan untuk test menyeluruh.')
+    info('Urutan: Company → Dept → Jabatan Preset → Sync → Dummy Karyawan → Absensi → Salary → Kontrak → Kandidat → Profil Kandidat → Asset')
+    print()
+    if not confirm('Lanjutkan seed lengkap? (akan masuk ke setiap menu secara berurutan)'):
+        warn('Dibatalkan.'); return
+
+    steps = [
+        ('Company',           menu_tambah_company),
+        ('Department',        menu_tambah_department),
+        ('Jabatan Preset',    menu_jabatan_preset),
+        ('Sync Dept→Jabatan', menu_sync_department_jabatan),
+        ('Karyawan Dummy',    menu_generate_dummy_karyawan),
+        ('Absensi',           menu_generate_absensi),
+        ('Salary Benefit',    menu_seed_salary_benefit),
+        ('Kontrak',           menu_seed_kontrak),
+        ('Kandidat',          menu_seed_kandidat),
+        ('Profil Kandidat',   menu_seed_candidate_profile),
+        ('Asset',             menu_seed_asset),
+    ]
+    for label, fn in steps:
+        print(f'\n{B}══ STEP: {label} ══{RST}')
+        try:
+            fn()
+        except Exception as e:
+            err(f'Step "{label}" error: {e}')
+            if not confirm('Lanjut ke step berikutnya?'):
+                break
+    ok('Seed lengkap selesai!')
+
+
 def main_menu():
     while True:
         header('i-Kira — Seed Data')
@@ -1884,25 +2138,31 @@ def main_menu():
             'Sync Department ke Jabatan',
             'Generate Karyawan Dummy',
             'Generate Absensi',
+            'Seed Salary Benefit (Upah & Tunjangan)',
             'Seed Kandidat Rekrutmen',
+            'Seed Profil Lengkap Kandidat',
             'Seed Kontrak Karyawan',
             'Seed Asset Management',
             'Lihat semua data',
+            'SEED LENGKAP (All-in-One)',
             'Keluar',
         ], title='Menu')
 
-        if   menu == 0: menu_tambah_company()
-        elif menu == 1: menu_tambah_department()
-        elif menu == 2: menu_tambah_jabatan()
-        elif menu == 3: menu_jabatan_preset()
-        elif menu == 4: menu_sync_department_jabatan()
-        elif menu == 5: menu_generate_dummy_karyawan()
-        elif menu == 6: menu_generate_absensi()
-        elif menu == 7: menu_seed_kandidat()
-        elif menu == 8: menu_seed_kontrak()
-        elif menu == 9: menu_seed_asset()
-        elif menu == 10: menu_lihat_data()
-        elif menu == 11:
+        if   menu == 0:  menu_tambah_company()
+        elif menu == 1:  menu_tambah_department()
+        elif menu == 2:  menu_tambah_jabatan()
+        elif menu == 3:  menu_jabatan_preset()
+        elif menu == 4:  menu_sync_department_jabatan()
+        elif menu == 5:  menu_generate_dummy_karyawan()
+        elif menu == 6:  menu_generate_absensi()
+        elif menu == 7:  menu_seed_salary_benefit()
+        elif menu == 8:  menu_seed_kandidat()
+        elif menu == 9:  menu_seed_candidate_profile()
+        elif menu == 10: menu_seed_kontrak()
+        elif menu == 11: menu_seed_asset()
+        elif menu == 12: menu_lihat_data()
+        elif menu == 13: menu_seed_lengkap()
+        elif menu == 14:
             print(f'\n{G}  Selesai. Sampai jumpa!{RST}\n')
             break
 
@@ -2406,6 +2666,9 @@ if __name__ == '__main__':
     parser.add_argument('--kontrak',    action='store_true', help='Langsung ke menu seed kontrak karyawan')
     parser.add_argument('--asset',      action='store_true', help='Langsung ke menu seed asset management')
     parser.add_argument('--list',       action='store_true', help='Langsung ke lihat data')
+    parser.add_argument('--salary',     action='store_true', help='Seed salary benefit karyawan')
+    parser.add_argument('--profil-kandidat', action='store_true', help='Seed profil lengkap kandidat')
+    parser.add_argument('--seed-all',   action='store_true', help='Seed lengkap all-in-one')
     args = parser.parse_args()
 
     try:
@@ -2416,9 +2679,12 @@ if __name__ == '__main__':
         elif getattr(args, 'sync_dept', False): menu_sync_department_jabatan()
         elif args.dummy:      menu_generate_dummy_karyawan()
         elif args.absensi:    menu_generate_absensi()
+        elif args.salary:     menu_seed_salary_benefit()
         elif args.kandidat:   menu_seed_kandidat()
+        elif getattr(args, 'profil_kandidat', False): menu_seed_candidate_profile()
         elif args.kontrak:    menu_seed_kontrak()
         elif args.asset:      menu_seed_asset()
+        elif getattr(args, 'seed_all', False): menu_seed_lengkap()
         elif args.list:       menu_lihat_data()
         else:                 main_menu()
     except KeyboardInterrupt:
