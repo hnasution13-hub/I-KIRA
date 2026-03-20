@@ -80,6 +80,10 @@ class Candidate(models.Model):
 
     mprf             = models.ForeignKey(ManpowerRequest, on_delete=models.CASCADE,
                                          related_name='candidates', null=True, blank=True)
+    company          = models.ForeignKey('core.Company', on_delete=models.CASCADE,
+                                         null=True, blank=True, related_name='candidates',
+                                         verbose_name='Perusahaan',
+                                         help_text='Diisi otomatis dari MPRF atau saat tambah manual.')
     nama             = models.CharField(max_length=200, verbose_name='Nama Kandidat')
     email            = models.EmailField(blank=True)
     no_hp            = models.CharField(max_length=20, blank=True)
