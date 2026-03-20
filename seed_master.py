@@ -1323,6 +1323,391 @@ def menu_lihat_data():
 #  MENU JABATAN PRESET — 114 Jabatan Industri
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  PRESET DEPARTMENT & JABATAN PER INDUSTRI
+# ══════════════════════════════════════════════════════════════════════════════
+
+DEPT_PRESET = {
+
+    'pertambangan': {
+        'label': '⛏  Pertambangan (Mining)',
+        'departments': [
+            ('Mining',                    'MIN',  'Operasi penambangan di pit'),
+            ('Civil & Maintenance',       'CIV',  'Pemeliharaan alat berat dan infrastruktur'),
+            ('Electric & Water Facility', 'EWF',  'Pengelolaan listrik dan utilitas air'),
+            ('Health Safety Environment', 'HSE',  'Keselamatan kerja dan lingkungan'),
+            ('Human Resources',           'HR',   'Manajemen SDM dan rekrutmen'),
+            ('General Affair',            'GA',   'Urusan umum dan fasilitas kantor'),
+            ('Logistic',                  'LOG',  'Pengelolaan gudang dan distribusi'),
+            ('Purchasing',                'PURCH','Pengadaan barang dan jasa'),
+            ('Finance & Accounting',      'FIN',  'Keuangan, akuntansi, dan pajak'),
+            ('Infrastructure Technology', 'IT',   'Infrastruktur teknologi informasi'),
+            ('Legal',                     'LGL',  'Urusan hukum dan kepatuhan'),
+            ('Security',                  'SEC',  'Keamanan area tambang'),
+        ],
+        'jabatan': [
+            # Mining
+            ('Operator ADT',               'Staff',           'Mining'),
+            ('Operator Excavator',         'Staff',           'Mining'),
+            ('Operator Dozer',             'Staff',           'Mining'),
+            ('Operator Grader',            'Staff',           'Mining'),
+            ('Operator Loader',            'Staff',           'Mining'),
+            ('Surveyor',                   'Staff',           'Mining'),
+            ('Mine Dispatcher',            'Staff',           'Mining'),
+            ('Drill & Blast Officer',      'Staff',           'Mining'),
+            ('Mine Engineer',              'Staff',           'Mining'),
+            ('Senior Mine Engineer',       'Senior Staff',    'Mining'),
+            ('Mine Foreman',               'Supervisor',      'Mining'),
+            ('Pit Supervisor',             'Supervisor',      'Mining'),
+            ('Mining Superintendent',      'Senior Supervisor','Mining'),
+            ('Mine Manager',               'Manager',         'Mining'),
+            # Civil & Maintenance
+            ('Mechanic',                   'Staff',           'Civil & Maintenance'),
+            ('Helper Mechanic',            'Staff',           'Civil & Maintenance'),
+            ('Welder',                     'Staff',           'Civil & Maintenance'),
+            ('Technician',                 'Staff',           'Civil & Maintenance'),
+            ('Maintenance Planner',        'Staff',           'Civil & Maintenance'),
+            ('Senior Mechanic',            'Senior Staff',    'Civil & Maintenance'),
+            ('Foreman Mechanic',           'Supervisor',      'Civil & Maintenance'),
+            ('Workshop Supervisor',        'Supervisor',      'Civil & Maintenance'),
+            ('Maintenance Superintendent', 'Senior Supervisor','Civil & Maintenance'),
+            ('Maintenance Manager',        'Manager',         'Civil & Maintenance'),
+            # Electric & Water Facility
+            ('Electrician',                'Staff',           'Electric & Water Facility'),
+            ('Genset Operator',            'Staff',           'Electric & Water Facility'),
+            ('Water Pump Operator',        'Staff',           'Electric & Water Facility'),
+            ('Electrical Technician',      'Staff',           'Electric & Water Facility'),
+            ('Electrical Engineer',        'Staff',           'Electric & Water Facility'),
+            ('Senior Electrical Engineer', 'Senior Staff',    'Electric & Water Facility'),
+            ('Electrical Supervisor',      'Supervisor',      'Electric & Water Facility'),
+            ('Electrical Superintendent',  'Senior Supervisor','Electric & Water Facility'),
+            ('Utility Manager',            'Manager',         'Electric & Water Facility'),
+            # HSE
+            ('Safety Patrol',              'Staff',           'Health Safety Environment'),
+            ('Firefighter',                'Staff',           'Health Safety Environment'),
+            ('Safety Officer',             'Staff',           'Health Safety Environment'),
+            ('Environmental Officer',      'Staff',           'Health Safety Environment'),
+            ('Senior Safety Officer',      'Senior Staff',    'Health Safety Environment'),
+            ('Safety Supervisor',          'Supervisor',      'Health Safety Environment'),
+            ('HSE Superintendent',         'Senior Supervisor','Health Safety Environment'),
+            ('HSE Manager',               'Manager',         'Health Safety Environment'),
+            # HR
+            ('HR Admin',                   'Staff',           'Human Resources'),
+            ('Recruitment Officer',        'Staff',           'Human Resources'),
+            ('Training Officer',           'Staff',           'Human Resources'),
+            ('HR Generalist',              'Senior Staff',    'Human Resources'),
+            ('HR Supervisor',              'Supervisor',      'Human Resources'),
+            ('HR Superintendent',          'Senior Supervisor','Human Resources'),
+            ('HR Manager',                'Manager',         'Human Resources'),
+            # GA
+            ('Office Boy',                 'Staff',           'General Affair'),
+            ('Driver',                     'Staff',           'General Affair'),
+            ('GA Officer',                 'Staff',           'General Affair'),
+            ('Mess & Camp Officer',        'Staff',           'General Affair'),
+            ('Senior GA Officer',          'Senior Staff',    'General Affair'),
+            ('GA Supervisor',              'Supervisor',      'General Affair'),
+            ('GA Manager',                'Manager',         'General Affair'),
+            # Logistic
+            ('Warehouse Helper',           'Staff',           'Logistic'),
+            ('Storekeeper',                'Staff',           'Logistic'),
+            ('Logistic Officer',           'Staff',           'Logistic'),
+            ('Senior Logistic Officer',    'Senior Staff',    'Logistic'),
+            ('Warehouse Supervisor',       'Supervisor',      'Logistic'),
+            ('Logistic Manager',          'Manager',         'Logistic'),
+            # Purchasing
+            ('Purchasing Admin',           'Staff',           'Purchasing'),
+            ('Procurement Officer',        'Staff',           'Purchasing'),
+            ('Senior Procurement Officer', 'Senior Staff',    'Purchasing'),
+            ('Procurement Supervisor',     'Supervisor',      'Purchasing'),
+            ('Procurement Manager',       'Manager',         'Purchasing'),
+            # Finance
+            ('Finance Admin',              'Staff',           'Finance & Accounting'),
+            ('Accountant',                 'Staff',           'Finance & Accounting'),
+            ('Tax Officer',                'Staff',           'Finance & Accounting'),
+            ('Senior Accountant',          'Senior Staff',    'Finance & Accounting'),
+            ('Finance Supervisor',         'Supervisor',      'Finance & Accounting'),
+            ('Finance Manager',           'Manager',         'Finance & Accounting'),
+            # IT
+            ('IT Support',                 'Staff',           'Infrastructure Technology'),
+            ('Network Engineer',           'Staff',           'Infrastructure Technology'),
+            ('System Administrator',       'Senior Staff',    'Infrastructure Technology'),
+            ('IT Supervisor',              'Supervisor',      'Infrastructure Technology'),
+            ('IT Manager',                'Manager',         'Infrastructure Technology'),
+            # Legal
+            ('Legal Admin',                'Staff',           'Legal'),
+            ('Legal Officer',              'Staff',           'Legal'),
+            ('Senior Legal Officer',       'Senior Staff',    'Legal'),
+            ('Legal Supervisor',           'Supervisor',      'Legal'),
+            ('Legal Manager',             'Manager',         'Legal'),
+            # Security
+            ('Security Guard',             'Staff',           'Security'),
+            ('Security Officer',           'Staff',           'Security'),
+            ('Senior Security Officer',    'Senior Staff',    'Security'),
+            ('Security Supervisor',        'Supervisor',      'Security'),
+            ('Security Manager',          'Manager',         'Security'),
+            # Direksi
+            ('Site Manager',               'Senior Manager',  None),
+            ('Operations Director',        'Director',        None),
+            ('Finance Director',           'Director',        None),
+            ('HR Director',                'Director',        None),
+            ('Managing Director',          'Director',        None),
+        ],
+    },
+
+    'retail': {
+        'label': '🏪  Retail',
+        'departments': [
+            ('Store Operations',    'OPS',  'Operasional toko dan pelayanan pelanggan'),
+            ('Merchandising',       'MRCH', 'Pengelolaan produk dan display toko'),
+            ('Sales & Marketing',   'SALES','Penjualan dan promosi'),
+            ('Inventory & Warehouse','INV', 'Pengelolaan stok dan gudang'),
+            ('Human Resources',     'HR',   'Manajemen SDM dan rekrutmen'),
+            ('Finance & Accounting','FIN',  'Keuangan, akuntansi, dan pajak'),
+            ('Customer Service',    'CS',   'Layanan dan kepuasan pelanggan'),
+            ('IT & Digital',        'IT',   'Teknologi informasi dan e-commerce'),
+            ('General Affair',      'GA',   'Urusan umum dan fasilitas'),
+            ('Security',            'SEC',  'Keamanan toko'),
+        ],
+        'jabatan': [
+            # Store Operations
+            ('Kasir',                      'Staff',        'Store Operations'),
+            ('Sales Associate',            'Staff',        'Store Operations'),
+            ('Pramuniaga',                 'Staff',        'Store Operations'),
+            ('Senior Kasir',               'Senior Staff', 'Store Operations'),
+            ('Kepala Kasir',               'Supervisor',   'Store Operations'),
+            ('Store Supervisor',           'Supervisor',   'Store Operations'),
+            ('Assistant Store Manager',    'Manager',      'Store Operations'),
+            ('Store Manager',              'Manager',      'Store Operations'),
+            ('Area Manager',               'Senior Manager','Store Operations'),
+            # Merchandising
+            ('Merchandiser',               'Staff',        'Merchandising'),
+            ('Visual Merchandiser',        'Staff',        'Merchandising'),
+            ('Senior Merchandiser',        'Senior Staff', 'Merchandising'),
+            ('Merchandising Supervisor',   'Supervisor',   'Merchandising'),
+            ('Merchandising Manager',      'Manager',      'Merchandising'),
+            # Sales & Marketing
+            ('Marketing Staff',            'Staff',        'Sales & Marketing'),
+            ('Social Media Specialist',    'Staff',        'Sales & Marketing'),
+            ('Brand Promotor',             'Staff',        'Sales & Marketing'),
+            ('Senior Marketing Staff',     'Senior Staff', 'Sales & Marketing'),
+            ('Marketing Supervisor',       'Supervisor',   'Sales & Marketing'),
+            ('Marketing Manager',          'Manager',      'Sales & Marketing'),
+            # Inventory
+            ('Warehouse Staff',            'Staff',        'Inventory & Warehouse'),
+            ('Stock Checker',              'Staff',        'Inventory & Warehouse'),
+            ('Inventory Control Officer',  'Senior Staff', 'Inventory & Warehouse'),
+            ('Warehouse Supervisor',       'Supervisor',   'Inventory & Warehouse'),
+            ('Inventory Manager',          'Manager',      'Inventory & Warehouse'),
+            # HR
+            ('HR Admin',                   'Staff',        'Human Resources'),
+            ('Recruitment Officer',        'Staff',        'Human Resources'),
+            ('Training Officer',           'Staff',        'Human Resources'),
+            ('HR Supervisor',              'Supervisor',   'Human Resources'),
+            ('HR Manager',                'Manager',      'Human Resources'),
+            # Finance
+            ('Finance Admin',              'Staff',        'Finance & Accounting'),
+            ('Accountant',                 'Staff',        'Finance & Accounting'),
+            ('Tax Officer',                'Staff',        'Finance & Accounting'),
+            ('Finance Supervisor',         'Supervisor',   'Finance & Accounting'),
+            ('Finance Manager',           'Manager',      'Finance & Accounting'),
+            # Customer Service
+            ('Customer Service Officer',   'Staff',        'Customer Service'),
+            ('Senior CS Officer',          'Senior Staff', 'Customer Service'),
+            ('CS Supervisor',              'Supervisor',   'Customer Service'),
+            ('CS Manager',                'Manager',      'Customer Service'),
+            # IT
+            ('IT Support',                 'Staff',        'IT & Digital'),
+            ('Web Developer',              'Staff',        'IT & Digital'),
+            ('Digital Marketing Staff',    'Staff',        'IT & Digital'),
+            ('IT Supervisor',              'Supervisor',   'IT & Digital'),
+            ('IT Manager',                'Manager',      'IT & Digital'),
+            # GA
+            ('Office Boy',                 'Staff',        'General Affair'),
+            ('Driver',                     'Staff',        'General Affair'),
+            ('GA Officer',                 'Staff',        'General Affair'),
+            ('GA Supervisor',              'Supervisor',   'General Affair'),
+            # Security
+            ('Security Guard',             'Staff',        'Security'),
+            ('Security Supervisor',        'Supervisor',   'Security'),
+            # Direksi
+            ('Operations Director',        'Director',     None),
+            ('Finance Director',           'Director',     None),
+            ('Managing Director',          'Director',     None),
+        ],
+    },
+
+    'manufaktur': {
+        'label': '🏭  Manufaktur (Manufacturing)',
+        'departments': [
+            ('Production',          'PROD', 'Proses produksi dan line manufacturing'),
+            ('Quality Control',     'QC',   'Pengendalian kualitas produk'),
+            ('Engineering',         'ENG',  'Rekayasa dan pengembangan proses'),
+            ('Maintenance',         'MAINT','Pemeliharaan mesin dan fasilitas produksi'),
+            ('Warehouse & Logistic','LOG',  'Pergudangan bahan baku dan produk jadi'),
+            ('Purchasing',          'PURCH','Pengadaan bahan baku dan material'),
+            ('Human Resources',     'HR',   'Manajemen SDM dan rekrutmen'),
+            ('Finance & Accounting','FIN',  'Keuangan, akuntansi, dan pajak'),
+            ('Health Safety Environment','HSE','Keselamatan kerja dan lingkungan'),
+            ('General Affair',      'GA',   'Urusan umum dan fasilitas'),
+            ('IT',                  'IT',   'Infrastruktur teknologi informasi'),
+            ('Sales & Marketing',   'SALES','Penjualan dan pemasaran produk'),
+        ],
+        'jabatan': [
+            # Production
+            ('Operator Produksi',          'Staff',        'Production'),
+            ('Helper Produksi',            'Staff',        'Production'),
+            ('Senior Operator',            'Senior Staff', 'Production'),
+            ('Leader Produksi',            'Supervisor',   'Production'),
+            ('Foreman Produksi',           'Supervisor',   'Production'),
+            ('Production Supervisor',      'Supervisor',   'Production'),
+            ('Production Superintendent',  'Senior Supervisor','Production'),
+            ('Production Manager',         'Manager',      'Production'),
+            # Quality Control
+            ('QC Inspector',               'Staff',        'Quality Control'),
+            ('QC Analyst',                 'Staff',        'Quality Control'),
+            ('Senior QC Inspector',        'Senior Staff', 'Quality Control'),
+            ('QC Supervisor',              'Supervisor',   'Quality Control'),
+            ('QC Manager',                'Manager',      'Quality Control'),
+            # Engineering
+            ('Process Engineer',           'Staff',        'Engineering'),
+            ('Product Engineer',           'Staff',        'Engineering'),
+            ('Industrial Engineer',        'Staff',        'Engineering'),
+            ('Senior Engineer',            'Senior Staff', 'Engineering'),
+            ('Engineering Supervisor',     'Supervisor',   'Engineering'),
+            ('Engineering Manager',        'Manager',      'Engineering'),
+            # Maintenance
+            ('Technician Mesin',           'Staff',        'Maintenance'),
+            ('Electrician',                'Staff',        'Maintenance'),
+            ('Mechanic',                   'Staff',        'Maintenance'),
+            ('Senior Technician',          'Senior Staff', 'Maintenance'),
+            ('Maintenance Supervisor',     'Supervisor',   'Maintenance'),
+            ('Maintenance Manager',        'Manager',      'Maintenance'),
+            # Warehouse
+            ('Warehouse Staff',            'Staff',        'Warehouse & Logistic'),
+            ('Driver Forklift',            'Staff',        'Warehouse & Logistic'),
+            ('Inventory Control',          'Senior Staff', 'Warehouse & Logistic'),
+            ('Warehouse Supervisor',       'Supervisor',   'Warehouse & Logistic'),
+            ('Logistic Manager',          'Manager',      'Warehouse & Logistic'),
+            # Purchasing
+            ('Purchasing Admin',           'Staff',        'Purchasing'),
+            ('Procurement Officer',        'Staff',        'Purchasing'),
+            ('Senior Procurement Officer', 'Senior Staff', 'Purchasing'),
+            ('Procurement Supervisor',     'Supervisor',   'Purchasing'),
+            ('Procurement Manager',       'Manager',      'Purchasing'),
+            # HR
+            ('HR Admin',                   'Staff',        'Human Resources'),
+            ('Recruitment Officer',        'Staff',        'Human Resources'),
+            ('Training Officer',           'Staff',        'Human Resources'),
+            ('HR Supervisor',              'Supervisor',   'Human Resources'),
+            ('HR Manager',                'Manager',      'Human Resources'),
+            # Finance
+            ('Finance Admin',              'Staff',        'Finance & Accounting'),
+            ('Accountant',                 'Staff',        'Finance & Accounting'),
+            ('Tax Officer',                'Staff',        'Finance & Accounting'),
+            ('Finance Supervisor',         'Supervisor',   'Finance & Accounting'),
+            ('Finance Manager',           'Manager',      'Finance & Accounting'),
+            # HSE
+            ('Safety Officer',             'Staff',        'Health Safety Environment'),
+            ('Environmental Officer',      'Staff',        'Health Safety Environment'),
+            ('Senior Safety Officer',      'Senior Staff', 'Health Safety Environment'),
+            ('HSE Supervisor',             'Supervisor',   'Health Safety Environment'),
+            ('HSE Manager',               'Manager',      'Health Safety Environment'),
+            # GA
+            ('Office Boy',                 'Staff',        'General Affair'),
+            ('Driver',                     'Staff',        'General Affair'),
+            ('GA Officer',                 'Staff',        'General Affair'),
+            ('GA Supervisor',              'Supervisor',   'General Affair'),
+            # IT
+            ('IT Support',                 'Staff',        'IT'),
+            ('Network Engineer',           'Staff',        'IT'),
+            ('IT Supervisor',              'Supervisor',   'IT'),
+            ('IT Manager',                'Manager',      'IT'),
+            # Sales
+            ('Sales Executive',            'Staff',        'Sales & Marketing'),
+            ('Marketing Staff',            'Staff',        'Sales & Marketing'),
+            ('Senior Sales Executive',     'Senior Staff', 'Sales & Marketing'),
+            ('Sales Supervisor',           'Supervisor',   'Sales & Marketing'),
+            ('Sales Manager',             'Manager',      'Sales & Marketing'),
+            # Direksi
+            ('Plant Manager',              'Senior Manager',None),
+            ('Operations Director',        'Director',     None),
+            ('Finance Director',           'Director',     None),
+            ('Managing Director',          'Director',     None),
+        ],
+    },
+}
+
+
+def menu_department_preset():
+    header('TAMBAH DEPARTMENT & JABATAN PRESET PER INDUSTRI')
+
+    # Pilih industri
+    industri_keys  = list(DEPT_PRESET.keys())
+    industri_labels = [DEPT_PRESET[k]['label'] for k in industri_keys]
+    idx = pilih_menu(industri_labels, title='Pilih industri')
+    key = industri_keys[idx]
+    preset = DEPT_PRESET[key]
+
+    info(f'Industri: {preset["label"]}')
+    info(f'{len(preset["departments"])} department, {len(preset["jabatan"])} jabatan.')
+
+    targets = pilih_companies('Apply ke company')
+    if not targets:
+        return
+
+    # Opsi: dept saja, jabatan saja, atau keduanya
+    mode_idx = pilih_menu(
+        ['Department + Jabatan (lengkap)', 'Department saja', 'Jabatan saja'],
+        title='Yang ingin di-insert'
+    )
+
+    print()
+    if not confirm(f'Insert preset {preset["label"]} ke {len(targets)} company?'):
+        warn('Dibatalkan.'); return
+
+    for company in targets:
+        dept_created = dept_skip = jab_created = jab_skip = 0
+
+        # ── Insert department ──────────────────────────────────────────────
+        if mode_idx in (0, 1):
+            for nama, kode, deskripsi in preset['departments']:
+                _, is_new = Department.objects.get_or_create(
+                    company=company, nama=nama,
+                    defaults={'kode': kode, 'deskripsi': deskripsi, 'aktif': True}
+                )
+                if is_new: dept_created += 1
+                else:      dept_skip    += 1
+
+        # ── Insert jabatan ─────────────────────────────────────────────────
+        if mode_idx in (0, 2):
+            dept_map = {d.nama: d for d in Department.objects.filter(company=company)}
+            for nama, level, dept_nama in preset['jabatan']:
+                dept_obj = None
+                if dept_nama:
+                    # cari exact dulu, fallback icontains
+                    dept_obj = dept_map.get(dept_nama)
+                    if not dept_obj:
+                        dept_obj = next(
+                            (d for n, d in dept_map.items() if dept_nama.lower() in n.lower()),
+                            None
+                        )
+                _, is_new = Position.objects.get_or_create(
+                    company=company, nama=nama,
+                    defaults={'level': level, 'department': dept_obj, 'aktif': True}
+                )
+                if is_new: jab_created += 1
+                else:      jab_skip    += 1
+
+        print(f'\n{W}  {company.nama}:{RST}')
+        if mode_idx in (0, 1):
+            ok(f'Department : {dept_created} dibuat, {dept_skip} sudah ada.')
+        if mode_idx in (0, 2):
+            ok(f'Jabatan    : {jab_created} dibuat, {jab_skip} sudah ada.')
+
+    print()
+    ok('Selesai!')
+
+
 JABATAN_PRESET = [
     # Mining | MPE-MIN
     ("Operator ADT",                    "Staff"),
@@ -2134,7 +2519,8 @@ def main_menu():
         print()
         menu = pilih_menu([
             'Tambah Company / Tenant',
-            'Tambah Department',
+            'Tambah Department (manual)',
+            'Tambah Department & Jabatan Preset (Industri)',
             'Tambah Jabatan (manual)',
             'Tambah Jabatan Preset (114 jabatan industri)',
             'Sync Department ke Jabatan',
@@ -2152,19 +2538,20 @@ def main_menu():
 
         if   menu == 0:  menu_tambah_company()
         elif menu == 1:  menu_tambah_department()
-        elif menu == 2:  menu_tambah_jabatan()
-        elif menu == 3:  menu_jabatan_preset()
-        elif menu == 4:  menu_sync_department_jabatan()
-        elif menu == 5:  menu_generate_dummy_karyawan()
-        elif menu == 6:  menu_generate_absensi()
-        elif menu == 7:  menu_seed_salary_benefit()
-        elif menu == 8:  menu_seed_kandidat()
-        elif menu == 9:  menu_seed_candidate_profile()
-        elif menu == 10: menu_seed_kontrak()
-        elif menu == 11: menu_seed_asset()
-        elif menu == 12: menu_lihat_data()
-        elif menu == 13: menu_seed_lengkap()
-        elif menu == 14:
+        elif menu == 2:  menu_department_preset()
+        elif menu == 3:  menu_tambah_jabatan()
+        elif menu == 4:  menu_jabatan_preset()
+        elif menu == 5:  menu_sync_department_jabatan()
+        elif menu == 6:  menu_generate_dummy_karyawan()
+        elif menu == 7:  menu_generate_absensi()
+        elif menu == 8:  menu_seed_salary_benefit()
+        elif menu == 9:  menu_seed_kandidat()
+        elif menu == 10: menu_seed_candidate_profile()
+        elif menu == 11: menu_seed_kontrak()
+        elif menu == 12: menu_seed_asset()
+        elif menu == 13: menu_lihat_data()
+        elif menu == 14: menu_seed_lengkap()
+        elif menu == 15:
             print(f'\n{G}  Selesai. Sampai jumpa!{RST}\n')
             break
 
@@ -2668,6 +3055,7 @@ if __name__ == '__main__':
     parser.add_argument('--kontrak',    action='store_true', help='Langsung ke menu seed kontrak karyawan')
     parser.add_argument('--asset',      action='store_true', help='Langsung ke menu seed asset management')
     parser.add_argument('--list',       action='store_true', help='Langsung ke lihat data')
+    parser.add_argument('--dept-preset',  action='store_true', help='Preset department & jabatan per industri')
     parser.add_argument('--salary',     action='store_true', help='Seed salary benefit karyawan')
     parser.add_argument('--profil-kandidat', action='store_true', help='Seed profil lengkap kandidat')
     parser.add_argument('--seed-all',   action='store_true', help='Seed lengkap all-in-one')
@@ -2676,6 +3064,7 @@ if __name__ == '__main__':
     try:
         if   args.company:    menu_tambah_company()
         elif args.department: menu_tambah_department()
+        elif getattr(args, 'dept_preset', False): menu_department_preset()
         elif args.jabatan:    menu_tambah_jabatan()
         elif args.preset:     menu_jabatan_preset()
         elif getattr(args, 'sync_dept', False): menu_sync_department_jabatan()
