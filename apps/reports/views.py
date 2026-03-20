@@ -14,10 +14,19 @@ def _get_filter_params(request):
     return month, year, dept_id
 
 
+def _get_company(request):
+    """Helper: ambil company aktif dari request (multi-tenant)."""
+    company = getattr(request, 'company', None)
+    if not company and getattr(request.user, 'is_superuser', False):
+        from apps.core.models import Company
+        company = Company.objects.first()
+    return company
+
+
 def _get_departments(request):
     """Helper: ambil queryset Department difilter by company (multi-tenant fix BUG-6)."""
     from apps.core.models import Department
-    company = getattr(request, 'company', None)
+    company = _get_company(request)
     qs = Department.objects.filter(aktif=True)
     if company:
         qs = qs.filter(company=company)
@@ -36,11 +45,14 @@ def report_attendance(request):
     from apps.employees.models import Employee
     month, year, dept_id = _get_filter_params(request)
 
+    company = _get_company(request)
     qs = Attendance.objects.filter(
         tanggal__month=month, tanggal__year=year
     ).select_related('employee', 'employee__department').order_by(
         'employee__nama', 'tanggal'
     )
+    if company:
+        qs = qs.filter(employee__company=company)
     if dept_id:
         qs = qs.filter(employee__department_id=dept_id)
 
@@ -61,7 +73,8 @@ def report_payroll(request):
     month, year, dept_id = _get_filter_params(request)
     periode = f"{year}-{month:02d}"
 
-    payroll = Payroll.objects.filter(periode=periode).first()
+    company = _get_company(request)
+    payroll = Payroll.objects.filter(periode=periode, company=company).first() if company else Payroll.objects.filter(periode=periode).first()
     details = []
     if payroll:
         details = PayrollDetail.objects.filter(
@@ -88,7 +101,10 @@ def report_employee(request):
     dept_id = request.GET.get('department', '')
     status_filter = request.GET.get('status', 'Aktif')
 
+    company = _get_company(request)
     qs = Employee.objects.select_related('department', 'jabatan')
+    if company:
+        qs = qs.filter(company=company)
     if dept_id:
         qs = qs.filter(department_id=dept_id)
     if status_filter:
@@ -111,9 +127,12 @@ def report_contract(request):
     dept_id = request.GET.get('department', '')
     status_filter = request.GET.get('status', '')
 
+    company = _get_company(request)
     qs = Contract.objects.select_related('employee', 'employee__department').order_by(
         '-tanggal_mulai'
     )
+    if company:
+        qs = qs.filter(employee__company=company)
     if dept_id:
         qs = qs.filter(employee__department_id=dept_id)
     if status_filter:
@@ -124,7 +143,10 @@ def report_contract(request):
         status='Aktif',
         tanggal_selesai__isnull=False,
         tanggal_selesai__range=[today, today + timedelta(days=30)],
-    ).count()
+    )
+    if company:
+        expiring_soon = expiring_soon.filter(employee__company=company)
+    expiring_soon = expiring_soon.count()
 
     return render(request, 'reports/report_contract.html', {
         'contracts': qs,
@@ -141,10 +163,12 @@ def report_violation(request):
     from apps.industrial.models import Violation
     month, year, dept_id = _get_filter_params(request)
 
+    company = _get_company(request)
     qs = Violation.objects.filter(
         tanggal_kejadian__month=month, tanggal_kejadian__year=year
     ).select_related('employee', 'employee__department').order_by('-tanggal_kejadian')
-
+    if company:
+        qs = qs.filter(employee__company=company)
     if dept_id:
         qs = qs.filter(employee__department_id=dept_id)
 
@@ -164,13 +188,18 @@ def report_recruitment(request):
     from apps.recruitment.models import Candidate, ManpowerRequest
     month, year, dept_id = _get_filter_params(request)
 
+    company = _get_company(request)
     candidates = Candidate.objects.filter(
         created_at__month=month, created_at__year=year
     ).select_related('mprf').order_by('-created_at')
+    if company:
+        candidates = candidates.filter(mprf__company=company)
 
     mprfs = ManpowerRequest.objects.filter(
         created_at__month=month, created_at__year=year
     ).select_related('department')
+    if company:
+        mprfs = mprfs.filter(company=company)
 
     if dept_id:
         mprfs = mprfs.filter(department_id=dept_id)
@@ -215,9 +244,12 @@ def export_attendance_excel(request):
 
     from apps.attendance.models import Attendance
     month, year, dept_id = _get_filter_params(request)
+    company = _get_company(request)
     qs = Attendance.objects.filter(
         tanggal__month=month, tanggal__year=year
     ).select_related('employee', 'employee__department').order_by('employee__nama', 'tanggal')
+    if company:
+        qs = qs.filter(employee__company=company)
     if dept_id:
         qs = qs.filter(employee__department_id=dept_id)
 
@@ -289,7 +321,10 @@ def export_employee_excel(request):
     dept_id = request.GET.get('department', '')
     status_filter = request.GET.get('status', 'Aktif')
 
+    company = _get_company(request)
     qs = Employee.objects.select_related('department', 'jabatan')
+    if company:
+        qs = qs.filter(company=company)
     if dept_id:
         qs = qs.filter(department_id=dept_id)
     if status_filter:
@@ -357,7 +392,8 @@ def export_payroll_excel(request):
     from apps.payroll.models import Payroll, PayrollDetail
     month, year, dept_id = _get_filter_params(request)
     periode = f'{year}-{month:02d}'
-    payroll = Payroll.objects.filter(periode=periode).first()
+    company = _get_company(request)
+    payroll = Payroll.objects.filter(periode=periode, company=company).first() if company else Payroll.objects.filter(periode=periode).first()
     details = []
     if payroll:
         details = PayrollDetail.objects.filter(payroll=payroll).select_related('employee', 'employee__department')
@@ -430,9 +466,12 @@ def export_violation_excel(request):
 
     from apps.industrial.models import Violation
     month, year, dept_id = _get_filter_params(request)
+    company = _get_company(request)
     qs = Violation.objects.filter(
         tanggal_kejadian__month=month, tanggal_kejadian__year=year
     ).select_related('employee', 'employee__department').order_by('-tanggal_kejadian')
+    if company:
+        qs = qs.filter(employee__company=company)
     if dept_id:
         qs = qs.filter(employee__department_id=dept_id)
 
@@ -495,7 +534,10 @@ def export_contract_excel(request):
     dept_id = request.GET.get('department', '')
     status_filter = request.GET.get('status', '')
 
+    company = _get_company(request)
     qs = Contract.objects.select_related('employee', 'employee__department').order_by('-tanggal_mulai')
+    if company:
+        qs = qs.filter(employee__company=company)
     if dept_id:
         qs = qs.filter(employee__department_id=dept_id)
     if status_filter:
@@ -562,9 +604,12 @@ def export_recruitment_excel(request):
 
     from apps.recruitment.models import Candidate
     month, year, dept_id = _get_filter_params(request)
+    company = _get_company(request)
     qs = Candidate.objects.filter(
         created_at__month=month, created_at__year=year
     ).select_related('mprf').order_by('-created_at')
+    if company:
+        qs = qs.filter(mprf__company=company)
 
     wb = openpyxl.Workbook()
     ws = wb.active

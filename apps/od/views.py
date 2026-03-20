@@ -16,7 +16,8 @@ def _company(request):
 
 
 def _emp_qs(request):
-    qs = Employee.objects.filter(status='Aktif')
+    company = _get_company(request)
+    qs = Employee.objects.filter(company=company, status='Aktif') if company else Employee.objects.filter(status='Aktif')
     c = _company(request)
     if c:
         qs = qs.filter(company=c)
@@ -54,7 +55,8 @@ def od_dashboard(request):
     chart_level_data   = [d['jumlah'] for d in dist_level]
 
     # FTE Gap summary
-    fte_qs = FTEPlanningResult.objects.all()
+    company = _get_company(request)
+    fte_qs = FTEPlanningResult.objects.filter(company=company) if company else FTEPlanningResult.objects.all()
     if company:
         fte_qs = fte_qs.filter(company=company)
 
@@ -87,7 +89,8 @@ def od_dashboard(request):
 
     # Headcount per dept untuk tabel
     dept_headcount = []
-    depts = Department.objects.all()
+    company = _get_company(request)
+    depts = Department.objects.filter(company=company) if company else Department.objects.all()
     if company:
         depts = depts.filter(company=company)
     for dept in depts:
@@ -133,7 +136,8 @@ def workload_list(request):
     if dept_id:
         qs = qs.filter(department_id=dept_id)
 
-    depts = Department.objects.all()
+    company = _get_company(request)
+    depts = Department.objects.filter(company=company) if company else Department.objects.all()
     if company:
         depts = depts.filter(company=company)
 
@@ -164,10 +168,9 @@ def workload_create(request):
         messages.success(request, 'Standar workload berhasil ditambahkan.')
         return redirect('od:workload_list')
 
+    company = _get_company(request)
     depts    = Department.objects.filter(company=company) if company else Department.objects.all()
-    jabatans = Position.objects.filter(aktif=True)
-    if company:
-        jabatans = jabatans.filter(company=company)
+    jabatans = Position.objects.filter(company=company, aktif=True) if company else Position.objects.filter(aktif=True)
 
     return render(request, 'od/workload_form.html', {
         'depts': depts, 'jabatans': jabatans, 'action': 'Tambah'
@@ -191,10 +194,9 @@ def workload_edit(request, pk):
         messages.success(request, 'Standar workload diperbarui.')
         return redirect('od:workload_list')
 
+    company = _get_company(request)
     depts    = Department.objects.filter(company=company) if company else Department.objects.all()
-    jabatans = Position.objects.filter(aktif=True)
-    if company:
-        jabatans = jabatans.filter(company=company)
+    jabatans = Position.objects.filter(company=company, aktif=True) if company else Position.objects.filter(aktif=True)
 
     return render(request, 'od/workload_form.html', {
         'obj': obj, 'depts': depts, 'jabatans': jabatans, 'action': 'Edit'
@@ -243,10 +245,9 @@ def fte_standard_create(request):
         messages.success(request, 'FTE Standard berhasil ditambahkan.')
         return redirect('od:fte_standard_list')
 
+    company = _get_company(request)
     depts    = Department.objects.filter(company=company) if company else Department.objects.all()
-    jabatans = Position.objects.filter(aktif=True)
-    if company:
-        jabatans = jabatans.filter(company=company)
+    jabatans = Position.objects.filter(company=company, aktif=True) if company else Position.objects.filter(aktif=True)
 
     return render(request, 'od/fte_standard_form.html', {
         'depts': depts, 'jabatans': jabatans, 'action': 'Tambah',
@@ -270,10 +271,9 @@ def fte_standard_edit(request, pk):
         messages.success(request, 'FTE Standard diperbarui.')
         return redirect('od:fte_standard_list')
 
+    company = _get_company(request)
     depts    = Department.objects.filter(company=company) if company else Department.objects.all()
-    jabatans = Position.objects.filter(aktif=True)
-    if company:
-        jabatans = jabatans.filter(company=company)
+    jabatans = Position.objects.filter(company=company, aktif=True) if company else Position.objects.filter(aktif=True)
 
     return render(request, 'od/fte_standard_form.html', {
         'obj': obj, 'depts': depts, 'jabatans': jabatans, 'action': 'Edit'
@@ -298,7 +298,8 @@ def fte_planning(request):
     company = _company(request)
 
     # Hitung headcount aktual per dept + jabatan, compare ke FTE Standard
-    depts = Department.objects.all()
+    company = _get_company(request)
+    depts = Department.objects.filter(company=company) if company else Department.objects.all()
     if company:
         depts = depts.filter(company=company)
 
@@ -404,6 +405,15 @@ def od_performance_dashboard(request):
 from .models import (
     CompetencyCategory, Competency, PositionCompetency, EmployeeCompetency
 )
+
+
+def _get_company(request):
+    """Helper multi-tenant: ambil company aktif dari request."""
+    company = getattr(request, 'company', None)
+    if not company and getattr(request.user, 'is_superuser', False):
+        from apps.core.models import Company
+        company = Company.objects.first()
+    return company
 
 
 # ── Kategori Kompetensi ───────────────────────────────────────────────────────
@@ -611,6 +621,7 @@ def competency_matrix(request):
             })
         matrix.append(row)
 
+    company = _get_company(request)
     depts = Department.objects.filter(company=company) if company else Department.objects.all()
     return render(request, 'od/competency_matrix.html', {
         'matrix'      : matrix,
@@ -724,6 +735,7 @@ def competency_gap_report(request):
     report.sort(key=lambda x: x['total_gap'])  # urut: paling banyak gap dulu
 
     has_gap = any(r['gaps'] for r in report)
+    company = _get_company(request)
     depts = Department.objects.filter(company=company) if company else Department.objects.all()
     return render(request, 'od/competency_gap_report.html', {
         'report'      : report,

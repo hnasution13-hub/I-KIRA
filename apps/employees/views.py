@@ -8,6 +8,16 @@ from apps.core.models import Department, Position
 from apps.core.decorators import hr_required, manager_required
 from apps.wilayah.models import Provinsi, Kabupaten
 
+def _get_company(request):
+    """Helper multi-tenant: ambil company aktif dari request."""
+    company = getattr(request, 'company', None)
+    if not company and getattr(request.user, 'is_superuser', False):
+        from apps.core.models import Company
+        company = Company.objects.first()
+    return company
+
+
+
 
 def _can_see_salary(user):
     """Hanya Supervisor ke atas (admin, hr_manager, manager) yang bisa lihat/edit gaji."""
@@ -42,8 +52,8 @@ def employee_list(request):
     return render(request, 'employees/employee_list.html', {
         'employees'   : employees,
         'departments' : Department.objects.filter(aktif=True, **({'company': company} if company else {})),
-        'job_sites'   : JobSite.objects.filter(aktif=True),
-        'perusahaans' : Perusahaan.objects.filter(aktif=True),
+        'job_sites'   : JobSite.objects.filter(company=company, aktif=True) if company else JobSite.objects.filter(aktif=True),
+        'perusahaans' : Perusahaan.objects.filter(company=company, aktif=True) if company else Perusahaan.objects.filter(aktif=True),
         'search'      : search,
         'status_filter': status,
         'job_site_filter': job_site,
@@ -326,7 +336,7 @@ def _render_form(request, instance):
         'provinsi_list'      : Provinsi.objects.all(),
         'kabupaten_list'     : Kabupaten.objects.all(),
         'poh_list'           : Kabupaten.objects.all().order_by('nama'),
-        'jobsite_list'       : JobSite.objects.filter(aktif=True),
+        'jobsite_list'       : JobSite.objects.filter(company=company, aktif=True) if company else JobSite.objects.filter(aktif=True),
         'bank_list'          : Bank.objects.all().order_by('nama'),
         'golongan_darah_list': ['A','B','AB','O','A+','A-','B+','B-','AB+','AB-','O+','O-'],
     })
@@ -633,7 +643,8 @@ def api_jabatan_by_dept(request):
     company = getattr(request, 'company', None)
     dept_id = request.GET.get('dept', '').strip()
 
-    qs = Position.objects.filter(aktif=True)
+    company = _get_company(request)
+    qs = Position.objects.filter(company=company, aktif=True) if company else Position.objects.filter(aktif=True)
     if company:
         qs = qs.filter(company=company)
     if dept_id:
@@ -655,7 +666,8 @@ def api_employees(request):
     jabatan_id = request.GET.get('jabatan')
     dept_id    = request.GET.get('department')
 
-    qs = Employee.objects.filter(status='Aktif').select_related('jabatan', 'department')
+    company = _get_company(request)
+    qs = Employee.objects.filter(company=company, status='Aktif').select_related('jabatan', 'department') if company else Employee.objects.filter(status='Aktif').select_related('jabatan', 'department')
     if company:
         qs = qs.filter(company=company)
     if jabatan_id:

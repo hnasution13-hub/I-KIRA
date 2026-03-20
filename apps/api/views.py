@@ -14,7 +14,11 @@ from .serializers import (
 class EmployeeViewSet(viewsets.ModelViewSet):
     # FIX BUG-016: Hapus filter status='Aktif' dari queryset agar filterset_fields
     # bisa bekerja untuk semua nilai status. Filter via ?status=Aktif di query param.
-    queryset = Employee.objects.all().select_related('department', 'jabatan')
+    def get_queryset(self):
+        company = getattr(self.request, 'company', None)
+        qs = Employee.objects.all().select_related('department', 'jabatan')
+        return qs.filter(company=company) if company else qs
+    queryset = Employee.objects.none()  # overridden by get_queryset
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated]
     search_fields = ['nama', 'nik', 'email']
@@ -67,6 +71,10 @@ class LeaveViewSet(viewsets.ModelViewSet):
 
 
 class PayrollViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Payroll.objects.all().order_by('-periode')
+    def get_queryset(self):
+        company = getattr(self.request, 'company', None)
+        qs = Payroll.objects.all().order_by('-periode')
+        return qs.filter(company=company) if company else qs
+    queryset = Payroll.objects.none()  # overridden by get_queryset
     serializer_class = PayrollSerializer
     permission_classes = [IsAuthenticated]

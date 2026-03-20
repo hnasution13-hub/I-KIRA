@@ -21,6 +21,16 @@ from .models import Shift, ShiftRoster
 from apps.employees.models import Employee
 from apps.core.models import Department
 
+def _get_company(request):
+    """Helper multi-tenant: ambil company aktif dari request."""
+    company = getattr(request, 'company', None)
+    if not company and getattr(request.user, 'is_superuser', False):
+        from apps.core.models import Company
+        company = Company.objects.first()
+    return company
+
+
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  MASTER POLA CYCLIC
@@ -29,7 +39,8 @@ from apps.core.models import Department
 @login_required
 def cycle_list(request):
     cycles = ShiftCycle.objects.prefetch_related('assignments').all()
-    shifts = Shift.objects.filter(aktif=True).order_by('nama')
+    company = _get_company(request)
+    shifts = Shift.objects.filter(company=company, aktif=True).order_by('nama') if company else Shift.objects.filter(aktif=True).order_by('nama')
 
     # Hitung preview pola untuk tiap cycle
     for c in cycles:
@@ -134,8 +145,8 @@ def cycle_assignment_list(request):
 
     return render(request, 'shifts/cycle_assignment_list.html', {
         'assignments': qs,
-        'cycles': ShiftCycle.objects.filter(aktif=True),
-        'departments': Department.objects.filter(aktif=True),
+        'cycles': ShiftCycle.objects.filter(company=company, aktif=True) if company else ShiftCycle.objects.filter(aktif=True),
+        'departments': Department.objects.filter(company=company, aktif=True) if company else Department.objects.filter(aktif=True),
         'dept_filter': dept_id,
         'cycle_filter': cycle_id,
     })
@@ -184,8 +195,8 @@ def cycle_assignment_form(request, pk=None):
 
     return render(request, 'shifts/cycle_assignment_form.html', {
         'instance': instance,
-        'cycles': ShiftCycle.objects.filter(aktif=True).order_by('nama'),
-        'employees': Employee.objects.filter(status='Aktif').select_related('department').order_by('nama'),
+        'cycles': ShiftCycle.objects.filter(company=company, aktif=True).order_by('nama') if company else ShiftCycle.objects.filter(aktif=True).order_by('nama'),
+        'employees': Employee.objects.filter(company=company, status='Aktif').select_related('department').order_by('nama') if company else Employee.objects.filter(status='Aktif').select_related('department').order_by('nama'),
         'emp_preselect': emp_preselect,
     })
 
@@ -283,7 +294,7 @@ def cycle_generate_roster(request):
         override = data.get('override', False)
 
         employees = Employee.objects.filter(pk__in=emp_ids) if emp_ids \
-                    else Employee.objects.filter(status='Aktif')
+                    else Employee.objects.filter(company=company, status='Aktif') if company else Employee.objects.filter(status='Aktif')
 
         total = 0
         skipped = 0

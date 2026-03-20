@@ -15,6 +15,16 @@ from .models import AdvSoal, AdvSession, AdvAnswer, AdvResult, TEST_TYPE_CHOICES
 from apps.recruitment.models import Candidate
 from apps.core.addon_decorators import addon_required
 
+def _get_company(request):
+    """Helper multi-tenant: ambil company aktif dari request."""
+    company = getattr(request, 'company', None)
+    if not company and getattr(request.user, 'is_superuser', False):
+        from apps.core.models import Company
+        company = Company.objects.first()
+    return company
+
+
+
 ADDON_KEY = 'advanced_psychotest'
 
 
@@ -761,7 +771,8 @@ def psychotest_report_all(request):
     dept_filter = request.GET.get('dept', '')
     tipe_filter = request.GET.get('tipe', 'bigfive')
 
-    employees = Employee.objects.filter(status='Aktif').select_related('department', 'jabatan')
+    company = _get_company(request)
+    employees = Employee.objects.filter(company=company, status='Aktif').select_related('department', 'jabatan') if company else Employee.objects.filter(status='Aktif').select_related('department', 'jabatan')
     if dept_filter:
         employees = employees.filter(department_id=dept_filter)
 
@@ -797,7 +808,8 @@ def psychotest_report_all(request):
         dept_avg[nama] = {'avg': round(d['avg_skor']), 'total': d['total']}
 
     from apps.core.models import Department
-    departments = Department.objects.filter(aktif=True)
+    company = _get_company(request)
+    departments = Department.objects.filter(company=company, aktif=True) if company else Department.objects.filter(aktif=True)
 
     return render(request, 'advanced_psychotest/report_all.html', {
         'profil_list':       profil_list,

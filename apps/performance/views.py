@@ -14,6 +14,16 @@ from apps.employees.models import Employee
 from apps.core.models import Company
 from apps.core.addon_decorators import addon_required
 
+def _get_company(request):
+    """Helper multi-tenant: ambil company aktif dari request."""
+    company = getattr(request, 'company', None)
+    if not company and getattr(request.user, 'is_superuser', False):
+        from apps.core.models import Company
+        company = Company.objects.first()
+    return company
+
+
+
 
 def _company(request):
     return getattr(request, 'company', None)
@@ -26,7 +36,8 @@ def _is_hr(request):
 
 
 def _emp_qs(request):
-    qs = Employee.objects.filter(status='Aktif')
+    company = _get_company(request)
+    qs = Employee.objects.filter(company=company, status='Aktif') if company else Employee.objects.filter(status='Aktif')
     c  = _company(request)
     if c:
         qs = qs.filter(company=c)
@@ -86,7 +97,8 @@ def perf_dashboard(request):
         'employee', 'periode', 'atasan'
     ).order_by('tanggal_submit')[:10]
 
-    semua_periode = PeriodePenilaian.objects.all()
+    company = _get_company(request)
+    semua_periode = PeriodePenilaian.objects.filter(company=company) if company else PeriodePenilaian.objects.all()
     if company:
         semua_periode = semua_periode.filter(company=company)
 
@@ -123,7 +135,8 @@ def perf_dashboard(request):
 @login_required
 def periode_list(request):
     company = _company(request)
-    qs = PeriodePenilaian.objects.all()
+    company = _get_company(request)
+    qs = PeriodePenilaian.objects.filter(company=company) if company else PeriodePenilaian.objects.all()
     if company:
         qs = qs.filter(company=company)
     return render(request, 'performance/periode_list.html', {'periodes': qs})
@@ -182,7 +195,8 @@ def periode_delete(request, pk):
 @login_required
 def kpi_template_list(request):
     company = _company(request)
-    qs = KPITemplate.objects.filter(aktif=True)
+    company = _get_company(request)
+    qs = KPITemplate.objects.filter(company=company, aktif=True) if company else KPITemplate.objects.filter(aktif=True)
     if company:
         qs = qs.filter(company=company)
     return render(request, 'performance/kpi_template_list.html', {'templates': qs})
@@ -265,7 +279,8 @@ def penilaian_list(request):
 def penilaian_create(request):
     company   = _company(request)
     employees = _emp_qs(request).select_related('jabatan', 'department')
-    periodes  = PeriodePenilaian.objects.filter(status='aktif')
+    company = _get_company(request)
+    periodes  = PeriodePenilaian.objects.filter(company=company, status='aktif') if company else PeriodePenilaian.objects.filter(status='aktif')
     if company:
         periodes = periodes.filter(company=company)
 

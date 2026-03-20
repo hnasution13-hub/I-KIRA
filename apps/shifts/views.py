@@ -11,6 +11,16 @@ from .models import Shift, ShiftAssignment, ShiftRoster, get_shift_for_employee
 from apps.employees.models import Employee
 from apps.core.utils import get_company_qs, get_employee_related_qs
 from apps.core.models import Department
+
+def _get_company(request):
+    """Helper multi-tenant: ambil company aktif dari request."""
+    company = getattr(request, 'company', None)
+    if not company and getattr(request.user, 'is_superuser', False):
+        from apps.core.models import Company
+        company = Company.objects.first()
+    return company
+
+
 try:
     from apps.core.decorators import hr_required
 except ImportError:
@@ -29,7 +39,8 @@ HARI_NAMA = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
 @login_required
 @hr_required
 def shift_list(request):
-    shifts = Shift.objects.all().order_by('nama')
+    company = _get_company(request)
+    shifts = Shift.objects.filter(company=company).order_by('nama') if company else Shift.objects.all().order_by('nama')
     return render(request, 'shifts/shift_list.html', {'shifts': shifts})
 
 
@@ -141,8 +152,8 @@ def assignment_list(request):
 
     return render(request, 'shifts/assignment_list.html', {
         'assignments': qs,
-        'shifts': Shift.objects.filter(aktif=True),
-        'departments': Department.objects.filter(aktif=True),
+        'shifts': Shift.objects.filter(company=company, aktif=True) if company else Shift.objects.filter(aktif=True),
+        'departments': Department.objects.filter(company=company, aktif=True) if company else Department.objects.filter(aktif=True),
         'dept_filter': dept_id,
         'shift_filter': shift_id,
     })
@@ -190,9 +201,9 @@ def assignment_form(request, pk=None):
 
     return render(request, 'shifts/assignment_form.html', {
         'instance': instance,
-        'shifts': Shift.objects.filter(aktif=True).order_by('nama'),
+        'shifts': Shift.objects.filter(company=company, aktif=True).order_by('nama') if company else Shift.objects.filter(aktif=True).order_by('nama'),
         'employees': get_company_qs(Employee, request, status='Aktif').order_by('nama'),
-        'departments': Department.objects.filter(aktif=True).order_by('nama'),
+        'departments': Department.objects.filter(company=company, aktif=True).order_by('nama') if company else Department.objects.filter(aktif=True).order_by('nama'),
         'HARI_CHOICES': list(enumerate(HARI_NAMA)),
     })
 
@@ -245,7 +256,8 @@ def roster_view(request):
     month_start = all_dates[0]
     month_end   = all_dates[-1]
 
-    departments = Department.objects.filter(aktif=True).order_by('nama')
+    company = _get_company(request)
+    departments = Department.objects.filter(company=company, aktif=True).order_by('nama') if company else Department.objects.filter(aktif=True).order_by('nama')
 
     # Wajib pilih departemen kalau total karyawan > 100
     total_aktif = get_company_qs(Employee, request, status='Aktif').count()
@@ -338,7 +350,7 @@ def roster_view(request):
         'total_emp':          total_emp,
         'page_size':          PAGE_SIZE,
         'require_dept_filter': require_dept_filter,
-        'shifts':             Shift.objects.filter(aktif=True).order_by('nama'),
+        'shifts':             Shift.objects.filter(company=company, aktif=True).order_by('nama') if company else Shift.objects.filter(aktif=True).order_by('nama'),
         'departments':        departments,
         'bulan_nama':         calendar.month_name[month],
         'bulan_list':         BULAN_LIST,

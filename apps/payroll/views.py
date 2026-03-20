@@ -16,6 +16,16 @@ from apps.core.decorators import hr_required, manager_required
 from utils.email_sender import send_payslip_email
 from utils.payroll_calculator import PayrollCalculator
 
+def _get_company(request):
+    """Helper multi-tenant: ambil company aktif dari request."""
+    company = getattr(request, 'company', None)
+    if not company and getattr(request.user, 'is_superuser', False):
+        from apps.core.models import Company
+        company = Company.objects.first()
+    return company
+
+
+
 
 @login_required
 @hr_required
@@ -387,7 +397,8 @@ def _build_site_summary(payroll, details):
 def payroll_site_summary(request):
     """Laporan ringkasan payroll lintas periode per job site."""
     company = getattr(request, 'company', None)
-    qs = Payroll.objects.filter(status__in=['APPROVED', 'PAID'])
+    company = _get_company(request)
+    qs = Payroll.objects.filter(company=company, status__in=['APPROVED', 'PAID']) if company else Payroll.objects.filter(status__in=['APPROVED', 'PAID'])
     if company:
         qs = qs.filter(company=company)
     qs = qs.order_by('-periode')
@@ -411,7 +422,8 @@ def payroll_site_summary(request):
         total_karyawan = Sum('jumlah_karyawan'),
     ).order_by('site_label')
 
-    periodes = Payroll.objects.filter(status__in=['APPROVED','PAID'])
+    company = _get_company(request)
+    periodes = Payroll.objects.filter(company=company, status__in=['APPROVED','PAID']) if company else Payroll.objects.filter(status__in=['APPROVED','PAID'])
     if company:
         periodes = periodes.filter(company=company)
     periodes = periodes.values_list('periode', flat=True).distinct().order_by('-periode')
