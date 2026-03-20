@@ -35,6 +35,12 @@ def mprf_list(request):
 @addon_required('recruitment')
 def mprf_form(request, pk=None):
     instance = get_object_or_404(ManpowerRequest, pk=pk) if pk else None
+
+    from apps.core.models import Company
+    company = getattr(request, 'company', None)
+    if not company and getattr(request.user, 'is_superuser', False):
+        company = Company.objects.first()
+
     if request.method == 'POST':
         data = {
             'department_id': request.POST.get('department'),
@@ -53,10 +59,6 @@ def mprf_form(request, pk=None):
             instance.save()
         else:
             import uuid
-            from apps.core.models import Company
-            company = getattr(request, 'company', None)
-            if not company and getattr(request.user, 'is_superuser', False):
-                company = Company.objects.first()
             data['created_by']  = request.user.get_full_name() or request.user.username
             data['company']     = company
             data['nomor_mprf']  = f"MPRF-{uuid.uuid4().hex[:8].upper()}"
