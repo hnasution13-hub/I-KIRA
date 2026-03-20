@@ -1,3 +1,5 @@
+import logging
+import sys
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -656,4 +658,7 @@ def error_404(request, exception=None):
 
 
 def error_500(request):
+    _exc = sys.exc_info()
+    if _exc[0] is not None:
+        logging.getLogger('apps').error('500 Internal Server Error', exc_info=_exc)
     return render(request, 'errors/500.html', status=500)
