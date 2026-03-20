@@ -1446,11 +1446,11 @@ DEPT_PRESET = {
             ('Security Supervisor',        'Supervisor',      'Security'),
             ('Security Manager',          'Manager',         'Security'),
             # Direksi
-            ('Site Manager',               'Senior Manager',  None),
-            ('Operations Director',        'Director',        None),
-            ('Finance Director',           'Director',        None),
-            ('HR Director',                'Director',        None),
-            ('Managing Director',          'Director',        None),
+            ('Site Manager',               'Sr.Manager',          None),
+            ('Operations Director',        'Manajemen',           None),
+            ('Finance Director',           'Manajemen',           None),
+            ('HR Director',                'Manajemen',           None),
+            ('Managing Director',          'Corporate Manajemen', None),
         ],
     },
 
@@ -1530,9 +1530,9 @@ DEPT_PRESET = {
             ('Security Guard',             'Staff',        'Security'),
             ('Security Supervisor',        'Supervisor',   'Security'),
             # Direksi
-            ('Operations Director',        'Director',     None),
-            ('Finance Director',           'Director',     None),
-            ('Managing Director',          'Director',     None),
+            ('Operations Director',        'Manajemen',           None),
+            ('Finance Director',           'Manajemen',           None),
+            ('Managing Director',          'Corporate Manajemen', None),
         ],
     },
 
@@ -1629,10 +1629,10 @@ DEPT_PRESET = {
             ('Sales Supervisor',           'Supervisor',   'Sales & Marketing'),
             ('Sales Manager',             'Manager',      'Sales & Marketing'),
             # Direksi
-            ('Plant Manager',              'Senior Manager',None),
-            ('Operations Director',        'Director',     None),
-            ('Finance Director',           'Director',     None),
-            ('Managing Director',          'Director',     None),
+            ('Plant Manager',              'Sr.Manager',          None),
+            ('Operations Director',        'Manajemen',           None),
+            ('Finance Director',           'Manajemen',           None),
+            ('Managing Director',          'Corporate Manajemen', None),
         ],
     },
 }
@@ -1828,14 +1828,14 @@ JABATAN_PRESET = [
     ("Security Manager",                "Manager"),
 
     # Site Management
-    ("Site Superintendent",             "Senior Manager"),
-    ("Site Manager",                    "Senior Manager"),
+    ("Site Superintendent",             "Sr.Superintendent"),
+    ("Site Manager",                    "Sr.Manager"),
 
     # Corporate Management
-    ("Operations Director",             "Director"),
-    ("Finance Director",                "Director"),
-    ("HR Director",                     "Director"),
-    ("Managing Director",               "Director"),
+    ("Operations Director",             "Manajemen"),
+    ("Finance Director",                "Manajemen"),
+    ("HR Director",                     "Manajemen"),
+    ("Managing Director",               "Corporate Manajemen"),
 ]
 
 
@@ -2139,9 +2139,9 @@ def menu_seed_kontrak():
 
     _PENANDATANGAN = [
         ('HR Manager',        'Manager'),
-        ('Site Manager',      'Manager'),
-        ('HR Director',       'Director'),
-        ('Managing Director', 'Director'),
+        ('Site Manager',      'Sr.Manager'),
+        ('HR Director',       'Manajemen'),
+        ('Managing Director', 'Corporate Manajemen'),
     ]
 
     targets = pilih_companies('Seed kontrak untuk company')
