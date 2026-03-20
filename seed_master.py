@@ -295,20 +295,22 @@ def menu_tambah_department():
             if not nama:
                 break
             kode = input_prompt('  Kode (opsional, contoh: HRD, FIN)')
-            departments.append({'nama': nama, 'kode': kode})
+            deskripsi = input_prompt('  Deskripsi (opsional)')
+            departments.append({'nama': nama, 'kode': kode, 'deskripsi': deskripsi})
     else:
         print()
-        info('Format: NamaDepartment, kode (kode opsional)')
-        info('Contoh: Human Resources, HRD')
+        info('Format: NamaDepartment, kode, deskripsi (kode & deskripsi opsional)')
+        info('Contoh: Human Resources, HRD, Mengelola SDM perusahaan')
         info('        Finance & Accounting, FIN')
         lines = input_bulk('Daftar department')
         departments = []
         for line in lines:
             parts = [p.strip() for p in line.split(',')]
-            nama  = parts[0] if parts else ''
-            kode  = parts[1] if len(parts) > 1 else ''
+            nama      = parts[0] if parts else ''
+            kode      = parts[1] if len(parts) > 1 else ''
+            deskripsi = parts[2] if len(parts) > 2 else ''
             if nama:
-                departments.append({'nama': nama, 'kode': kode})
+                departments.append({'nama': nama, 'kode': kode, 'deskripsi': deskripsi})
 
     if not departments:
         warn('Tidak ada department diinput.')
@@ -330,7 +332,7 @@ def menu_tambah_department():
             obj, is_new = Department.objects.get_or_create(
                 company=company,
                 nama=d['nama'],
-                defaults={'kode': d['kode'], 'aktif': True}
+                defaults={'kode': d['kode'], 'deskripsi': d.get('deskripsi', ''), 'aktif': True}
             )
             if is_new:
                 created += 1
