@@ -65,8 +65,8 @@ def mprf_form(request, pk=None):
         return redirect('mprf_list')
     return render(request, 'recruitment/manpower_form.html', {
         'instance': instance,
-        'departments': Department.objects.filter(aktif=True),
-        'positions': Position.objects.all(),
+        'departments': Department.objects.filter(company=company, aktif=True),
+        'positions': Position.objects.filter(company=company, aktif=True).select_related('department').order_by('department__nama', 'nama'),
     })
 
 

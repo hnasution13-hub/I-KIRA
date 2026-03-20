@@ -61,3 +61,30 @@ if invalid.exists():
         print(f'    - {p.nama} | level="{p.level}" | company={p.company}')
 else:
     print('\n[OK] Semua level jabatan sudah valid.')
+
+# ── Hapus duplikat jabatan per company ────────────────────────────────────────
+print('\n=== Hapus Duplikat Jabatan ===\n')
+from apps.core.models import Company
+from django.db.models import Min
+
+total_del = 0
+for company in Company.objects.all():
+    positions = Position.objects.filter(company=company)
+    # Group by nama — simpan ID terkecil (pertama dibuat), hapus sisanya
+    seen = {}
+    to_delete = []
+    for pos in positions.order_by('id'):
+        key = pos.nama.strip().lower()
+        if key in seen:
+            to_delete.append(pos.pk)
+        else:
+            seen[key] = pos.pk
+
+    if to_delete:
+        Position.objects.filter(pk__in=to_delete).delete()
+        print(f'  [OK] {company.nama}: {len(to_delete)} duplikat dihapus.')
+        total_del += len(to_delete)
+    else:
+        print(f'  [-] {company.nama}: tidak ada duplikat.')
+
+print(f'\nTotal duplikat dihapus: {total_del}')
