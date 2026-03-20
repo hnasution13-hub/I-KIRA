@@ -100,8 +100,6 @@ def candidate_list(request):
     qs = Candidate.objects.select_related('mprf')
     company = getattr(request, 'company', None)
     if company:
-        # FIX: kandidat dengan MPRF dari company ini, ATAU kandidat tanpa MPRF
-        # tapi punya company langsung (ditambah manual)
         from django.db.models import Q
         qs = qs.filter(
             Q(mprf__company=company) | Q(mprf__isnull=True, company=company)
@@ -180,8 +178,7 @@ def candidate_form(request, pk=None):
             candidate = Candidate(**data)
             if 'cv_file' in request.FILES:
                 candidate.cv_file = request.FILES['cv_file']
-            # FIX: set company agar kandidat tanpa MPRF tetap terikat ke tenant
-            if not candidate.company_id:
+            if not getattr(candidate, 'company_id', None):
                 candidate.company = getattr(request, 'company', None)
             candidate.save()
         messages.success(request, 'Data kandidat berhasil disimpan.')
