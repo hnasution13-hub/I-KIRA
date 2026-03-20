@@ -60,7 +60,9 @@ def _validate_device_mac(emp, mac_address, user_agent=''):
         return None, False, f'Perangkat MAC {mac_address} belum terdaftar untuk karyawan ini'
 
 
-def _save_checkin_log(emp, device, mac_address, lat, lng, accuracy, tipe, request, device_known, gps_valid, flag=False, flag_reason=''):
+def _save_checkin_log(emp, device, mac_address, lat, lng, accuracy, tipe, request,
+                      device_known, gps_valid, flag=False, flag_reason='',
+                      jarak_meter=None, dalam_radius=None, ditolak=False, alasan_tolak=''):
     """Simpan log check-in ke PortalCheckInLog."""
     from apps.employees.models import PortalCheckInLog
     try:
@@ -78,6 +80,10 @@ def _save_checkin_log(emp, device, mac_address, lat, lng, accuracy, tipe, reques
             gps_valid=gps_valid,
             flagged=flag,
             catatan_flag=flag_reason,
+            jarak_meter=jarak_meter,
+            dalam_radius=dalam_radius,
+            ditolak=ditolak,
+            alasan_tolak=alasan_tolak,
         )
     except Exception:
         pass  # Log gagal tidak boleh hentikan proses checkin
@@ -305,6 +311,29 @@ def portal_checkin(request):
 
     gps_valid = (latitude is not None and longitude is not None and not gps_denied)
 
+    # ── Validasi Radius Geofencing ──────────────────────────────────────────
+    from utils.geofencing import validasi_radius
+    geo = validasi_radius(emp, latitude, longitude)
+
+    if not geo['valid']:
+        # Simpan log penolakan sebagai bukti
+        device, device_known, mac_flag_reason = _validate_device_mac(
+            emp, mac_address, request.META.get('HTTP_USER_AGENT', '')
+        )
+        _save_checkin_log(
+            emp=emp, device=device, mac_address=mac_address,
+            lat=latitude, lng=longitude, accuracy=accuracy,
+            tipe='checkin', request=request,
+            device_known=False, gps_valid=gps_valid,
+            flag=True, flag_reason=geo['pesan_hr'],
+            jarak_meter=geo['jarak_meter'],
+            dalam_radius=False,
+            ditolak=True,
+            alasan_tolak=geo['pesan_hr'],
+        )
+        messages.error(request, geo['pesan'])
+        return redirect('portal_dashboard')
+
     # Validasi MAC address
     device, device_known, mac_flag_reason = _validate_device_mac(
         emp, mac_address, request.META.get('HTTP_USER_AGENT', '')
@@ -372,6 +401,10 @@ def portal_checkin(request):
         tipe=tipe_action, request=request,
         device_known=device_known, gps_valid=gps_valid,
         flag=flag, flag_reason=flag_reason,
+        jarak_meter=geo['jarak_meter'],
+        dalam_radius=geo['valid'],
+        ditolak=False,
+        alasan_tolak='',
     )
 
     return redirect('portal_dashboard')
@@ -429,6 +462,32 @@ def portal_sync_checkin(request):
 
     gps_valid = (latitude is not None and longitude is not None and not gps_denied)
 
+    # ── Validasi Radius Geofencing (offline sync tetap divalidasi) ──────────
+    from utils.geofencing import validasi_radius
+    geo = validasi_radius(emp, latitude, longitude)
+    if not geo['valid']:
+        device, device_known, _ = _validate_device_mac(
+            emp, mac_address, request.META.get('HTTP_USER_AGENT', '')
+        )
+        _save_checkin_log(
+            emp=emp, device=device, mac_address=mac_address,
+            lat=latitude, lng=longitude, accuracy=accuracy,
+            tipe='checkin', request=request,
+            device_known=False, gps_valid=gps_valid,
+            flag=True, flag_reason=geo['pesan_hr'],
+            jarak_meter=geo['jarak_meter'],
+            dalam_radius=False,
+            ditolak=True, alasan_tolak=geo['pesan_hr'],
+        )
+        from django.http import JsonResponse
+        return JsonResponse({
+            'status': 'error',
+            'reason': 'diluar_radius',
+            'pesan': geo['pesan'],
+            'jarak_meter': geo['jarak_meter'],
+            'radius_meter': geo['radius_meter'],
+        }, status=403)
+
     device, device_known, mac_flag_reason = _validate_device_mac(
         emp, mac_address, request.META.get('HTTP_USER_AGENT', '')
     )
@@ -470,6 +529,9 @@ def portal_sync_checkin(request):
         tipe=tipe_action, request=request,
         device_known=device_known, gps_valid=gps_valid,
         flag=flag, flag_reason=flag_reason,
+        jarak_meter=geo['jarak_meter'],
+        dalam_radius=geo['valid'],
+        ditolak=False, alasan_tolak='',
     )
 
     from django.http import JsonResponse

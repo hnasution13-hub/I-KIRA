@@ -24,6 +24,21 @@ class JobSite(models.Model):
     nama    = models.CharField(max_length=100, verbose_name='Job Site')
     aktif   = models.BooleanField(default=True)
 
+    # ── Geofencing ────────────────────────────────────────────────────────────
+    latitude     = models.DecimalField(
+        max_digits=10, decimal_places=7,
+        null=True, blank=True, verbose_name='Latitude Kantor'
+    )
+    longitude    = models.DecimalField(
+        max_digits=10, decimal_places=7,
+        null=True, blank=True, verbose_name='Longitude Kantor'
+    )
+    radius_meter = models.PositiveIntegerField(
+        null=True, blank=True,
+        verbose_name='Radius Check-In (meter)',
+        help_text='Jarak maksimal dari koordinat kantor. Wajib diset agar check-in dapat dilakukan.'
+    )
+
     class Meta:
         verbose_name        = 'Job Site'
         verbose_name_plural = 'Job Site'
@@ -263,6 +278,12 @@ class PortalCheckInLog(models.Model):
     gps_valid      = models.BooleanField(default=False)
     flagged        = models.BooleanField(default=False)
     catatan_flag   = models.TextField(blank=True)
+
+    # ── Geofencing ────────────────────────────────────────────────────────────
+    jarak_meter    = models.FloatField(null=True, blank=True, verbose_name='Jarak dari Kantor (m)')
+    dalam_radius   = models.BooleanField(null=True, blank=True, verbose_name='Dalam Radius')
+    ditolak        = models.BooleanField(default=False, verbose_name='Check-In Ditolak')
+    alasan_tolak   = models.TextField(blank=True, verbose_name='Alasan Penolakan')
 
     class Meta:
         verbose_name = 'Log Check-In Portal'

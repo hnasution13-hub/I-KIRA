@@ -108,6 +108,56 @@
               </button>
             </div>
           </div>
+
+          <!-- ── Geofencing Kantor Pusat ─────────────────────────────────── -->
+          <hr class="my-4">
+          <h6 class="fw-bold mb-3"><i class="fas fa-map-marker-alt me-2 text-danger"></i>Lokasi Check-In Kantor Pusat</h6>
+          <p class="text-muted small mb-3">
+            Koordinat ini digunakan sebagai fallback jika Job Site karyawan belum punya koordinat sendiri.
+            Karyawan <strong>tidak dapat check-in</strong> sampai lokasi ini atau Job Site-nya diset.
+          </p>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Latitude</label>
+              <input type="number" name="latitude" step="0.0000001" class="form-control"
+                     value="{{ company.latitude|default:'' }}"
+                     placeholder="-6.2088000">
+              <small class="text-muted">Contoh: -6.2088000</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Longitude</label>
+              <input type="number" name="longitude" step="0.0000001" class="form-control"
+                     value="{{ company.longitude|default:'' }}"
+                     placeholder="106.8456000">
+              <small class="text-muted">Contoh: 106.8456000</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Radius Check-In (meter)</label>
+              <input type="number" name="radius_meter" min="10" max="5000" class="form-control"
+                     value="{{ company.radius_meter|default:'' }}"
+                     placeholder="100">
+              <small class="text-muted">Jarak maksimal dari kantor. Misal: 100</small>
+            </div>
+            <div class="col-12">
+              <a href="https://maps.google.com" target="_blank" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-map me-1"></i>Buka Google Maps untuk cari koordinat
+              </a>
+              {% if company.latitude and company.longitude %}
+              <a href="https://maps.google.com/?q={{ company.latitude }},{{ company.longitude }}"
+                 target="_blank" class="btn btn-sm btn-outline-success ms-2">
+                <i class="fas fa-eye me-1"></i>Lihat Lokasi Tersimpan
+              </a>
+              <span class="ms-2 badge bg-success">
+                <i class="fas fa-check me-1"></i>Koordinat sudah diset
+                {% if company.radius_meter %}— radius {{ company.radius_meter }}m{% endif %}
+              </span>
+              {% else %}
+              <span class="ms-2 badge bg-warning text-dark">
+                <i class="fas fa-exclamation-triangle me-1"></i>Belum diset — karyawan belum bisa check-in
+              </span>
+              {% endif %}
+            </div>
+          </div>
         </form>
       </div>
     </div>

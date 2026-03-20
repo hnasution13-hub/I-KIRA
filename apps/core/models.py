@@ -87,6 +87,21 @@ class Company(models.Model):
     jabatan_penandatangan_default = models.CharField(max_length=100, blank=True,
                                                       verbose_name='Jabatan Penandatangan Default')
 
+    # ── Geofencing (fallback jika JobSite tidak diset) ────────────────────────
+    latitude     = models.DecimalField(
+        max_digits=10, decimal_places=7,
+        null=True, blank=True, verbose_name='Latitude Kantor Pusat'
+    )
+    longitude    = models.DecimalField(
+        max_digits=10, decimal_places=7,
+        null=True, blank=True, verbose_name='Longitude Kantor Pusat'
+    )
+    radius_meter = models.PositiveIntegerField(
+        null=True, blank=True,
+        verbose_name='Radius Check-In Kantor Pusat (meter)',
+        help_text='Fallback jika Job Site tidak punya koordinat.'
+    )
+
     created_at     = models.DateTimeField(auto_now_add=True)
     updated_at     = models.DateTimeField(auto_now=True)
 

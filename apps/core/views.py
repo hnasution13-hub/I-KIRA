@@ -96,6 +96,19 @@ def company_profile(request):
     if request.method == 'POST' and company:
         company.nama  = request.POST.get('nama', company.nama)
         company.email = request.POST.get('email', company.email)
+
+        # Geofencing — koordinat & radius kantor pusat
+        lat_raw    = request.POST.get('latitude', '').strip()
+        lng_raw    = request.POST.get('longitude', '').strip()
+        radius_raw = request.POST.get('radius_meter', '').strip()
+        try:
+            company.latitude     = float(lat_raw)    if lat_raw    else None
+            company.longitude    = float(lng_raw)    if lng_raw    else None
+            company.radius_meter = int(radius_raw)   if radius_raw else None
+        except ValueError:
+            messages.error(request, 'Format koordinat atau radius tidak valid.')
+            return render(request, 'core/company_profile.html', {'company': company})
+
         company.save()
         messages.success(request, 'Profil perusahaan berhasil diperbarui.')
     return render(request, 'core/company_profile.html', {'company': company})
