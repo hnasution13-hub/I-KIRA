@@ -120,11 +120,25 @@
           <!-- Leaflet CSS -->
           <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 
+          <!-- Search box -->
+          <div class="position-relative mb-2">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" id="geo-search" class="form-control"
+                     placeholder="Cari alamat atau nama jalan... contoh: Jl. Sudirman Jakarta"
+                     autocomplete="off">
+              <button type="button" class="btn btn-outline-primary" onclick="geoSearchAddress()">
+                Cari
+              </button>
+            </div>
+            <div id="geo-suggestions" class="list-group position-absolute w-100" style="z-index:9999; display:none; max-height:220px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.15);"></div>
+          </div>
+
           <!-- Map container -->
           <div id="geo-map" style="height:320px; border-radius:10px; border:1px solid var(--border); margin-bottom:1rem;"></div>
           <small class="text-muted d-block mb-3">
             <i class="fas fa-info-circle me-1"></i>
-            Klik pada peta untuk menentukan lokasi kantor, atau gunakan tombol di bawah.
+            Cari alamat di atas, klik peta, atau gunakan tombol Lokasi Saya.
           </small>
 
           <div class="row g-3">
@@ -260,6 +274,67 @@
               if (marker) { map.removeLayer(marker); marker = null; }
               if (circle)  { map.removeLayer(circle); circle = null; }
             };
+
+            // ── Search alamat via Nominatim ─────────────────────────────────
+            var searchTimeout = null;
+            var searchInput   = document.getElementById('geo-search');
+            var suggestions   = document.getElementById('geo-suggestions');
+
+            function showSuggestions(results) {
+              suggestions.innerHTML = '';
+              if (!results.length) {
+                suggestions.style.display = 'none';
+                return;
+              }
+              results.forEach(function(r) {
+                var item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'list-group-item list-group-item-action text-start py-2';
+                item.style.fontSize = '.85rem';
+                item.innerHTML = '<i class="fas fa-map-marker-alt me-2 text-danger opacity-50"></i>' + r.display_name;
+                item.onclick = function() {
+                  setLocation(parseFloat(r.lat), parseFloat(r.lon));
+                  map.setView([parseFloat(r.lat), parseFloat(r.lon)], 17);
+                  searchInput.value = r.display_name;
+                  suggestions.style.display = 'none';
+                };
+                suggestions.appendChild(item);
+              });
+              suggestions.style.display = 'block';
+            }
+
+            function geoDoSearch(q) {
+              if (!q || q.length < 3) { suggestions.style.display = 'none'; return; }
+              fetch('https://nominatim.openstreetmap.org/search?format=json&q=' +
+                    encodeURIComponent(q) + '&countrycodes=id&limit=6&addressdetails=1', {
+                headers: {'Accept-Language': 'id'}
+              })
+              .then(function(r){ return r.json(); })
+              .then(showSuggestions)
+              .catch(function(){ suggestions.style.display = 'none'; });
+            }
+
+            window.geoSearchAddress = function() {
+              geoDoSearch(searchInput.value.trim());
+            };
+
+            // Live search saat ketik (debounce 400ms)
+            searchInput.addEventListener('input', function() {
+              clearTimeout(searchTimeout);
+              searchTimeout = setTimeout(function(){ geoDoSearch(searchInput.value.trim()); }, 400);
+            });
+
+            // Enter untuk search
+            searchInput.addEventListener('keydown', function(e) {
+              if (e.key === 'Enter') { e.preventDefault(); geoDoSearch(searchInput.value.trim()); }
+            });
+
+            // Tutup suggestion saat klik di luar
+            document.addEventListener('click', function(e) {
+              if (!e.target.closest('#geo-search') && !e.target.closest('#geo-suggestions')) {
+                suggestions.style.display = 'none';
+              }
+            });
           })();
           </script>
         </form>
