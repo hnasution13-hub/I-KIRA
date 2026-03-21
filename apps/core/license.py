@@ -17,8 +17,6 @@ from django.conf import settings
 # ── Addon code mapping ────────────────────────────────────────────────────────
 ADDON_CODES = {
     'assets':              'AST',
-    'recruitment':         'RCT',
-    'psychotest':          'PSY',
     'advanced_psychotest': 'APY',
     'od':                  'OD0',
 }
@@ -26,8 +24,6 @@ CODE_TO_ADDON = {v: k for k, v in ADDON_CODES.items()}
 
 ADDON_LABELS = {
     'assets':              'Asset Management',
-    'recruitment':         'Rekrutmen',
-    'psychotest':          'Psikotes',
     'advanced_psychotest': 'Advanced Psychotest (OCEAN)',
     'od':                  'Organisation Development (+ Performance & KPI)',
 }

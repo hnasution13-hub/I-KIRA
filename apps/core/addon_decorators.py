@@ -14,10 +14,11 @@ Expiry logic:
 from functools import wraps
 from django.shortcuts import render
 
+# Rekrutmen & Psikotes Dasar adalah fitur INTI — selalu aktif, bukan addon
+BASIC_FEATURES = {'recruitment', 'psychotest'}
+
 ADDON_LABELS = {
     'assets':              'Asset Management',
-    'recruitment':         'Rekrutmen',
-    'psychotest':          'Psikotes',
     'advanced_psychotest': 'Advanced Psychotest (OCEAN)',
     'od':                  'Organisation Development (+ Performance & KPI)',
 }
@@ -39,8 +40,10 @@ def _get_license(company, addon_name):
 def _is_addon_active(company, addon_name):
     """
     True jika addon valid atau dalam grace period.
-    Fallback ke Company boolean flag untuk backward compat.
+    Rekrutmen & Psikotes Dasar selalu True (fitur inti).
     """
+    if addon_name in BASIC_FEATURES:
+        return True
     if not company:
         return False
 
@@ -65,6 +68,9 @@ def addon_required(addon_name):
             if getattr(request, 'is_developer', False):
                 return view_func(request, *args, **kwargs)
 
+            # Fitur inti — selalu aktif
+            if addon_name in BASIC_FEATURES:
+                return view_func(request, *args, **kwargs)
             company = getattr(request, 'company', None)
             # Performance adalah bagian dari OD
             check_name = 'od' if addon_name == 'performance' else addon_name
@@ -86,6 +92,9 @@ def check_addon(request, addon_name):
     Performance adalah bagian dari OD — fallback ke addon_od.
     """
     if getattr(request, 'is_developer', False):
+        return True
+    # Fitur inti — selalu aktif
+    if addon_name in BASIC_FEATURES:
         return True
     # Performance adalah bagian dari OD
     if addon_name == 'performance':
@@ -114,7 +123,7 @@ def get_addon_license_context(company):
     licenses = AddonLicense.objects.filter(company=company, aktif=True)
     lic_map  = {l.addon: l for l in licenses}
 
-    for addon_name in [k for k in ADDON_LABELS if k != 'performance']:
+    for addon_name in ADDON_LABELS:
         lic = lic_map.get(addon_name)
         if lic:
             result[addon_name] = {

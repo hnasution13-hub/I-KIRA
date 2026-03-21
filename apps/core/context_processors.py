@@ -51,8 +51,9 @@ def global_context(request):
     # ── Add-On visibility ─────────────────────────────────────────────────────
     # Developer: semua True. Administrator & user biasa: ikut Company flags.
     context['addon_assets']              = check_addon(request, 'assets')
-    context['addon_recruitment']         = check_addon(request, 'recruitment')
-    context['addon_psychotest']          = check_addon(request, 'psychotest')
+    # Rekrutmen & Psikotes Dasar adalah fitur inti — selalu True
+    context['addon_recruitment']         = True
+    context['addon_psychotest']          = True
     context['addon_advanced_psychotest'] = check_addon(request, 'advanced_psychotest')
     context['addon_od']                  = check_addon(request, 'od')
     # Performance adalah bagian dari OD — sama nilainya

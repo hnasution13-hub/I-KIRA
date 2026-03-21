@@ -24,7 +24,6 @@ from utils.psychotest_seed import DISC_DESKRIPSI
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
-@addon_required('psychotest')
 def soal_bank_list(request):
     kategori = request.GET.get('kategori', '')
     qs = SoalBank.objects.all()
@@ -38,7 +37,6 @@ def soal_bank_list(request):
 
 
 @login_required
-@addon_required('psychotest')
 def soal_bank_form(request, pk=None):
     instance = get_object_or_404(SoalBank, pk=pk) if pk else None
     if request.method == 'POST':
@@ -88,7 +86,6 @@ def soal_bank_delete(request, pk):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
-@addon_required('psychotest')
 def session_list(request):
     sessions = PsikotesSession.objects.select_related(
         'candidate', 'employee'
@@ -103,7 +100,6 @@ def session_list(request):
 
 
 @login_required
-@addon_required('psychotest')
 def session_create(request, candidate_pk):
     """HR buat sesi psikotes baru untuk kandidat."""
     candidate = get_object_or_404(Candidate, pk=candidate_pk)
@@ -147,7 +143,6 @@ def session_create(request, candidate_pk):
 
 
 @login_required
-@addon_required('psychotest')
 def session_create_employee(request, employee_pk):
     """HR buat sesi psikotes basic untuk karyawan."""
     from apps.employees.models import Employee
@@ -193,7 +188,6 @@ def session_create_employee(request, employee_pk):
 
 
 @login_required
-@addon_required('psychotest')
 def session_detail(request, pk):
     session = get_object_or_404(PsikotesSession, pk=pk)
     result = getattr(session, 'result', None)
@@ -454,7 +448,6 @@ def _hitung_dan_simpan_hasil(session: PsikotesSession):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
-@addon_required('psychotest')
 def mcu_form(request, candidate_pk):
     candidate = get_object_or_404(Candidate, pk=candidate_pk)
     instance, _ = MedicalCheckUp.objects.get_or_create(candidate=candidate)

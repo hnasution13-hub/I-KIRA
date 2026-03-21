@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 # ══════════════════════════════════════════════════════════════════════════════
 
 @login_required
-@addon_required('recruitment')
 def mprf_list(request):
     company = getattr(request, 'company', None)
     mprfs = ManpowerRequest.objects.select_related('department', 'jabatan').order_by('-created_at')
@@ -35,7 +34,6 @@ def mprf_list(request):
 
 
 @login_required
-@addon_required('recruitment')
 def mprf_form(request, pk=None):
     instance = get_object_or_404(ManpowerRequest, pk=pk, **({'company': request.company} if pk and request.company else {})) if pk else None
 
@@ -93,7 +91,6 @@ def mprf_approve(request, pk):
 # ══════════════════════════════════════════════════════════════════════════════
 
 @login_required
-@addon_required('recruitment')
 def candidate_list(request):
     from django.core.paginator import Paginator
 
@@ -157,7 +154,6 @@ def candidate_list(request):
 
 
 @login_required
-@addon_required('recruitment')
 def candidate_form(request, pk=None):
     instance = get_object_or_404(Candidate, pk=pk, **({'company': request.company} if pk and request.company else {})) if pk else None
     if request.method == 'POST':
@@ -205,7 +201,6 @@ def candidate_form(request, pk=None):
 
 
 @login_required
-@addon_required('recruitment')
 def candidate_detail(request, pk):
     from apps.psychotest.models import (
         PsikotesSession, MedicalCheckUp, InterviewSession,
@@ -378,7 +373,6 @@ def candidate_update_status(request, pk):
 # ══════════════════════════════════════════════════════════════════════════════
 
 @login_required
-@addon_required('recruitment')
 def offering_list(request):
     company = getattr(request, 'company', None)
     offerings = OfferingLetter.objects.select_related('candidate', 'template').order_by('-tanggal_surat')

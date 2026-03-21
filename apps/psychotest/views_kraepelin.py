@@ -160,7 +160,6 @@ def _hitung_kraepelin(session: KraepelinSession) -> KraepelinResult:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
-@addon_required('psychotest')
 def kraepelin_create(request, candidate_pk=None, employee_pk=None):
     """HR buat sesi Kraepelin untuk kandidat atau karyawan."""
     from apps.recruitment.models import Candidate
@@ -343,7 +342,6 @@ def kraepelin_selesai(request, token):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
-@addon_required('psychotest')
 def kraepelin_result_hr(request, pk):
     """HR lihat hasil Kraepelin detail."""
     sesi   = get_object_or_404(KraepelinSession, pk=pk)
@@ -361,7 +359,6 @@ def kraepelin_result_hr(request, pk):
 
 
 @login_required
-@addon_required('psychotest')
 def kraepelin_session_list(request):
     """HR lihat semua sesi Kraepelin."""
     sessions = KraepelinSession.objects.select_related(
