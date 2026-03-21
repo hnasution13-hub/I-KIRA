@@ -101,12 +101,52 @@ def company_profile(request):
         lat_raw    = request.POST.get('latitude', '').strip()
         lng_raw    = request.POST.get('longitude', '').strip()
         radius_raw = request.POST.get('radius_meter', '').strip()
+
+        def _parse_coord(raw):
+            """Parse koordinat: decimal (biasa/koma) atau DMS dari Google Maps."""
+            if not raw:
+                return None
+            import re
+            raw = raw.strip()
+            # DMS format: 7°23'38.6"S atau 7°23'38.6"N
+            dms = re.match(
+                r"""([0-9]+)[°\s]([0-9]+)['\'\s]([0-9]+\.?[0-9]*)["\"\s]*([NSns])""", raw
+            )
+            if dms:
+                d, m, s, hem = dms.groups()
+                dec = float(d) + float(m)/60 + float(s)/3600
+                if hem.upper() in ('S', 'W'):
+                    dec = -dec
+                return dec
+            dms2 = re.match(
+                r"""([0-9]+)[°\s]([0-9]+)['\'\s]([0-9]+\.?[0-9]*)["\"\s]*([EWew])""", raw
+            )
+            if dms2:
+                d, m, s, hem = dms2.groups()
+                dec = float(d) + float(m)/60 + float(s)/3600
+                if hem.upper() in ('S', 'W'):
+                    dec = -dec
+                return dec
+            # Decimal biasa (titik atau koma)
+            return float(raw.replace(',', '.'))
+
         try:
-            company.latitude     = float(lat_raw)    if lat_raw    else None
-            company.longitude    = float(lng_raw)    if lng_raw    else None
-            company.radius_meter = int(radius_raw)   if radius_raw else None
-        except ValueError:
-            messages.error(request, 'Format koordinat atau radius tidak valid.')
+            lat = _parse_coord(lat_raw)
+            lng = _parse_coord(lng_raw)
+            rad = int(radius_raw) if radius_raw else None
+
+            if lat is not None and not (-90 <= lat <= 90):
+                raise ValueError(f'Latitude harus antara -90 dan 90. Nilai yang diparse: {lat:.6f}')
+            if lng is not None and not (-180 <= lng <= 180):
+                raise ValueError(f'Longitude harus antara -180 dan 180. Nilai yang diparse: {lng:.6f}')
+            if rad is not None and rad <= 0:
+                raise ValueError('Radius harus lebih dari 0.')
+
+            company.latitude     = round(lat, 7) if lat is not None else None
+            company.longitude    = round(lng, 7) if lng is not None else None
+            company.radius_meter = rad
+        except ValueError as e:
+            messages.error(request, f'Format koordinat tidak valid: {e}')
             return render(request, 'core/company_profile.html', {'company': company})
 
         company.save()

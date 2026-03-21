@@ -116,48 +116,152 @@
             Koordinat ini digunakan sebagai fallback jika Job Site karyawan belum punya koordinat sendiri.
             Karyawan <strong>tidak dapat check-in</strong> sampai lokasi ini atau Job Site-nya diset.
           </p>
+
+          <!-- Leaflet CSS -->
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+
+          <!-- Map container -->
+          <div id="geo-map" style="height:320px; border-radius:10px; border:1px solid var(--border); margin-bottom:1rem;"></div>
+          <small class="text-muted d-block mb-3">
+            <i class="fas fa-info-circle me-1"></i>
+            Klik pada peta untuk menentukan lokasi kantor, atau gunakan tombol di bawah.
+          </small>
+
           <div class="row g-3">
             <div class="col-md-4">
               <label class="form-label fw-semibold">Latitude</label>
-              <input type="number" name="latitude" step="0.0000001" class="form-control"
+              <input type="text" name="latitude" id="geo-lat" class="form-control"
                      value="{{ company.latitude|default:'' }}"
-                     placeholder="-6.2088000">
-              <small class="text-muted">Contoh: -6.2088000</small>
+                     placeholder="-7.3940556" readonly>
             </div>
             <div class="col-md-4">
               <label class="form-label fw-semibold">Longitude</label>
-              <input type="number" name="longitude" step="0.0000001" class="form-control"
+              <input type="text" name="longitude" id="geo-lng" class="form-control"
                      value="{{ company.longitude|default:'' }}"
-                     placeholder="106.8456000">
-              <small class="text-muted">Contoh: 106.8456000</small>
+                     placeholder="112.6916111" readonly>
             </div>
             <div class="col-md-4">
               <label class="form-label fw-semibold">Radius Check-In (meter)</label>
-              <input type="number" name="radius_meter" min="10" max="5000" class="form-control"
+              <input type="number" name="radius_meter" id="geo-radius" min="10" max="5000" class="form-control"
                      value="{{ company.radius_meter|default:'' }}"
                      placeholder="100">
-              <small class="text-muted">Jarak maksimal dari kantor. Misal: 100</small>
+              <small class="text-muted">Jarak maksimal dari kantor.</small>
             </div>
-            <div class="col-12">
-              <a href="https://maps.google.com" target="_blank" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-map me-1"></i>Buka Google Maps untuk cari koordinat
-              </a>
+            <div class="col-12 d-flex gap-2 flex-wrap align-items-center">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="geoUseMyLocation()">
+                <i class="fas fa-crosshairs me-1"></i>Gunakan Lokasi Saya
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="geoClear()">
+                <i class="fas fa-times me-1"></i>Reset
+              </button>
               {% if company.latitude and company.longitude %}
-              <a href="https://maps.google.com/?q={{ company.latitude }},{{ company.longitude }}"
-                 target="_blank" class="btn btn-sm btn-outline-success ms-2">
-                <i class="fas fa-eye me-1"></i>Lihat Lokasi Tersimpan
-              </a>
-              <span class="ms-2 badge bg-success">
+              <span class="badge bg-success">
                 <i class="fas fa-check me-1"></i>Koordinat sudah diset
                 {% if company.radius_meter %}— radius {{ company.radius_meter }}m{% endif %}
               </span>
               {% else %}
-              <span class="ms-2 badge bg-warning text-dark">
+              <span class="badge bg-warning text-dark" id="geo-status-badge">
                 <i class="fas fa-exclamation-triangle me-1"></i>Belum diset — karyawan belum bisa check-in
               </span>
               {% endif %}
             </div>
           </div>
+
+          <!-- Leaflet JS -->
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+          <script>
+          (function(){
+            var initLat = {{ company.latitude|default:'null' }};
+            var initLng = {{ company.longitude|default:'null' }};
+            var initRad = {{ company.radius_meter|default:'100' }};
+            var defaultLat = -2.5;
+            var defaultLng = 118.0;
+            var defaultZoom = 5;
+
+            var map = L.map('geo-map').setView(
+              initLat && initLng ? [initLat, initLng] : [defaultLat, defaultLng],
+              initLat && initLng ? 16 : defaultZoom
+            );
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap contributors',
+              maxZoom: 19
+            }).addTo(map);
+
+            var marker = null;
+            var circle = null;
+
+            function setLocation(lat, lng) {
+              lat = parseFloat(lat.toFixed(7));
+              lng = parseFloat(lng.toFixed(7));
+              document.getElementById('geo-lat').value = lat;
+              document.getElementById('geo-lng').value = lng;
+
+              var rad = parseInt(document.getElementById('geo-radius').value) || 100;
+
+              if (marker) { map.removeLayer(marker); }
+              if (circle)  { map.removeLayer(circle); }
+
+              marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+              circle = L.circle([lat, lng], {
+                radius: rad,
+                color: '#c0392b',
+                fillColor: '#e74c3c',
+                fillOpacity: 0.15,
+                weight: 2
+              }).addTo(map);
+
+              marker.bindPopup('<b>Lokasi Kantor</b><br>' + lat + ', ' + lng).openPopup();
+
+              // Update circle saat radius berubah
+              document.getElementById('geo-radius').oninput = function(){
+                var r = parseInt(this.value) || 100;
+                if (circle) { circle.setRadius(r); }
+              };
+
+              // Drag marker → update koordinat
+              marker.on('dragend', function(e){
+                var pos = e.target.getLatLng();
+                setLocation(pos.lat, pos.lng);
+                map.setView([pos.lat, pos.lng]);
+              });
+
+              var badge = document.getElementById('geo-status-badge');
+              if (badge) { badge.style.display = 'none'; }
+            }
+
+            // Klik peta → set lokasi
+            map.on('click', function(e){ setLocation(e.latlng.lat, e.latlng.lng); map.setView(e.latlng, 17); });
+
+            // Init jika sudah ada koordinat tersimpan
+            if (initLat && initLng) { setLocation(initLat, initLng); }
+
+            // Tombol Gunakan Lokasi Saya
+            window.geoUseMyLocation = function(){
+              if (!navigator.geolocation) {
+                alert('Browser Anda tidak mendukung geolokasi.');
+                return;
+              }
+              navigator.geolocation.getCurrentPosition(
+                function(pos){
+                  var lat = pos.coords.latitude;
+                  var lng = pos.coords.longitude;
+                  setLocation(lat, lng);
+                  map.setView([lat, lng], 17);
+                },
+                function(){ alert('Gagal mendapatkan lokasi. Pastikan izin lokasi diaktifkan.'); }
+              );
+            };
+
+            // Tombol Reset
+            window.geoClear = function(){
+              document.getElementById('geo-lat').value = '';
+              document.getElementById('geo-lng').value = '';
+              if (marker) { map.removeLayer(marker); marker = null; }
+              if (circle)  { map.removeLayer(circle); circle = null; }
+            };
+          })();
+          </script>
         </form>
       </div>
     </div>
