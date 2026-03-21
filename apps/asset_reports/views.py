@@ -6,6 +6,7 @@
 
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from apps.core.addon_decorators import addon_required
 from django.http import HttpResponse
 from apps.assets.models import Asset
 from apps.employees.models import Employee
@@ -27,6 +28,7 @@ def _get_company(request):
 
 
 @login_required
+@addon_required('assets')
 def dashboard_view(request):
     company = _get_company(request)
     asset_qs = Asset.objects.filter(company=company) if company else Asset.objects.all()
@@ -96,6 +98,7 @@ def dashboard_view(request):
 
 
 @login_required
+@addon_required('assets')
 def pic_beban_view(request):
     company = _get_company(request)
     emp_qs = Employee.objects.filter(
@@ -111,6 +114,7 @@ def pic_beban_view(request):
 
 
 @login_required
+@addon_required('assets')
 def stock_opname_view(request):
     company = _get_company(request)
     assets = Asset.objects.select_related(
@@ -145,6 +149,7 @@ def stock_opname_view(request):
 
 
 @login_required
+@addon_required('assets')
 def asset_card_view(request, asset_id):
     company = _get_company(request)
     qs = Asset.objects.filter(company=company) if company else Asset.objects.all()
@@ -160,6 +165,7 @@ def asset_card_view(request, asset_id):
 
 
 @login_required
+@addon_required('assets')
 def asset_card_print(request, asset_id):
     company = _get_company(request)
     qs = Asset.objects.filter(company=company) if company else Asset.objects.all()
@@ -178,6 +184,7 @@ def asset_card_print(request, asset_id):
 
 
 @login_required
+@addon_required('assets')
 def depreciation_report_view(request):
     company = _get_company(request)
     assets = Asset.objects.prefetch_related('depreciation_set').select_related('category')
@@ -200,6 +207,7 @@ def depreciation_report_view(request):
 
 
 @login_required
+@addon_required('assets')
 def maintenance_report_view(request):
     company = _get_company(request)
     maintenances = Maintenance.objects.select_related('asset')

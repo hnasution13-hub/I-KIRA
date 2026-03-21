@@ -9,6 +9,24 @@ import logging
 logger = logging.getLogger(__name__)
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from apps.core.addon_decorators import addon_required, _is_addon_active, ADDON_LABELS
+
+
+class AddonRequiredMixin:
+    addon_name = 'assets'
+
+    def dispatch(self, request, *args, **kwargs):
+        from django.shortcuts import render
+        if not getattr(request, 'is_developer', False):
+            company = getattr(request, 'company', None)
+            if not _is_addon_active(company, self.addon_name):
+                return render(request, 'core/addon_locked.html', {
+                    'addon_name':  self.addon_name,
+                    'addon_label': ADDON_LABELS.get(self.addon_name, self.addon_name),
+                })
+        return super().dispatch(request, *args, **kwargs)
+
+
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.shortcuts import render
 from django.urls import reverse_lazy
@@ -27,7 +45,7 @@ def _get_company(request):
     return company
 
 
-class AssetListView(LoginRequiredMixin, ListView):
+class AssetListView(AddonRequiredMixin, LoginRequiredMixin, ListView):
     model = Asset
     template_name = 'assets/asset_list.html'
     context_object_name = 'assets'
@@ -56,7 +74,7 @@ class AssetListView(LoginRequiredMixin, ListView):
         return context
 
 
-class AssetDetailView(LoginRequiredMixin, DetailView):
+class AssetDetailView(AddonRequiredMixin, LoginRequiredMixin, DetailView):
     model = Asset
     template_name = 'assets/asset_detail.html'
     context_object_name = 'asset'
@@ -69,7 +87,7 @@ class AssetDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class AssetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class AssetCreateView(AddonRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Asset
     form_class = AssetForm
     template_name = 'assets/asset_form.html'
@@ -89,7 +107,7 @@ class AssetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         return response
 
 
-class AssetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class AssetUpdateView(AddonRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Asset
     form_class = AssetForm
     template_name = 'assets/asset_form.html'
@@ -108,7 +126,7 @@ class AssetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return response
 
 
-class AssetDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class AssetDeleteView(AddonRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Asset
     template_name = 'assets/asset_confirm_delete.html'
     success_url = reverse_lazy('assets:asset_list')
@@ -120,7 +138,7 @@ class AssetDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
 
 
 # Category Views
-class CategoryListView(LoginRequiredMixin, ListView):
+class CategoryListView(AddonRequiredMixin, LoginRequiredMixin, ListView):
     model = Category
     template_name = 'assets/category_list.html'
     context_object_name = 'categories'
@@ -133,7 +151,7 @@ class CategoryListView(LoginRequiredMixin, ListView):
         return qs
 
 
-class CategoryDetailView(LoginRequiredMixin, DetailView):
+class CategoryDetailView(AddonRequiredMixin, LoginRequiredMixin, DetailView):
     model = Category
     template_name = 'assets/category_detail.html'
     context_object_name = 'category'
@@ -152,7 +170,7 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class CategoryCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class CategoryCreateView(AddonRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Category
     form_class = CategoryForm
     template_name = 'assets/category_form.html'
@@ -165,7 +183,7 @@ class CategoryCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         return super().form_valid(form)
 
 
-class CategoryUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class CategoryUpdateView(AddonRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Category
     form_class = CategoryForm
     template_name = 'assets/category_form.html'
@@ -177,7 +195,7 @@ class CategoryUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
         return super().form_valid(form)
 
 
-class CategoryDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class CategoryDeleteView(AddonRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Category
     template_name = 'assets/category_confirm_delete.html'
     success_url = reverse_lazy('assets:category_list')
@@ -188,7 +206,7 @@ class CategoryDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
         return super().delete(request, *args, **kwargs)
 
 
-class CategoryHierarchyView(LoginRequiredMixin, ListView):
+class CategoryHierarchyView(AddonRequiredMixin, LoginRequiredMixin, ListView):
     model = Category
     template_name = 'assets/category_hierarchy.html'
     context_object_name = 'categories'
@@ -204,6 +222,7 @@ class CategoryHierarchyView(LoginRequiredMixin, ListView):
 # ── Import Bulk ───────────────────────────────────────────────────────────────
 
 @login_required
+@addon_required('assets')
 def download_template_asset(request):
     from .export_import import download_template_import_asset
     company = _get_company(request)
@@ -211,6 +230,7 @@ def download_template_asset(request):
 
 
 @login_required
+@addon_required('assets')
 def import_asset(request):
     from apps.core.models import Company as CoreCompany
     is_developer = getattr(request, 'is_developer', False)
