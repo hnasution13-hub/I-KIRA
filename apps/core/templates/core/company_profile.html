@@ -1,4 +1,5 @@
 {% extends 'base_dashboard.html' %}
+{% load core_extras %}
 {% block title %}Profil Perusahaan{% endblock %}
 {% block breadcrumb %}Pengaturan / Profil Perusahaan{% endblock %}
 
@@ -349,111 +350,174 @@
         <i class="fas fa-key text-danger"></i>
         <h5 class="mb-0">Serial Key & Aktivasi Add-On</h5>
       </div>
-      <div class="card-body">
-        <div class="alert alert-warning py-2 small mb-3">
-          <i class="fas fa-info-circle me-1"></i>
-          Serial key di-generate dari <strong>Nama/Singkatan Perusahaan</strong> + <strong>Tanggal Daftar</strong>.
-          Salin key, lalu gunakan untuk mengaktifkan add-on yang diinginkan.
-          Jika profil berubah, key akan berubah — simpan key di tempat aman.
-        </div>
+      <div class="card-body p-0">
 
-        <div class="d-flex flex-column gap-3">
-          {% for addon in addons %}
-          <div class="addon-card {% if addon.aktif %}active-addon{% endif %}">
-            <div class="d-flex justify-content-between align-items-start mb-1">
+        {# ── Generated Key Banner (muncul setelah dev generate key) ── #}
+        {% if generated_key %}
+        <div class="alert alert-success m-3 mb-0">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <strong><i class="fas fa-check-circle me-1"></i>Key Baru Digenerate</strong>
+              <div class="text-muted small mb-1">{{ generated_company }} — {{ generated_addon }}</div>
+              <div class="serial-box d-inline-block mt-1" onclick="copySerialText('{{ generated_key }}')"
+                   style="font-size:.82rem; cursor:pointer;" title="Klik untuk salin">
+                {{ generated_key }}
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline-success ms-2" onclick="copySerialText('{{ generated_key }}')">
+              <i class="fas fa-copy me-1"></i>Salin
+            </button>
+          </div>
+          <div class="mt-2 small text-muted">
+            <i class="fas fa-exclamation-triangle me-1 text-warning"></i>
+            Simpan key ini di tempat aman. Key tidak akan ditampilkan lagi.
+          </div>
+        </div>
+        {% endif %}
+
+        {# ── Daftar Add-On ── #}
+        <div class="d-flex flex-column">
+          {% for addon_name, info in addon_ctx.items %}
+          <div class="addon-card {% if info.aktif %}active-addon{% endif %} border-bottom p-3">
+
+            {# Header addon #}
+            <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
-                <span class="fw-bold">{{ addon.get_addon_display }}</span>
-                {% if addon.aktif %}
-                  <span class="badge-addon-on ms-2"><i class="fas fa-check-circle me-1"></i>Aktif</span>
+                <span class="fw-bold">{{ addon_labels|getkey:addon_name }}</span>
+                {% if info.aktif and info.is_grace %}
+                  <span class="badge bg-warning text-dark ms-2" style="font-size:.72rem;">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Grace Period
+                  </span>
+                {% elif info.aktif %}
+                  <span class="badge bg-success bg-opacity-15 text-success ms-2" style="font-size:.72rem;">
+                    <i class="fas fa-check-circle me-1"></i>Aktif
+                  </span>
                 {% else %}
-                  <span class="badge-addon-off ms-2">Nonaktif</span>
+                  <span class="badge bg-secondary bg-opacity-15 text-muted ms-2" style="font-size:.72rem;">
+                    Nonaktif
+                  </span>
                 {% endif %}
               </div>
-              {% if addon.aktif %}
-              <form method="post" style="display:inline">
+
+              {# Tombol nonaktifkan #}
+              {% if info.aktif %}
+              <form method="post" action="{% url 'addon_deactivate' addon_name %}" class="d-inline">
                 {% csrf_token %}
-                <input type="hidden" name="action" value="deactivate_addon">
-                <input type="hidden" name="addon_id" value="{{ addon.pk }}">
-                <button type="submit" class="btn btn-sm btn-outline-secondary"
-                        onclick="return confirm('Nonaktifkan {{ addon.get_addon_display }}?')">
-                  <i class="fas fa-power-off"></i>
+                <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-2"
+                        onclick="return confirm('Nonaktifkan add-on ini?')"
+                        title="Nonaktifkan">
+                  <i class="fas fa-power-off" style="font-size:.75rem;"></i>
                 </button>
               </form>
               {% endif %}
             </div>
 
-            <!-- Serial Key Display -->
-            <div class="mb-2">
-              <small class="text-muted d-block mb-1">Serial Key:</small>
-              <div class="serial-box" onclick="copySerial(this, '{{ serial_keys|default_if_none:'' }}')"
-                   data-key="{{ serial_keys.assets }}{% if addon.addon == 'assets' %}{{ serial_keys.assets }}{% elif addon.addon == 'recruitment' %}{{ serial_keys.recruitment }}{% elif addon.addon == 'psychotest' %}{{ serial_keys.psychotest }}{% elif addon.addon == 'advanced_psychotest' %}{{ serial_keys.advanced_psychotest }}{% elif addon.addon == 'od' %}{{ serial_keys.od }}{% endif %}"
-                   title="Klik untuk salin">
-                {% if addon.addon == 'assets' %}{{ serial_keys.assets }}
-                {% elif addon.addon == 'recruitment' %}{{ serial_keys.recruitment }}
-                {% elif addon.addon == 'psychotest' %}{{ serial_keys.psychotest }}
-                {% elif addon.addon == 'advanced_psychotest' %}{{ serial_keys.advanced_psychotest }}
-                {% elif addon.addon == 'od' %}{{ serial_keys.od }}
+            {# Info license aktif #}
+            {% if info.aktif %}
+              {% if info.expiry %}
+                {% if info.is_grace %}
+                <div class="alert alert-warning py-1 px-2 small mb-2">
+                  <i class="fas fa-clock me-1"></i>
+                  Expired {{ info.days_left|abs }} hari lalu — grace period aktif.
+                  Segera perpanjang!
+                </div>
+                {% elif info.days_left <= 30 %}
+                <div class="alert alert-warning py-1 px-2 small mb-2">
+                  <i class="fas fa-bell me-1"></i>
+                  Berakhir dalam <strong>{{ info.days_left }} hari</strong>
+                  ({{ info.expiry|date:"d/m/Y" }})
+                </div>
+                {% else %}
+                <small class="text-muted d-block mb-2">
+                  <i class="fas fa-calendar me-1"></i>
+                  Berlaku hingga {{ info.expiry|date:"d/m/Y" }}
+                  ({{ info.days_left }} hari lagi)
+                </small>
                 {% endif %}
-              </div>
-              <small class="text-muted"><i class="fas fa-copy me-1"></i>Klik key untuk menyalin</small>
-            </div>
+              {% else %}
+                <small class="text-muted d-block mb-2">
+                  <i class="fas fa-infinity me-1"></i>Lifetime
+                </small>
+              {% endif %}
 
-            {% if not addon.aktif %}
-            <!-- Tombol Aktifkan -->
+              {% if info.serial_key %}
+              <div class="mb-1">
+                <small class="text-muted">Serial Key:</small>
+                <div class="serial-box small mt-1" onclick="copySerialText('{{ info.serial_key }}')"
+                     title="Klik untuk salin" style="cursor:pointer;">
+                  {{ info.serial_key }}
+                </div>
+              </div>
+              {% endif %}
+
+              {% if info.aktif_sejak %}
+              <small class="text-muted">
+                <i class="fas fa-user me-1"></i>
+                Diaktifkan {{ info.aktif_sejak|date:"d/m/Y" }}
+                {% if info.diaktifkan_oleh %}— {{ info.diaktifkan_oleh }}{% endif %}
+              </small>
+              {% endif %}
+
+            {% else %}
+            {# Form input key #}
             <button type="button" class="btn btn-sm btn-outline-danger"
-                    onclick="toggleActivateForm({{ addon.pk }})">
-              <i class="fas fa-unlock me-1"></i>Masukkan Key & Aktifkan
+                    onclick="toggleKeyForm('form-{{ addon_name }}')">
+              <i class="fas fa-unlock me-1"></i>Masukkan Serial Key
             </button>
-            <div class="activate-form" id="activate-form-{{ addon.pk }}">
-              <form method="post" class="d-flex gap-2 mt-2">
+            <div id="form-{{ addon_name }}" style="display:none; margin-top:.75rem;">
+              <form method="post" action="{% url 'addon_activate' %}">
                 {% csrf_token %}
-                <input type="hidden" name="action" value="activate_addon">
-                <input type="hidden" name="addon_id" value="{{ addon.pk }}">
-                <input type="text" name="serial_key" class="form-control form-control-sm"
-                       placeholder="NAMA-YYYYMMDD-ADDON-XXXX" style="font-family:monospace;letter-spacing:1px">
-                <button type="submit" class="btn btn-sm btn-danger">
-                  <i class="fas fa-key me-1"></i>Aktifkan
-                </button>
+                <input type="hidden" name="addon" value="{{ addon_name }}">
+                <div class="input-group input-group-sm">
+                  <input type="text" name="serial_key" class="form-control"
+                         placeholder="IKIRA-XXX-XXXXXXXX-YYYYMMDD-XXX"
+                         style="font-family:monospace; letter-spacing:.5px;"
+                         autocomplete="off" required>
+                  <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-key me-1"></i>Aktifkan
+                  </button>
+                </div>
+                <div class="form-text">Format: IKIRA-{ADDON}-{HASH}-{EXPIRY}-{CHECK}</div>
               </form>
             </div>
-            {% else %}
-            {% if addon.aktif_sejak %}
-            <small class="text-muted"><i class="fas fa-calendar me-1"></i>Aktif sejak {{ addon.aktif_sejak|date:"d/m/Y" }}
-              {% if addon.diaktifkan_oleh %} — oleh {{ addon.diaktifkan_oleh }}{% endif %}
-            </small>
             {% endif %}
-            {% endif %}
+
           </div>
           {% empty %}
-          <p class="text-muted text-center py-3">Tidak ada add-on terdaftar.</p>
+          <div class="text-center text-muted py-4">
+            <i class="fas fa-box-open fa-2x mb-2 opacity-25"></i>
+            <p class="small">Tidak ada add-on terdaftar.</p>
+          </div>
           {% endfor %}
         </div>
+
       </div>
     </div>
   </div>
-
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function copySerial(el, key) {
-    const text = el.textContent.trim();
+function copySerialText(text) {
     navigator.clipboard.writeText(text).then(() => {
         const toast = document.getElementById('copy-toast');
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2000);
+        if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        const toast = document.getElementById('copy-toast');
+        if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
     });
 }
 
-function toggleActivateForm(addonId) {
-    const form = document.getElementById('activate-form-' + addonId);
-    if (form.style.display === 'none' || !form.style.display) {
-        form.style.display = 'block';
-        form.querySelector('input[name="serial_key"]').focus();
-    } else {
-        form.style.display = 'none';
-    }
+function toggleKeyForm(formId) {
+    const el = document.getElementById(formId);
+    if (!el) return;
+    const shown = el.style.display === 'block';
+    el.style.display = shown ? 'none' : 'block';
+    if (!shown) { const inp = el.querySelector('input[name="serial_key"]'); if (inp) inp.focus(); }
 }
 </script>
 {% endblock %}

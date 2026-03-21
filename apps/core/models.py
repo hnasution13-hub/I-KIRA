@@ -251,6 +251,72 @@ class Company(models.Model):
 #  DEPARTMENT & POSITION — Per Company
 # ══════════════════════════════════════════════════════════════════════════════
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ADDON LICENSE
+# ══════════════════════════════════════════════════════════════════════════════
+
+class AddonLicense(models.Model):
+    """Lisensi per addon per company. Diaktifkan via serial key HMAC offline."""
+    ADDON_CHOICES = [
+        ('assets',              'Asset Management'),
+        ('recruitment',         'Rekrutmen'),
+        ('psychotest',          'Psikotes'),
+        ('advanced_psychotest', 'Advanced Psychotest (OCEAN)'),
+        ('od',                  'Organisation Development'),
+        ('performance',         'Performance & KPI'),
+    ]
+    company         = models.ForeignKey('Company', on_delete=models.CASCADE,
+                                         related_name='addon_licenses')
+    addon           = models.CharField(max_length=30, choices=ADDON_CHOICES)
+    serial_key      = models.CharField(max_length=100, verbose_name='Serial Key')
+    expiry          = models.DateField(null=True, blank=True,
+                                        verbose_name='Tanggal Expired',
+                                        help_text='NULL = Lifetime')
+    aktif           = models.BooleanField(default=True)
+    diaktifkan_oleh = models.CharField(max_length=100, blank=True)
+    aktif_sejak     = models.DateField(null=True, blank=True)
+    created_at      = models.DateTimeField(auto_now_add=True)
+    updated_at      = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name        = 'Addon License'
+        verbose_name_plural = 'Addon Licenses'
+        unique_together     = [['company', 'addon']]
+        ordering            = ['company', 'addon']
+
+    def __str__(self):
+        exp = self.expiry.strftime('%d/%m/%Y') if self.expiry else 'Lifetime'
+        return f'{self.company.nama} — {self.get_addon_display()} ({exp})'
+
+    @property
+    def is_valid(self):
+        from apps.core.license import GRACE_DAYS
+        from datetime import date
+        if not self.aktif:
+            return False
+        if self.expiry is None:
+            return True
+        return (self.expiry - date.today()).days >= -GRACE_DAYS
+
+    @property
+    def is_grace(self):
+        from apps.core.license import GRACE_DAYS
+        from datetime import date
+        if self.expiry is None:
+            return False
+        d = (self.expiry - date.today()).days
+        return -GRACE_DAYS <= d < 0
+
+    @property
+    def days_until_expiry(self):
+        from datetime import date
+        if self.expiry is None:
+            return None
+        return (self.expiry - date.today()).days
+
+
+
 class Department(models.Model):
     company    = models.ForeignKey(Company, on_delete=models.CASCADE,
                                    related_name='departments', verbose_name='Perusahaan')

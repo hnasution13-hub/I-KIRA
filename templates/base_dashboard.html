@@ -917,6 +917,32 @@ a{color:inherit;}
 {% endif %}
 
 <main class="main-wrap" id="main-content" role="main" aria-label="Konten utama">
+
+  {# ── License Expiry Warnings ────────────────────────────────────────────── #}
+  {% if license_grace_list %}
+  <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3 mb-0 py-2" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>
+    <strong>Add-On dalam Grace Period:</strong>
+    {% for item in license_grace_list %}
+      <span class="badge bg-danger ms-1">{{ item.label }} — expired {{ item.days }} hari lalu</span>
+    {% endfor %}
+    — Segera perpanjang di <a href="{% url 'company_profile' %}" class="alert-link">Pengaturan</a>.
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
+  {% if license_warn_list %}
+  <div class="alert alert-warning alert-dismissible fade show mx-3 mt-3 mb-0 py-2" role="alert">
+    <i class="fas fa-bell me-2"></i>
+    <strong>Add-On akan segera berakhir:</strong>
+    {% for item in license_warn_list %}
+      <span class="badge bg-warning text-dark ms-1">{{ item.label }} — {{ item.days }} hari lagi</span>
+    {% endfor %}
+    — <a href="{% url 'company_profile' %}" class="alert-link">Lihat detail</a>.
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
   {% if show_onboarding %}
   <div class="onboarding-banner" id="onboardingBanner" role="region" aria-label="Panduan pengaturan awal">
     <button class="onboarding-dismiss" onclick="dismissOnboarding()" aria-label="Tutup panduan pengaturan">

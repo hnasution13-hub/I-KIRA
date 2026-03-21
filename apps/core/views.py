@@ -151,7 +151,136 @@ def company_profile(request):
 
         company.save()
         messages.success(request, 'Profil perusahaan berhasil diperbarui.')
-    return render(request, 'core/company_profile.html', {'company': company})
+
+    from apps.core.addon_decorators import get_addon_license_context
+    from apps.core.license import ADDON_LABELS, DURATION_CHOICES
+    addon_ctx = get_addon_license_context(company)
+
+    generated_key      = request.session.pop('generated_key', None)
+    generated_addon    = request.session.pop('generated_addon', None)
+    generated_company  = request.session.pop('generated_company', None)
+    generated_duration = request.session.pop('generated_duration', None)
+
+    return render(request, 'core/company_profile.html', {
+        'company'           : company,
+        'addon_ctx'         : addon_ctx,
+        'addon_labels'      : ADDON_LABELS,
+        'duration_choices'  : DURATION_CHOICES,
+        'generated_key'     : generated_key,
+        'generated_addon'   : generated_addon,
+        'generated_company' : generated_company,
+        'generated_duration': generated_duration,
+    })
+
+
+@login_required
+def addon_activate(request):
+    """POST: Aktifkan addon via serial key input dari HR/Admin."""
+    from apps.core.license import verify_key, LicenseStatus, ADDON_LABELS
+    from apps.core.models import AddonLicense
+    from datetime import date
+
+    if request.method != 'POST':
+        return redirect('company_profile')
+
+    company = _get_company(request)
+    if not company:
+        messages.error(request, 'Company tidak ditemukan.')
+        return redirect('company_profile')
+
+    if not (request.user.is_hr or request.user.is_superuser):
+        messages.error(request, 'Akses ditolak.')
+        return redirect('company_profile')
+
+    key   = request.POST.get('serial_key', '').strip()
+    addon = request.POST.get('addon', '').strip()
+
+    if not key or not addon:
+        messages.error(request, 'Key dan addon wajib diisi.')
+        return redirect('company_profile')
+
+    result = verify_key(key, company)
+
+    if result['status'] == LicenseStatus.WRONG_TENANT:
+        messages.error(request, 'Key ini tidak valid untuk perusahaan ini.')
+        return redirect('company_profile')
+    if result['status'] == LicenseStatus.INVALID:
+        messages.error(request, f'Key tidak valid: {result["message"]}')
+        return redirect('company_profile')
+    if result['status'] == LicenseStatus.EXPIRED:
+        messages.error(request, f'Key sudah expired sejak {result["expiry"].strftime("%d/%m/%Y")}.')
+        return redirect('company_profile')
+    if result['addon'] != addon:
+        messages.error(request, f'Key ini untuk addon {result["addon"]}, bukan {addon}.')
+        return redirect('company_profile')
+
+    AddonLicense.objects.update_or_create(
+        company=company, addon=addon,
+        defaults={
+            'serial_key'      : key,
+            'expiry'          : result['expiry'],
+            'aktif'           : True,
+            'aktif_sejak'     : date.today(),
+            'diaktifkan_oleh' : request.user.get_full_name() or request.user.username,
+        }
+    )
+    setattr(company, f'addon_{addon}', True)
+    company.save(update_fields=[f'addon_{addon}'])
+
+    label   = ADDON_LABELS.get(addon, addon)
+    exp_str = result['expiry'].strftime('%d/%m/%Y') if result['expiry'] else 'Lifetime'
+    messages.success(request, f'Add-on {label} berhasil diaktifkan! Berlaku hingga: {exp_str}.')
+    return redirect('company_profile')
+
+
+@login_required
+def addon_deactivate(request, addon):
+    """POST: Nonaktifkan addon."""
+    from apps.core.models import AddonLicense
+    if request.method != 'POST':
+        return redirect('company_profile')
+    company = _get_company(request)
+    if not (request.user.is_hr or request.user.is_superuser):
+        messages.error(request, 'Akses ditolak.')
+        return redirect('company_profile')
+    AddonLicense.objects.filter(company=company, addon=addon).update(aktif=False)
+    setattr(company, f'addon_{addon}', False)
+    company.save(update_fields=[f'addon_{addon}'])
+    from apps.core.license import ADDON_LABELS
+    messages.success(request, f'Add-on {ADDON_LABELS.get(addon, addon)} dinonaktifkan.')
+    return redirect('company_profile')
+
+
+@login_required
+def license_generate(request):
+    """POST: Generate serial key untuk tenant — superuser only."""
+    from apps.core.license import generate_key_with_duration, ADDON_LABELS
+    from apps.core.models import Company
+    if not request.user.is_superuser:
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied
+    if request.method != 'POST':
+        return redirect('tenant_list')
+    company_id = request.POST.get('company_id')
+    addon      = request.POST.get('addon')
+    duration   = request.POST.get('duration', '1y')
+    try:
+        company = Company.objects.get(pk=company_id)
+    except Company.DoesNotExist:
+        messages.error(request, 'Company tidak ditemukan.')
+        return redirect('tenant_list')
+    try:
+        key = generate_key_with_duration(addon, company, duration)
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('tenant_list')
+    request.session['generated_key']      = key
+    request.session['generated_addon']    = addon
+    request.session['generated_company']  = company.nama
+    request.session['generated_duration'] = duration
+    label = ADDON_LABELS.get(addon, addon)
+    messages.success(request, f'Key untuk {label} — {company.nama} berhasil digenerate.')
+    return redirect('tenant_list')
 
 
 @login_required
@@ -679,9 +808,18 @@ def tenant_list(request):
             'n_absensi':  n_abs,
         })
 
+    generated_key      = request.session.pop('generated_key', None)
+    generated_addon    = request.session.pop('generated_addon', None)
+    generated_company  = request.session.pop('generated_company', None)
+    generated_duration = request.session.pop('generated_duration', None)
+
     return render(request, 'core/tenant_list.html', {
-        'data':    data,
-        'total':   companies.count(),
+        'data'              : data,
+        'total'             : companies.count(),
+        'generated_key'     : generated_key,
+        'generated_addon'   : generated_addon,
+        'generated_company' : generated_company,
+        'generated_duration': generated_duration,
     })
 
 

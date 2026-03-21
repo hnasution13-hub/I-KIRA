@@ -230,4 +230,125 @@
   Halaman ini hanya terlihat oleh akun <strong>superuser</strong>.
   Tenant tidak dapat mengakses atau mengetahui keberadaan tenant lain.
 </p>
+
+<!-- ── Generate Serial Key Panel ────────────────────────────────────────── -->
+<div class="card mt-4" style="border:1px solid var(--border);">
+  <div class="card-header d-flex align-items-center gap-2" style="background:var(--surface);">
+    <i class="fas fa-key text-danger"></i>
+    <h6 class="mb-0 fw-bold">Generate Serial Key Add-On</h6>
+  </div>
+  <div class="card-body">
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show py-2 small mb-3">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label form-label-sm fw-semibold">Tenant</label>
+        <select id="gen-company" class="form-select form-select-sm">
+          <option value="">-- Pilih Tenant --</option>
+          {% for item in data %}
+          <option value="{{ item.company.pk }}">{{ item.company.nama }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label form-label-sm fw-semibold">Add-On</label>
+        <select id="gen-addon" class="form-select form-select-sm">
+          <option value="">-- Pilih Add-On --</option>
+          <option value="assets">Asset Management</option>
+          <option value="recruitment">Rekrutmen</option>
+          <option value="psychotest">Psikotes</option>
+          <option value="advanced_psychotest">Advanced Psychotest (OCEAN)</option>
+          <option value="od">Organisation Development</option>
+          <option value="performance">Performance & KPI</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label form-label-sm fw-semibold">Durasi</label>
+        <select id="gen-duration" class="form-select form-select-sm">
+          <option value="1m">1 Bulan</option>
+          <option value="3m">3 Bulan</option>
+          <option value="6m">6 Bulan</option>
+          <option value="1y" selected>1 Tahun</option>
+          <option value="lifetime">Lifetime</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="button" class="btn btn-danger btn-sm w-100" onclick="doGenerate()">
+          <i class="fas fa-key me-1"></i>Generate Key
+        </button>
+      </div>
+    </div>
+
+    <!-- Result box -->
+    <div id="gen-result" style="display:none; margin-top:1rem;">
+      <label class="form-label form-label-sm fw-semibold text-success">
+        <i class="fas fa-check-circle me-1"></i>Key Berhasil Digenerate
+      </label>
+      <div class="input-group input-group-sm">
+        <input type="text" id="gen-key-display" class="form-control"
+               style="font-family:monospace; letter-spacing:.5px;" readonly>
+        <button class="btn btn-outline-success" type="button" onclick="copyGenKey()">
+          <i class="fas fa-copy me-1"></i>Salin
+        </button>
+      </div>
+      <div class="form-text text-warning">
+        <i class="fas fa-exclamation-triangle me-1"></i>
+        Simpan key ini. Key tidak disimpan di server — kirim ke tenant via email/manual.
+      </div>
+      <!-- Form POST tersembunyi -->
+      <form id="gen-form" method="post" action="{% url 'license_generate' %}" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" id="gen-company-id" name="company_id">
+        <input type="hidden" id="gen-addon-val" name="addon">
+        <input type="hidden" id="gen-duration-val" name="duration">
+      </form>
+      <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="submitAndLog()">
+        <i class="fas fa-save me-1"></i>Simpan Log & Kirim ke Tenant
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function doGenerate() {
+  var company  = document.getElementById('gen-company').value;
+  var addon    = document.getElementById('gen-addon').value;
+  var duration = document.getElementById('gen-duration').value;
+  if (!company || !addon) { alert('Pilih tenant dan add-on terlebih dahulu.'); return; }
+
+  // Preview key via fetch ke endpoint generate
+  document.getElementById('gen-company-id').value  = company;
+  document.getElementById('gen-addon-val').value    = addon;
+  document.getElementById('gen-duration-val').value = duration;
+
+  // Submit form untuk generate (server-side HMAC)
+  document.getElementById('gen-form').submit();
+}
+
+function copyGenKey() {
+  var key = document.getElementById('gen-key-display').value;
+  navigator.clipboard.writeText(key).then(function(){
+    alert('Key disalin ke clipboard!');
+  });
+}
+
+function submitAndLog() {
+  document.getElementById('gen-form').submit();
+}
+
+// Tampilkan result jika ada key di session (redirect dari generate)
+{% if generated_key %}
+document.getElementById('gen-result').style.display = 'block';
+document.getElementById('gen-key-display').value = '{{ generated_key }}';
+{% endif %}
+</script>
+
 {% endblock %}

@@ -287,6 +287,12 @@ SITE_URL    = os.environ.get('SITE_URL',    'http://localhost:8000')
 SALES_WA    = os.environ.get('SALES_WA',    '6281234567890')
 SALES_EMAIL = os.environ.get('SALES_EMAIL', 'sales@hris-smartdesk.com')
 
+# ── IKIRA License Secret ───────────────────────────────────────────────────────
+# WAJIB diset di environment variable production.
+# Jangan gunakan nilai default di production — generate random string 32+ chars.
+# Contoh generate: python -c "import secrets; print(secrets.token_hex(32))"
+IKIRA_LICENSE_SECRET = os.environ.get('IKIRA_LICENSE_SECRET', SECRET_KEY[:32])
+
 # Daftar email HR yang menerima notifikasi cuti & kontrak
 # Isi env var HR_EMAIL_LIST dengan format: hr@perusahaan.com,manager@perusahaan.com
 _hr_emails = os.environ.get('HR_EMAIL_LIST', '')

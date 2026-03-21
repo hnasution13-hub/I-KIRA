@@ -56,6 +56,33 @@ def global_context(request):
     context['addon_advanced_psychotest'] = check_addon(request, 'advanced_psychotest')
     context['addon_od']                  = check_addon(request, 'od')
 
+    # ── License expiry warnings ───────────────────────────────────────────────
+    if company and request.user.is_hr:
+        try:
+            from apps.core.models import AddonLicense
+            from apps.core.license import WARN_DAYS, GRACE_DAYS
+            from datetime import date
+            today    = date.today()
+            licenses = AddonLicense.objects.filter(company=company, aktif=True)
+            warn_list  = []
+            grace_list = []
+            for lic in licenses:
+                if lic.expiry is None:
+                    continue
+                days = (lic.expiry - today).days
+                if -GRACE_DAYS <= days < 0:
+                    grace_list.append({'label': lic.get_addon_display(), 'days': abs(days)})
+                elif 0 <= days <= WARN_DAYS:
+                    warn_list.append({'label': lic.get_addon_display(), 'days': days})
+            context['license_warn_list']  = warn_list
+            context['license_grace_list'] = grace_list
+        except Exception:
+            context['license_warn_list']  = []
+            context['license_grace_list'] = []
+    else:
+        context['license_warn_list']  = []
+        context['license_grace_list'] = []
+
     # ── Onboarding checklist (hanya untuk administrator/hr di company yang masih baru) ─
     if company and request.user.is_hr:
         try:

@@ -43,6 +43,9 @@ urlpatterns = [
 
     # Tenant List (superuser only)
     path('settings/tenants/', views.tenant_list, name='tenant_list'),
+    path('settings/license/generate/', views.license_generate, name='license_generate'),
+    path('settings/addon/activate/', views.addon_activate, name='addon_activate'),
+    path('settings/addon/<str:addon>/deactivate/', views.addon_deactivate, name='addon_deactivate'),
 
     # Tenant Switcher (superuser only)
     path('switch-tenant/', views.switch_tenant, name='switch_tenant'),
