@@ -16,10 +16,10 @@
       <div class="card-body">
         <div class="mb-3">
           <label class="form-label" style="font-size:.82rem;">Karyawan *</label>
-          <select name="employee_id" class="form-select" required style="background:var(--surface);border-color:var(--border);color:var(--text);">
+          <select name="employee_id" id="select-employee" class="form-select" required style="background:var(--surface);border-color:var(--border);color:var(--text);">
             <option value="">-- Pilih Karyawan --</option>
             {% for e in employees %}
-            <option value="{{ e.pk }}">{{ e.nama }} — {{ e.jabatan }}</option>
+            <option value="{{ e.pk }}" data-dept="{{ e.department_id|default:'0' }}">{{ e.nama }} — {{ e.jabatan }}</option>
             {% endfor %}
           </select>
         </div>
@@ -33,10 +33,10 @@
         </div>
         <div class="mb-3">
           <label class="form-label" style="font-size:.82rem;">Penilai / Atasan</label>
-          <select name="atasan_id" class="form-select" style="background:var(--surface);border-color:var(--border);color:var(--text);">
-            <option value="">-- Pilih Atasan (opsional) --</option>
-            {% for e in atasan_list %}<option value="{{ e.pk }}">{{ e.nama }} — {{ e.jabatan }}</option>{% endfor %}
+          <select name="atasan_id" id="select-atasan" class="form-select" style="background:var(--surface);border-color:var(--border);color:var(--text);">
+            <option value="">-- Pilih Karyawan terlebih dahulu --</option>
           </select>
+          <small class="text-muted">Hanya menampilkan karyawan dalam departemen yang sama.</small>
         </div>
       </div>
     </div>
@@ -70,4 +70,43 @@
   </div>
 </div>
 </form>
+
+<script>
+(function () {
+  var atasan_by_dept = {{ atasan_by_dept_json|safe }};
+  var selEmp    = document.getElementById('select-employee');
+  var selAtasan = document.getElementById('select-atasan');
+
+  function refreshAtasan() {
+    var opt = selEmp.options[selEmp.selectedIndex];
+    var deptId = opt ? (opt.dataset.dept || '0') : '';
+    selAtasan.innerHTML = '';
+
+    var blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = deptId ? '-- Pilih Atasan (opsional) --' : '-- Pilih Karyawan terlebih dahulu --';
+    selAtasan.appendChild(blank);
+
+    if (!deptId) return;
+
+    var list = atasan_by_dept[deptId] || [];
+    // Exclude karyawan yang dipilih sebagai employee
+    var empPk = selEmp.value;
+    list.forEach(function (e) {
+      if (String(e.id) === String(empPk)) return;
+      var o = document.createElement('option');
+      o.value = e.id;
+      o.textContent = e.nama;
+      selAtasan.appendChild(o);
+    });
+
+    if (selAtasan.options.length === 1) {
+      selAtasan.options[0].textContent = '-- Tidak ada atasan di departemen ini --';
+    }
+  }
+
+  selEmp.addEventListener('change', refreshAtasan);
+  refreshAtasan();
+})();
+</script>
 {% endblock %}

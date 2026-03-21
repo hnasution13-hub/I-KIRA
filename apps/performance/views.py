@@ -336,11 +336,22 @@ def penilaian_create(request):
     if company:
         kpi_templates = kpi_templates.filter(company=company)
 
+    # Bangun map dept_id -> list atasan untuk filter JS di template
+    import json as _json
+    atasan_by_dept = {}
+    for e in employees.select_related('department', 'jabatan'):
+        dept_id = str(e.department_id) if e.department_id else '0'
+        atasan_by_dept.setdefault(dept_id, []).append({
+            'id'  : e.pk,
+            'nama': f"{e.nama} — {e.jabatan}",
+        })
+
     ctx = {
-        'employees'    : employees,
-        'periodes'     : periodes,
-        'kpi_templates': kpi_templates,
-        'atasan_list'  : employees,
+        'employees'      : employees,
+        'periodes'       : periodes,
+        'kpi_templates'  : kpi_templates,
+        'atasan_list'    : employees,
+        'atasan_by_dept_json': _json.dumps(atasan_by_dept),
     }
     return render(request, 'performance/penilaian_create.html', ctx)
 
