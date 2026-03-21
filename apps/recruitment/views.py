@@ -129,8 +129,14 @@ def candidate_list(request):
         qs = qs.order_by('-tanggal_melamar')
 
     # ── Daftar posisi unik untuk dropdown ────────────────────────────────────
+    jabatan_list_qs = Candidate.objects.all()
+    if company:
+        from django.db.models import Q
+        jabatan_list_qs = jabatan_list_qs.filter(
+            Q(mprf__company=company) | Q(mprf__isnull=True, company=company)
+        )
     jabatan_list = (
-        Candidate.objects.values_list('jabatan_dilamar', flat=True)
+        jabatan_list_qs.values_list('jabatan_dilamar', flat=True)
         .distinct().order_by('jabatan_dilamar')
     )
 
@@ -153,7 +159,7 @@ def candidate_list(request):
 @login_required
 @addon_required('recruitment')
 def candidate_form(request, pk=None):
-    instance = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if pk and request.company else {})) if pk else None
+    instance = get_object_or_404(Candidate, pk=pk, **({'company': request.company} if pk and request.company else {})) if pk else None
     if request.method == 'POST':
         data = {
             'mprf_id': request.POST.get('mprf') or None,
@@ -171,6 +177,11 @@ def candidate_form(request, pk=None):
         if instance:
             for k, v in data.items():
                 setattr(instance, k, v)
+            # Set company dari mprf jika ada, fallback ke request.company
+            if instance.mprf_id:
+                instance.company = instance.mprf.company if instance.mprf else instance.company
+            if not instance.company_id:
+                instance.company = getattr(request, 'company', None)
             if 'cv_file' in request.FILES:
                 instance.cv_file = request.FILES['cv_file']
             instance.save()
@@ -183,9 +194,13 @@ def candidate_form(request, pk=None):
             candidate.save()
         messages.success(request, 'Data kandidat berhasil disimpan.')
         return redirect('candidate_list')
+    company = getattr(request, 'company', None)
+    mprfs_qs = ManpowerRequest.objects.exclude(status='Cancelled').order_by('-created_at')
+    if company:
+        mprfs_qs = mprfs_qs.filter(company=company)
     return render(request, 'recruitment/candidate_form.html', {
         'instance': instance,
-        'mprfs': ManpowerRequest.objects.exclude(status='Cancelled').order_by('-created_at'),
+        'mprfs': mprfs_qs,
     })
 
 
@@ -198,7 +213,7 @@ def candidate_detail(request, pk):
     )
     from utils.psychotest_seed import DISC_DESKRIPSI
 
-    candidate = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if request.company else {}))
+    candidate = get_object_or_404(Candidate, pk=pk, **({'company': request.company} if request.company else {}))
 
     # ── Psikotes ──────────────────────────────────────────────────────────────
     psy_session = (
@@ -309,7 +324,7 @@ def candidate_detail(request, pk):
 
 @login_required
 def candidate_print(request, pk):
-    candidate = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if request.company else {}))
+    candidate = get_object_or_404(Candidate, pk=pk, **({'company': request.company} if request.company else {}))
     return render(request, 'recruitment/candidate_print.html', {'candidate': candidate})
 
 
@@ -317,7 +332,7 @@ def candidate_print(request, pk):
 @require_POST
 def candidate_update_status(request, pk):
     """Update status kandidat — dengan auto-close MPRF & notifikasi."""
-    candidate = get_object_or_404(Candidate, pk=pk, **({'mprf__company': request.company} if request.company else {}))
+    candidate = get_object_or_404(Candidate, pk=pk, **({'company': request.company} if request.company else {}))
     valid_statuses = dict(Candidate.STATUS_CHOICES)
     status = request.POST.get('status', '').strip()
 
@@ -368,14 +383,14 @@ def offering_list(request):
     company = getattr(request, 'company', None)
     offerings = OfferingLetter.objects.select_related('candidate', 'template').order_by('-tanggal_surat')
     if company:
-        offerings = offerings.filter(candidate__mprf__company=company)
+        offerings = offerings.filter(candidate__company=company)
     return render(request, 'recruitment/offering_list.html', {'offerings': offerings})
 
 
 @login_required
 @hr_required
 def offering_form(request, pk=None):
-    instance = get_object_or_404(OfferingLetter, pk=pk, **({'candidate__mprf__company': request.company} if pk and request.company else {})) if pk else None
+    instance = get_object_or_404(OfferingLetter, pk=pk, **({'candidate__company': request.company} if pk and request.company else {})) if pk else None
     setting = CompanySetting.get()
     templates = OfferingTemplate.objects.all()
     default_tpl = templates.filter(is_default=True).first()
@@ -419,14 +434,17 @@ def offering_form(request, pk=None):
     prefill_candidate = None
     candidate_id = request.GET.get('candidate')
     if candidate_id:
-        prefill_candidate = Candidate.objects.filter(pk=candidate_id).first()
+        prefill_qs = Candidate.objects.filter(pk=candidate_id)
+        if company:
+            prefill_qs = prefill_qs.filter(company=company)
+        prefill_candidate = prefill_qs.first()
 
     # Filter kandidat: hanya yang sudah sampai tahap Offering dan belum Rejected/Withdrawn/Hired
     candidates = Candidate.objects.exclude(
         status__in=['Rejected', 'Withdrawn', 'Hired']
     ).filter(status='Offering')
     if company:
-        candidates = candidates.filter(mprf__company=company)
+        candidates = candidates.filter(company=company)
 
     # Job sites dan POH dari data yang ada
     from apps.employees.models import JobSite, PointOfHire
@@ -454,7 +472,7 @@ def offering_print(request, pk):
     """Render halaman print/preview offering letter."""
     ol = get_object_or_404(
         OfferingLetter.objects.select_related('candidate', 'template', 'department'),
-        pk=pk, **({'candidate__mprf__company': request.company} if request.company else {})
+        pk=pk, **({'candidate__company': request.company} if request.company else {})
     )
     setting = CompanySetting.get()
     tpl = ol.template or OfferingTemplate.objects.filter(is_default=True).first()
@@ -474,7 +492,7 @@ def offering_print(request, pk):
 @require_POST
 def offering_update_status(request, pk):
     """Update status offering letter (Accepted/Rejected/Sent)."""
-    ol = get_object_or_404(OfferingLetter, pk=pk, **({'candidate__mprf__company': request.company} if request.company else {}))
+    ol = get_object_or_404(OfferingLetter, pk=pk, **({'candidate__company': request.company} if request.company else {}))
     valid = [s[0] for s in OfferingLetter.STATUS_CHOICES]
     new_status = request.POST.get('status', '').strip()
     if new_status in valid:
@@ -796,9 +814,17 @@ def ats_save_candidate(request):
         except ManpowerRequest.DoesNotExist:
             pass
 
-    # Cek duplikat by email
+    # Set company dari MPRF atau dari request
+    if 'mprf' in data and data['mprf']:
+        data['company'] = data['mprf'].company
+    else:
+        data['company'] = company
+
+    # Cek duplikat by email — scoped by company agar tidak cross-tenant
     existing = None
-    if email:
+    if email and company:
+        existing = Candidate.objects.filter(email=email, company=company).first()
+    elif email and not company:
         existing = Candidate.objects.filter(email=email).first()
 
     if existing:
