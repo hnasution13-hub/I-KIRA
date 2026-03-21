@@ -593,9 +593,11 @@ a{color:inherit;}
         <i class="fas fa-chevron-right sb-group-arrow"></i>
       </div>
       <div class="sb-items">
+        {% if request.user.is_hr or request.user.is_superuser %}
         <a href="{% url 'company_profile' %}" class="sb-item {% if request.resolver_match.url_name == 'company_profile' %}active{% endif %}">
           <i class="sb-item-ico fas fa-building"></i><span class="sb-item-lbl">Profil & Serial Key</span>
         </a>
+        {% endif %}
         {% if user.is_superuser %}
         <a href="{% url 'tenant_list' %}" class="sb-item {% if request.resolver_match.url_name == 'tenant_list' %}active{% endif %}">
           <i class="sb-item-ico fas fa-layer-group"></i><span class="sb-item-lbl">Daftar Tenant</span>
@@ -609,9 +611,7 @@ a{color:inherit;}
         <a href="{% url 'holiday_list' %}" class="sb-item {% if 'holiday' in request.resolver_match.url_name %}active{% endif %}">
           <i class="sb-item-ico fas fa-calendar-xmark"></i><span class="sb-item-lbl">Hari Libur</span>
         </a>
-        <a href="{% url 'employee_accounts' %}" class="sb-item">
-          <i class="sb-item-ico fas fa-shield-halved"></i><span class="sb-item-lbl">Akun &amp; Akses</span>
-        </a>
+
         <a href="{% url 'audit:statistics' %}" class="sb-item">
           <i class="sb-item-ico fas fa-scroll"></i><span class="sb-item-lbl">Audit Log</span>
         </a>
