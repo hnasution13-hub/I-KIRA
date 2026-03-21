@@ -4,6 +4,7 @@
 {% block breadcrumb %}Pengaturan / Profil Perusahaan{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 .serial-box {
     font-family: 'Courier New', monospace;
@@ -118,9 +119,6 @@
             Karyawan <strong>tidak dapat check-in</strong> sampai lokasi ini atau Job Site-nya diset.
           </p>
 
-          <!-- Leaflet CSS -->
-          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-
           <!-- Search box -->
           <div class="position-relative mb-2">
             <div class="input-group">
@@ -182,8 +180,6 @@
             </div>
           </div>
 
-          <!-- Leaflet JS -->
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
           <script>
           (function(){
             var initLat = {{ company.latitude|default:'null' }};
@@ -498,6 +494,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 function copySerialText(text) {
     navigator.clipboard.writeText(text).then(() => {
