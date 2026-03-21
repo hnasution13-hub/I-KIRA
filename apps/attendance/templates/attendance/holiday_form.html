@@ -1,0 +1,73 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if instance %}Edit{% else %}Tambah{% endif %} Hari Libur{% endblock %}
+{% block breadcrumb %}Kehadiran / Hari Libur / {% if instance %}Edit{% else %}Tambah{% endif %}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0">
+    <i class="fas fa-calendar-{% if instance %}pen{% else %}plus{% endif %} me-2 text-danger"></i>
+    {% if instance %}Edit Hari Libur{% else %}Tambah Hari Libur{% endif %}
+  </h4>
+  <a href="{% url 'holiday_list' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>Kembali
+  </a>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'danger' }} alert-dismissible fade show mb-3">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Tanggal <span class="text-danger">*</span></label>
+            <input type="date" name="tanggal" class="form-control"
+                   value="{{ instance.tanggal|date:'Y-m-d'|default:'' }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nama Hari Libur <span class="text-danger">*</span></label>
+            <input type="text" name="nama" class="form-control"
+                   value="{{ instance.nama|default:'' }}"
+                   placeholder="Contoh: Hari Raya Idul Fitri" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Tipe <span class="text-danger">*</span></label>
+            <select name="tipe" class="form-select">
+              {% for val, label in tipe_choices %}
+              <option value="{{ val }}" {% if instance.tipe == val %}selected{% elif not instance and val == 'Nasional' %}selected{% endif %}>
+                {{ label }}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">
+              <span class="text-primary">Nasional</span> = SKB 3 Menteri/Keppres &nbsp;·&nbsp;
+              <span class="text-warning">Bersama</span> = Cuti bersama &nbsp;·&nbsp;
+              <span class="text-danger">Internal</span> = Kebijakan perusahaan
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Keterangan <span class="text-muted fw-normal">(opsional)</span></label>
+            <input type="text" name="keterangan" class="form-control"
+                   value="{{ instance.keterangan|default:'' }}"
+                   placeholder="Contoh: Berdasarkan SKB 3 Menteri No. 123">
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger px-4">
+              <i class="fas fa-save me-1"></i>{% if instance %}Simpan Perubahan{% else %}Tambah{% endif %}
+            </button>
+            <a href="{% url 'holiday_list' %}" class="btn btn-outline-secondary">Batal</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

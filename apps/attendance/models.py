@@ -4,9 +4,16 @@ from apps.core.models import Company
 
 
 class Holiday(models.Model):
+    TIPE_CHOICES = [
+        ('Nasional',  'Nasional (SKB/Keppres)'),
+        ('Bersama',   'Cuti Bersama'),
+        ('Internal',  'Kebijakan Perusahaan'),
+    ]
     company    = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='holidays')
     nama       = models.CharField(max_length=200, verbose_name='Nama Hari Libur')
     tanggal    = models.DateField()
+    tipe       = models.CharField(max_length=20, choices=TIPE_CHOICES, default='Nasional',
+                                   verbose_name='Tipe Libur')
     keterangan = models.CharField(max_length=200, blank=True)
 
     class Meta:

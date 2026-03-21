@@ -1,6 +1,11 @@
 from django.urls import path
 from . import views
 from .import_absensi import attendance_import, attendance_import_process, download_template_absensi
+from .holiday_manager import (
+    holiday_list, holiday_form, holiday_delete,
+    holiday_download_template, holiday_import,
+    holiday_import_preview, holiday_import_confirm,
+)
 
 urlpatterns = [
     path('', views.attendance_list, name='attendance_list'),
@@ -19,6 +24,15 @@ urlpatterns = [
     path('overtime/add/', views.overtime_form, name='overtime_add'),
     path('overtime/<int:pk>/edit/', views.overtime_form, name='overtime_edit'),
     path('bulk/', views.attendance_bulk, name='attendance_bulk'),
+    # Holiday
+    path('holiday/', holiday_list, name='holiday_list'),
+    path('holiday/tambah/', holiday_form, name='holiday_add'),
+    path('holiday/<int:pk>/edit/', holiday_form, name='holiday_edit'),
+    path('holiday/<int:pk>/hapus/', holiday_delete, name='holiday_delete'),
+    path('holiday/import/', holiday_import, name='holiday_import'),
+    path('holiday/import/preview/', holiday_import_preview, name='holiday_import_preview'),
+    path('holiday/import/confirm/', holiday_import_confirm, name='holiday_import_confirm'),
+    path('holiday/template/', holiday_download_template, name='holiday_download_template'),
     # Import fingerprint
     path('import/', attendance_import, name='attendance_import'),
     path('import/process/', attendance_import_process, name='attendance_import_process'),

@@ -1,0 +1,165 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Hari Libur{% endblock %}
+{% block breadcrumb %}Kehadiran / Hari Libur{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-calendar-xmark me-2 text-danger"></i>Hari Libur Perusahaan</h4>
+  <div class="d-flex gap-2">
+    <a href="{% url 'holiday_import' %}" class="btn btn-outline-success btn-sm">
+      <i class="fas fa-file-arrow-up me-1"></i>Import Excel
+    </a>
+    <a href="{% url 'holiday_add' %}" class="btn btn-danger btn-sm">
+      <i class="fas fa-plus me-1"></i>Tambah Libur
+    </a>
+  </div>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show mb-3">
+  <i class="fas fa-{% if msg.tags == 'success' %}check-circle{% elif msg.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Filter -->
+<div class="card mb-4 border-0 shadow-sm">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label form-label-sm mb-1">Tahun</label>
+        <select name="tahun" class="form-select form-select-sm" style="width:110px;">
+          {% for y in tahun_list %}
+          <option value="{{ y }}" {% if y == tahun_sel %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+          {% if tahun_now not in tahun_list %}
+          <option value="{{ tahun_now }}" {% if tahun_now == tahun_sel %}selected{% endif %}>{{ tahun_now }}</option>
+          {% endif %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <label class="form-label form-label-sm mb-1">Tipe</label>
+        <select name="tipe" class="form-select form-select-sm" style="width:180px;">
+          <option value="">Semua Tipe</option>
+          {% for val, label in tipe_choices %}
+          <option value="{{ val }}" {% if val == tipe_sel %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter me-1"></i>Filter</button>
+        <a href="{% url 'holiday_list' %}" class="btn btn-outline-secondary btn-sm ms-1">Reset</a>
+      </div>
+      <div class="col-auto ms-auto align-self-end">
+        <span class="text-muted small">{{ holidays|length }} hari libur</span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Summary badges -->
+{% if holidays %}
+<div class="d-flex gap-2 flex-wrap mb-3">
+  <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2">
+    <i class="fas fa-flag me-1"></i>Nasional: {{ holidays|dictsort:"tipe"|length }}
+    <span class="ms-1 opacity-75">{% for h in holidays %}{% if h.tipe == 'Nasional' %}x{% endif %}{% endfor %}</span>
+  </span>
+</div>
+{% endif %}
+
+{% if holidays %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead style="background:var(--surface-raised); font-size:.82rem;">
+        <tr>
+          <th class="ps-4" style="width:50px;">#</th>
+          <th>Tanggal</th>
+          <th>Hari</th>
+          <th>Nama Hari Libur</th>
+          <th>Tipe</th>
+          <th>Keterangan</th>
+          <th class="text-end pe-4">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in holidays %}
+        {% with hari=h.tanggal.weekday %}
+        <tr>
+          <td class="ps-4 text-muted small">{{ forloop.counter }}</td>
+          <td class="fw-semibold" style="font-size:.88rem; white-space:nowrap;">
+            {{ h.tanggal|date:"d M Y" }}
+          </td>
+          <td style="font-size:.82rem;">
+            {% with hari=h.tanggal.isoweekday %}
+            <span class="text-muted">
+              {% if hari == 1 %}Senin
+              {% elif hari == 2 %}Selasa
+              {% elif hari == 3 %}Rabu
+              {% elif hari == 4 %}Kamis
+              {% elif hari == 5 %}Jumat
+              {% elif hari == 6 %}Sabtu
+              {% else %}Minggu
+              {% endif %}
+            </span>
+            {% endwith %}
+          </td>
+          <td>
+            <span style="font-size:.88rem;">{{ h.nama }}</span>
+          </td>
+          <td>
+            {% if h.tipe == 'Nasional' %}
+            <span class="badge bg-primary bg-opacity-15 text-primary" style="font-size:.75rem;">🔵 Nasional</span>
+            {% elif h.tipe == 'Bersama' %}
+            <span class="badge bg-warning bg-opacity-20 text-warning" style="font-size:.75rem;">🟡 Bersama</span>
+            {% else %}
+            <span class="badge bg-danger bg-opacity-15 text-danger" style="font-size:.75rem;">🔴 Internal</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ h.keterangan|default:"—" }}</td>
+          <td class="text-end pe-4">
+            <a href="{% url 'holiday_edit' h.pk %}" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Edit">
+              <i class="fas fa-pen" style="font-size:.7rem;"></i>
+            </a>
+            <form method="post" action="{% url 'holiday_delete' h.pk %}" class="d-inline"
+                  onsubmit="return confirm('Hapus hari libur \'{{ h.nama }}\'?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2 ms-1" title="Hapus">
+                <i class="fas fa-trash" style="font-size:.7rem;"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card border-0 shadow-sm">
+  <div class="card-body text-center py-5">
+    <i class="fas fa-calendar-xmark fa-3x text-muted mb-3 opacity-25"></i>
+    <p class="text-muted mb-3">Belum ada hari libur untuk tahun {{ tahun_sel }}.</p>
+    <div class="d-flex gap-2 justify-content-center">
+      <a href="{% url 'holiday_import' %}" class="btn btn-success btn-sm">
+        <i class="fas fa-file-arrow-up me-1"></i>Import dari Excel
+      </a>
+      <a href="{% url 'holiday_add' %}" class="btn btn-outline-danger btn-sm">
+        <i class="fas fa-plus me-1"></i>Tambah Manual
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Legend -->
+<div class="mt-3 d-flex gap-3 flex-wrap">
+  <small class="text-muted"><span class="badge bg-primary bg-opacity-15 text-primary">🔵 Nasional</span> — SKB 3 Menteri / Keppres</small>
+  <small class="text-muted"><span class="badge bg-warning bg-opacity-20 text-warning">🟡 Bersama</span> — Cuti bersama pemerintah</small>
+  <small class="text-muted"><span class="badge bg-danger bg-opacity-15 text-danger">🔴 Internal</span> — Kebijakan perusahaan</small>
+</div>
+
+{% endblock %}

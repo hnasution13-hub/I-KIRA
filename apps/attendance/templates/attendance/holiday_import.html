@@ -1,0 +1,87 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Import Hari Libur{% endblock %}
+{% block breadcrumb %}Kehadiran / Hari Libur / Import Excel{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-file-arrow-up me-2 text-success"></i>Import Hari Libur dari Excel</h4>
+  <a href="{% url 'holiday_list' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>Kembali
+  </a>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show mb-3">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="row g-4">
+  <!-- Step 1 -->
+  <div class="col-md-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body text-center p-4">
+        <span class="badge bg-danger rounded-circle p-3 fs-5 mb-3 d-inline-block">1</span>
+        <h5 class="fw-bold">Download Template</h5>
+        <p class="text-muted small">Download template Excel lalu isi daftar hari libur sesuai format.</p>
+        <a href="{% url 'holiday_download_template' %}" class="btn btn-outline-danger w-100 mb-3">
+          <i class="fas fa-download me-2"></i>Download Template Excel
+        </a>
+        <div class="text-start">
+          <small class="text-muted">
+            <strong>3 kolom wajib:</strong><br>
+            <code>Tanggal</code> · <code>Nama Hari Libur</code> · <code>Tipe</code><br><br>
+            <strong>Tipe yang valid:</strong><br>
+            <span class="text-primary">Nasional</span> · <span class="text-warning">Bersama</span> · <span class="text-danger">Internal</span>
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="col-md-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body p-4">
+        <div class="text-center mb-3">
+          <span class="badge bg-warning text-dark rounded-circle p-3 fs-5 d-inline-block">2</span>
+        </div>
+        <h5 class="fw-bold text-center">Isi Data</h5>
+        <ul class="list-unstyled small text-muted mt-3">
+          <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Format tanggal: <code>DD/MM/YYYY</code> atau <code>YYYY-MM-DD</code></li>
+          <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Tipe: <code>Nasional</code> / <code>Bersama</code> / <code>Internal</code></li>
+          <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Kolom Keterangan opsional</li>
+          <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Bisa dari SKB 3 Menteri atau tambahan internal</li>
+          <li class="mb-2"><i class="fas fa-info-circle text-info me-2"></i>Tanggal duplikat ditandai — bisa pilih overwrite atau skip</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="col-md-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body p-4">
+        <div class="text-center mb-3">
+          <span class="badge bg-success rounded-circle p-3 fs-5 d-inline-block">3</span>
+        </div>
+        <h5 class="fw-bold text-center">Upload & Preview</h5>
+        <form method="post" enctype="multipart/form-data" class="mt-3">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Pilih File Excel</label>
+            <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+            <div class="form-text">Format: .xlsx atau .xls</div>
+          </div>
+          <button type="submit" class="btn btn-success w-100">
+            <i class="fas fa-eye me-2"></i>Lanjut ke Preview
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

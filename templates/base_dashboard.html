@@ -466,6 +466,9 @@ a{color:inherit;}
         <a href="{% url 'overtime_list' %}" class="sb-item {% if 'overtime' in request.resolver_match.url_name %}active{% endif %}">
           <i class="sb-item-ico fas fa-hourglass-half"></i><span class="sb-item-lbl">Lembur</span>
         </a>
+        <a href="{% url 'holiday_list' %}" class="sb-item {% if 'holiday' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="sb-item-ico fas fa-calendar-xmark"></i><span class="sb-item-lbl">Hari Libur</span>
+        </a>
       </div>
     </div>
 

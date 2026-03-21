@@ -1,0 +1,147 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Preview Import Hari Libur{% endblock %}
+{% block breadcrumb %}Kehadiran / Hari Libur / Import / Preview{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-eye me-2 text-warning"></i>Preview Import Hari Libur</h4>
+  <a href="{% url 'holiday_import' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>Upload Ulang
+  </a>
+</div>
+
+<!-- Summary -->
+<div class="row g-3 mb-4">
+  <div class="col-auto">
+    <div class="card border-0 shadow-sm text-center px-4 py-3">
+      <div class="fs-4 fw-bold text-success">{{ baru|length }}</div>
+      <small class="text-muted">Data Baru</small>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="card border-0 shadow-sm text-center px-4 py-3">
+      <div class="fs-4 fw-bold text-warning">{{ duplikat|length }}</div>
+      <small class="text-muted">Duplikat (sudah ada)</small>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="card border-0 shadow-sm text-center px-4 py-3">
+      <div class="fs-4 fw-bold text-primary">{{ parsed|length }}</div>
+      <small class="text-muted">Total Baris</small>
+    </div>
+  </div>
+</div>
+
+{% if duplikat %}
+<div class="alert alert-warning d-flex align-items-center mb-3">
+  <i class="fas fa-exclamation-triangle me-2"></i>
+  <span>{{ duplikat|length }} tanggal sudah ada di database. Centang opsi <strong>Overwrite</strong> di bawah jika ingin menimpa data lama.</span>
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'holiday_import_confirm' %}">
+  {% csrf_token %}
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header d-flex align-items-center gap-3 py-2" style="background:var(--surface-raised);">
+      <div class="form-check mb-0">
+        <input class="form-check-input" type="checkbox" id="checkAll">
+        <label class="form-check-label fw-semibold small" for="checkAll">Pilih Semua</label>
+      </div>
+      <span class="text-muted small ms-auto" id="countSelected">0 dipilih</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle" style="font-size:.85rem;">
+        <thead style="background:var(--surface-raised);">
+          <tr>
+            <th class="ps-3" style="width:40px;"></th>
+            <th>Tanggal</th>
+            <th>Nama Hari Libur</th>
+            <th>Tipe</th>
+            <th>Keterangan</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in parsed %}
+          <tr {% if item.sudah_ada %}class="table-warning"{% endif %}>
+            <td class="ps-3">
+              <input class="form-check-input row-check" type="checkbox"
+                     name="selected" value="{{ item.baris }}"
+                     {% if not item.sudah_ada %}checked{% endif %}>
+            </td>
+            <td class="fw-semibold">{{ item.tanggal_display }}</td>
+            <td>{{ item.nama }}</td>
+            <td>
+              {% if item.tipe == 'Nasional' %}
+              <span class="badge bg-primary bg-opacity-15 text-primary">🔵 Nasional</span>
+              {% elif item.tipe == 'Bersama' %}
+              <span class="badge bg-warning bg-opacity-20 text-warning">🟡 Bersama</span>
+              {% else %}
+              <span class="badge bg-danger bg-opacity-15 text-danger">🔴 Internal</span>
+              {% endif %}
+            </td>
+            <td class="text-muted">{{ item.keterangan|default:"—" }}</td>
+            <td>
+              {% if item.sudah_ada %}
+              <span class="badge bg-warning text-dark" style="font-size:.72rem;">⚠ Sudah ada</span>
+              {% else %}
+              <span class="badge bg-success bg-opacity-15 text-success" style="font-size:.72rem;">✓ Baru</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Opsi & Submit -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body d-flex align-items-center gap-4 flex-wrap">
+      {% if duplikat %}
+      <div class="form-check mb-0">
+        <input class="form-check-input" type="checkbox" name="overwrite" value="1" id="overwrite">
+        <label class="form-check-label small" for="overwrite">
+          <strong>Overwrite data duplikat</strong>
+          <span class="text-muted">(timpa yang sudah ada dengan data dari file)</span>
+        </label>
+      </div>
+      {% endif %}
+      <div class="ms-auto d-flex gap-2">
+        <a href="{% url 'holiday_import' %}" class="btn btn-outline-secondary">
+          <i class="fas fa-times me-1"></i>Batal
+        </a>
+        <button type="submit" class="btn btn-danger px-4" id="btnSimpan">
+          <i class="fas fa-save me-1"></i>Simpan <span id="btnCount"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<script>
+(function(){
+  var checks   = document.querySelectorAll('.row-check');
+  var checkAll = document.getElementById('checkAll');
+  var countEl  = document.getElementById('countSelected');
+  var btnCount = document.getElementById('btnCount');
+
+  function updateCount(){
+    var n = document.querySelectorAll('.row-check:checked').length;
+    countEl.textContent  = n + ' dipilih';
+    btnCount.textContent = n ? '(' + n + ' data)' : '';
+    checkAll.indeterminate = n > 0 && n < checks.length;
+    checkAll.checked = n === checks.length;
+  }
+
+  checks.forEach(function(c){ c.addEventListener('change', updateCount); });
+  checkAll.addEventListener('change', function(){
+    checks.forEach(function(c){ c.checked = checkAll.checked; });
+    updateCount();
+  });
+
+  updateCount();
+})();
+</script>
+{% endblock %}

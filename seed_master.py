@@ -2472,6 +2472,471 @@ def menu_seed_candidate_profile():
             ok(f'{len(anak_bulk)} data anak kandidat berhasil dibuat.')
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MENU — SEED SHIFT KERJA
+# ══════════════════════════════════════════════════════════════════════════════
+
+def menu_seed_shift():
+    header('SEED SHIFT KERJA')
+    from datetime import time as dtime
+    from apps.shifts.models import Shift
+
+    targets = pilih_companies('Seed shift untuk company')
+    if not targets:
+        return
+
+    SHIFT_PRESET = [
+        # (nama, kode, tipe, jam_masuk, jam_keluar, warna, hari_kerja)
+        ('Shift Pagi',   'PAGI',  'fixed',    dtime(7, 0),  dtime(15, 0), '#2563eb', '0,1,2,3,4'),
+        ('Shift Siang',  'SIANG', 'fixed',    dtime(15, 0), dtime(23, 0), '#d97706', '0,1,2,3,4'),
+        ('Shift Malam',  'MALAM', 'fixed',    dtime(23, 0), dtime(7, 0),  '#7c3aed', '0,1,2,3,4'),
+        ('Normal Office','NORM',  'fixed',    dtime(8, 0),  dtime(17, 0), '#059669', '0,1,2,3,4'),
+        ('Shift Sabtu',  'SAB',   'fixed',    dtime(8, 0),  dtime(14, 0), '#db2777', '0,1,2,3,4,5'),
+        ('Flexible WFA', 'FLEX',  'flexible', None,         None,         '#64748b', '0,1,2,3,4'),
+    ]
+
+    created = skipped = 0
+    for company in targets:
+        for nama, kode, tipe, masuk, keluar, warna, hari in SHIFT_PRESET:
+            obj, is_new = Shift.objects.get_or_create(
+                company=company, kode=kode,
+                defaults={
+                    'nama': nama, 'tipe': tipe,
+                    'jam_masuk': masuk, 'jam_keluar': keluar,
+                    'warna': warna, 'hari_kerja': hari, 'aktif': True,
+                }
+            )
+            if is_new: created += 1
+            else:      skipped += 1
+
+    ok(f'{created} shift berhasil dibuat, {skipped} sudah ada.')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MENU — SEED KPI TEMPLATE (Performance)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def menu_seed_kpi_template():
+    header('SEED KPI TEMPLATE')
+    from apps.performance.models import KPITemplate
+
+    KPI_PRESET = [
+        # (nama, satuan, arah, kategori)
+        ('Tingkat Kehadiran',                    '%',      'tinggi', 'SDM'),
+        ('Tingkat Ketepatan Waktu Hadir',         '%',      'tinggi', 'SDM'),
+        ('Jumlah Pelanggaran Disiplin',           'angka',  'rendah', 'SDM'),
+        ('Penyelesaian Training Wajib',           '%',      'tinggi', 'SDM'),
+        ('Skor Penilaian Kompetensi',             'angka',  'tinggi', 'SDM'),
+        ('Revenue Target Achievement',            '%',      'tinggi', 'Keuangan'),
+        ('Cost Efficiency Ratio',                 '%',      'rendah', 'Keuangan'),
+        ('Budget Realization Accuracy',           '%',      'tinggi', 'Keuangan'),
+        ('Net Profit Margin',                     '%',      'tinggi', 'Keuangan'),
+        ('Accounts Receivable Days',              'hari',   'rendah', 'Keuangan'),
+        ('Customer Satisfaction Score (CSAT)',    '%',      'tinggi', 'Pelanggan'),
+        ('Customer Complaint Resolution Rate',    '%',      'tinggi', 'Pelanggan'),
+        ('On-Time Delivery Rate',                 '%',      'tinggi', 'Pelanggan'),
+        ('Net Promoter Score (NPS)',              'angka',  'tinggi', 'Pelanggan'),
+        ('Defect Rate / Reject Rate',             '%',      'rendah', 'Proses'),
+        ('Process Cycle Time',                    'jam',    'rendah', 'Proses'),
+        ('Equipment Availability',                '%',      'tinggi', 'Proses'),
+        ('Safety Incident Rate',                  'angka',  'rendah', 'Proses'),
+        ('Work Order Completion Rate',            '%',      'tinggi', 'Proses'),
+        ('Procurement Lead Time',                 'hari',   'rendah', 'Proses'),
+        ('Turnover Rate Karyawan',                '%',      'rendah', 'SDM'),
+        ('Time-to-Fill (Rekrutmen)',              'hari',   'rendah', 'SDM'),
+        ('Employee Engagement Score',             '%',      'tinggi', 'SDM'),
+        ('Training Hours per Employee',           'jam',    'tinggi', 'SDM'),
+        ('Headcount vs Budget',                   '%',      'tinggi', 'SDM'),
+        ('Payroll Accuracy Rate',                 '%',      'tinggi', 'SDM'),
+        ('IT System Uptime',                      '%',      'tinggi', 'Infrastruktur'),
+        ('Tiket IT Terselesaikan',                '%',      'tinggi', 'Infrastruktur'),
+        ('Jumlah Proyek Selesai Tepat Waktu',     'unit',   'tinggi', 'Proses'),
+        ('Jumlah Inovasi / Improvement Submitted','unit',   'tinggi', 'Inovasi'),
+    ]
+
+    targets = pilih_companies('Seed KPI template untuk company')
+    if not targets:
+        return
+
+    info(f'Akan insert {len(KPI_PRESET)} KPI template.')
+    if not confirm('Lanjutkan?'):
+        warn('Dibatalkan.'); return
+
+    created = skipped = 0
+    for company in targets:
+        for nama, satuan, arah, kategori in KPI_PRESET:
+            _, is_new = KPITemplate.objects.get_or_create(
+                company=company, nama=nama,
+                defaults={'satuan': satuan, 'arah': arah, 'kategori': kategori, 'aktif': True}
+            )
+            if is_new: created += 1
+            else:      skipped += 1
+
+    ok(f'{created} KPI template berhasil dibuat, {skipped} sudah ada.')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MENU — SEED PERIODE PENILAIAN (Performance)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def menu_seed_periode_penilaian():
+    header('SEED PERIODE PENILAIAN')
+    from apps.performance.models import PeriodePenilaian
+    from datetime import date
+
+    targets = pilih_companies('Seed periode penilaian untuk company')
+    if not targets:
+        return
+
+    tahun_sekarang = date.today().year
+    PERIODE_PRESET = [
+        # (nama, tipe, mulai, selesai, status)
+        (f'Tahunan {tahun_sekarang}',        'Tahunan',    date(tahun_sekarang, 1, 1),  date(tahun_sekarang, 12, 31), 'aktif'),
+        (f'Tahunan {tahun_sekarang-1}',      'Tahunan',    date(tahun_sekarang-1, 1, 1),date(tahun_sekarang-1, 12, 31),'tutup'),
+        (f'Q1 {tahun_sekarang}',             'Triwulan',   date(tahun_sekarang, 1, 1),  date(tahun_sekarang, 3, 31),  'tutup'),
+        (f'Q2 {tahun_sekarang}',             'Triwulan',   date(tahun_sekarang, 4, 1),  date(tahun_sekarang, 6, 30),  'tutup'),
+        (f'Q3 {tahun_sekarang}',             'Triwulan',   date(tahun_sekarang, 7, 1),  date(tahun_sekarang, 9, 30),  'aktif'),
+        (f'Q4 {tahun_sekarang}',             'Triwulan',   date(tahun_sekarang, 10, 1), date(tahun_sekarang, 12, 31), 'draft'),
+        (f'Semester 1 {tahun_sekarang}',     'Semesteran', date(tahun_sekarang, 1, 1),  date(tahun_sekarang, 6, 30),  'tutup'),
+        (f'Semester 2 {tahun_sekarang}',     'Semesteran', date(tahun_sekarang, 7, 1),  date(tahun_sekarang, 12, 31), 'aktif'),
+    ]
+
+    created = skipped = 0
+    for company in targets:
+        for nama, tipe, mulai, selesai, status in PERIODE_PRESET:
+            _, is_new = PeriodePenilaian.objects.get_or_create(
+                company=company, nama=nama,
+                defaults={'tipe': tipe, 'tanggal_mulai': mulai,
+                          'tanggal_selesai': selesai, 'status': status}
+            )
+            if is_new: created += 1
+            else:      skipped += 1
+
+    ok(f'{created} periode penilaian berhasil dibuat, {skipped} sudah ada.')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MENU — SEED SOAL PSIKOTES (SoalBank)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def menu_seed_soal_psikotes():
+    header('SEED SOAL PSIKOTES (SoalBank)')
+    from apps.psychotest.models import SoalBank
+
+    existing = SoalBank.objects.count()
+    if existing > 0:
+        warn(f'SoalBank sudah ada {existing} soal.')
+        if not confirm('Tambah soal preset di atas yang sudah ada?'):
+            warn('Dibatalkan.'); return
+
+    SOAL_LOGIKA = [
+        ('Jika A > B dan B > C, maka...', 'A > C', 'A < C', 'A = C', 'Tidak bisa ditentukan', 'A', 'mudah'),
+        ('Semua kucing adalah hewan. Pus adalah kucing. Maka Pus adalah...', 'Hewan', 'Bukan hewan', 'Mungkin hewan', 'Tidak diketahui', 'A', 'mudah'),
+        ('5, 10, 20, 40, ?', '60', '70', '80', '100', 'C', 'mudah'),
+        ('Jika hari ini Senin, 3 hari lagi adalah...', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'B', 'mudah'),
+        ('Angka ganjil dari: 2, 4, 7, 8, 10 adalah...', '2', '4', '7', '8', 'C', 'mudah'),
+        ('1, 4, 9, 16, 25, ?', '30', '36', '40', '49', 'B', 'mudah'),
+        ('Jika merah = 1, biru = 2, hijau = 3, maka 1+3 = ?', 'Merah+Biru', 'Merah+Hijau', 'Biru+Hijau', 'Biru+Biru', 'B', 'sedang'),
+        ('3, 6, 12, 24, ?', '36', '42', '48', '60', 'C', 'mudah'),
+    ]
+    SOAL_VERBAL = [
+        ('Antonim dari RAJIN adalah...', 'Pintar', 'Malas', 'Cerdas', 'Aktif', 'B', 'mudah'),
+        ('Sinonim dari BIJAK adalah...', 'Bodoh', 'Arif', 'Kaya', 'Tua', 'B', 'mudah'),
+        ('DOKTER : RUMAH SAKIT = GURU : ?', 'Kantor', 'Pabrik', 'Sekolah', 'Toko', 'C', 'mudah'),
+        ('Kata yang tepat untuk melengkapi: "Dia ... keras untuk meraih impiannya."', 'bermain', 'bekerja', 'berlari', 'bernyanyi', 'B', 'mudah'),
+        ('Antonim dari OPTIMIS adalah...', 'Realistis', 'Idealis', 'Pesimis', 'Pragmatis', 'C', 'mudah'),
+        ('Manakah ejaan yang benar?', 'Praktek', 'Praktik', 'Praktic', 'Practik', 'B', 'mudah'),
+        ('Sinonim KOMPETEN adalah...', 'Lemah', 'Mampu', 'Gagal', 'Baru', 'B', 'mudah'),
+        ('BUKU : PERPUSTAKAAN = UANG : ?', 'Bank', 'Toko', 'Sekolah', 'Rumah', 'A', 'mudah'),
+    ]
+    SOAL_NUMERIK = [
+        ('Berapakah 15% dari 200?', '25', '30', '35', '40', 'B', 'mudah'),
+        ('Jika harga barang Rp80.000 didiskon 25%, harga akhir adalah...', 'Rp55.000', 'Rp60.000', 'Rp65.000', 'Rp70.000', 'B', 'mudah'),
+        ('Rata-rata dari 4, 8, 12, 16 adalah...', '8', '10', '12', '14', 'B', 'mudah'),
+        ('Jika 3x = 21, maka x = ?', '5', '6', '7', '8', 'C', 'mudah'),
+        ('Sebuah mobil menempuh 120 km dalam 2 jam. Kecepatannya adalah...', '40 km/jam', '50 km/jam', '60 km/jam', '70 km/jam', 'C', 'mudah'),
+        ('Berapakah 2^10?', '512', '1024', '2048', '256', 'B', 'sedang'),
+        ('25 + 17 × 2 - 10 = ?', '49', '74', '59', '64', 'C', 'sedang'),
+        ('Jika A = 5 dan B = 3, berapa A² - B²?', '16', '25', '34', '10', 'A', 'sedang'),
+    ]
+
+    bulk = []
+    for soal_list, kategori in [(SOAL_LOGIKA,'logika'),(SOAL_VERBAL,'verbal'),(SOAL_NUMERIK,'numerik')]:
+        for pertanyaan, a, b, c, d, jwb, tingkat in soal_list:
+            if not SoalBank.objects.filter(pertanyaan=pertanyaan).exists():
+                bulk.append(SoalBank(
+                    kategori=kategori, tipe='pilihan_ganda',
+                    pertanyaan=pertanyaan, opsi_a=a, opsi_b=b, opsi_c=c, opsi_d=d,
+                    jawaban_benar=jwb,
+                ))
+
+    if bulk:
+        SoalBank.objects.bulk_create(bulk, ignore_conflicts=True)
+        ok(f'{len(bulk)} soal psikotes berhasil dibuat.')
+    else:
+        warn('Semua soal sudah ada.')
+
+    info('Soal DISC & Kraepelin: generate otomatis via utils/psychotest_seed.py')
+    info('Soal Advanced (OCEAN/Raven): jalankan: python manage.py seed_advanced_soal')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MENU — SEED KOMPETENSI OD
+# ══════════════════════════════════════════════════════════════════════════════
+
+def menu_seed_kompetensi_od():
+    header('SEED KOMPETENSI OD (Organizational Development)')
+    from apps.od.models import CompetencyCategory, Competency
+
+    KOMPETENSI_PRESET = {
+        'Behavioral': [
+            ('BEH-01', 'Komunikasi', 'Kemampuan menyampaikan informasi secara jelas dan efektif',
+             'Hanya menyampaikan informasi dasar',
+             'Menyampaikan informasi dengan jelas kepada rekan kerja',
+             'Berkomunikasi efektif di berbagai situasi dan audiens',
+             'Menjadi komunikator kunci dalam tim dan lintas divisi',
+             'Memimpin komunikasi strategis organisasi'),
+            ('BEH-02', 'Kerjasama Tim', 'Kemampuan bekerja efektif dalam tim',
+             'Berpartisipasi jika diminta',
+             'Aktif berkontribusi dalam tim',
+             'Memfasilitasi kolaborasi antar anggota tim',
+             'Membangun sinergi tim lintas departemen',
+             'Memimpin budaya kolaborasi organisasi'),
+            ('BEH-03', 'Inisiatif', 'Kemampuan bertindak proaktif tanpa diarahkan',
+             'Bertindak jika ada instruksi jelas',
+             'Menyelesaikan tugas lebih dari yang diminta',
+             'Mengidentifikasi dan menyelesaikan masalah sebelum terjadi',
+             'Menginisiasi improvement proses secara konsisten',
+             'Memimpin transformasi budaya inovasi'),
+            ('BEH-04', 'Disiplin & Integritas', 'Komitmen terhadap aturan dan kejujuran',
+             'Memenuhi kewajiban minimum',
+             'Konsisten mengikuti aturan dan prosedur',
+             'Menjadi role model disiplin di lingkungan kerja',
+             'Membangun budaya integritas di tim',
+             'Menjaga integritas organisasi di seluruh lini'),
+            ('BEH-05', 'Adaptabilitas', 'Kemampuan menyesuaikan diri dengan perubahan',
+             'Menerima perubahan jika dipaksa',
+             'Beradaptasi dengan perubahan setelah waktu penyesuaian',
+             'Beradaptasi cepat dan membantu orang lain beradaptasi',
+             'Memimpin perubahan dan mengelola resistensi',
+             'Mendesain organisasi yang agile dan adaptif'),
+        ],
+        'Technical': [
+            ('TECH-01', 'Keahlian Teknis Bidang', 'Penguasaan kompetensi teknis sesuai bidang kerja',
+             'Pengetahuan teknis dasar',
+             'Mampu melaksanakan tugas teknis standar',
+             'Mampu menyelesaikan masalah teknis kompleks',
+             'Menjadi referensi teknis di departemen',
+             'Ahli teknis (subject matter expert) level organisasi'),
+            ('TECH-02', 'Penggunaan Teknologi & Sistem', 'Kemampuan memanfaatkan tools dan sistem digital',
+             'Menggunakan aplikasi dasar (email, Ms. Office)',
+             'Menggunakan sistem ERP/HRIS dasar',
+             'Memanfaatkan teknologi untuk meningkatkan produktivitas',
+             'Mengintegrasikan sistem dan mengotomasi proses',
+             'Merancang solusi teknologi organisasi'),
+            ('TECH-03', 'Analisis Data & Pelaporan', 'Kemampuan menganalisis data dan membuat laporan',
+             'Membuat laporan sederhana dari data yang tersedia',
+             'Menganalisis data dan membuat insight dasar',
+             'Membuat analisis mendalam dan rekomendasi berbasis data',
+             'Merancang sistem pelaporan dan dashboard',
+             'Memimpin strategi data-driven decision making'),
+        ],
+        'Leadership': [
+            ('LDR-01', 'Pengambilan Keputusan', 'Kemampuan membuat keputusan tepat dan tepat waktu',
+             'Membuat keputusan rutin dengan panduan',
+             'Membuat keputusan operasional secara mandiri',
+             'Membuat keputusan taktis dengan mempertimbangkan risiko',
+             'Membuat keputusan strategis departemen',
+             'Membuat keputusan strategis organisasi'),
+            ('LDR-02', 'Pengembangan Bawahan', 'Kemampuan mengembangkan kompetensi anggota tim',
+             'Memberikan feedback jika diminta',
+             'Aktif memberikan coaching dan feedback',
+             'Merancang program pengembangan individu',
+             'Membangun talent pipeline departemen',
+             'Memimpin talent management organisasi'),
+            ('LDR-03', 'Perencanaan & Organisasi', 'Kemampuan merencanakan dan mengorganisir sumber daya',
+             'Merencanakan pekerjaan harian',
+             'Merencanakan dan mengorganisir pekerjaan tim',
+             'Merancang rencana kerja departemen',
+             'Merancang strategi dan roadmap jangka menengah',
+             'Merancang strategi jangka panjang organisasi'),
+        ],
+    }
+
+    targets = pilih_companies('Seed kompetensi untuk company')
+    if not targets:
+        return
+
+    total_cat = total_comp = 0
+    for company in targets:
+        warna_map = {
+            'Behavioral':  '#2563eb',
+            'Technical':   '#059669',
+            'Leadership':  '#dc2626',
+        }
+        for urutan, (cat_nama, komps) in enumerate(KOMPETENSI_PRESET.items()):
+            cat, is_new = CompetencyCategory.objects.get_or_create(
+                company=company, nama=cat_nama,
+                defaults={'warna': warna_map.get(cat_nama, '#64748b'), 'urutan': urutan, 'aktif': True}
+            )
+            if is_new: total_cat += 1
+
+            for kode, nama, deskripsi, l1, l2, l3, l4, l5 in komps:
+                _, is_new = Competency.objects.get_or_create(
+                    company=company, kode=kode,
+                    defaults={
+                        'kategori': cat, 'nama': nama, 'deskripsi': deskripsi,
+                        'level_1_desc': l1, 'level_2_desc': l2, 'level_3_desc': l3,
+                        'level_4_desc': l4, 'level_5_desc': l5, 'aktif': True,
+                    }
+                )
+                if is_new: total_comp += 1
+
+    ok(f'{total_cat} kategori + {total_comp} kompetensi berhasil dibuat.')
+    info('Lanjutkan: OD → Position Competency untuk assign ke jabatan')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MENU — SEED JOB SITE & POINT OF HIRE
+# ══════════════════════════════════════════════════════════════════════════════
+
+def menu_seed_jobsite():
+    header('SEED JOB SITE & POINT OF HIRE')
+    from apps.employees.models import JobSite, PointOfHire
+
+    targets = pilih_companies('Seed job site untuk company')
+    if not targets:
+        return
+
+    JOBSITE_PRESET = [
+        ('Head Office', 'HO', 'Jakarta Selatan, DKI Jakarta'),
+        ('Site A', 'SITE-A', 'Kalimantan Timur'),
+        ('Site B', 'SITE-B', 'Kalimantan Selatan'),
+        ('Workshop', 'WS', 'Balikpapan, Kalimantan Timur'),
+        ('Camp Area', 'CAMP', 'Kutai Kartanegara, Kalimantan Timur'),
+    ]
+    POH_PRESET = [
+        'Jakarta', 'Surabaya', 'Balikpapan', 'Samarinda', 'Banjarmasin',
+        'Makassar', 'Medan', 'Semarang', 'Bandung', 'Palembang',
+    ]
+
+    created_js = created_poh = skipped_js = skipped_poh = 0
+    for company in targets:
+        for nama, kode, lokasi in JOBSITE_PRESET:
+            _, is_new = JobSite.objects.get_or_create(
+                company=company, kode=kode,
+                defaults={'nama': nama, 'lokasi': lokasi, 'aktif': True}
+            )
+            if is_new: created_js += 1
+            else:      skipped_js += 1
+
+    for nama_poh in POH_PRESET:
+        _, is_new = PointOfHire.objects.get_or_create(nama=nama_poh)
+        if is_new: created_poh += 1
+        else:      skipped_poh += 1
+
+    ok(f'{created_js} job site, {created_poh} point of hire berhasil dibuat.')
+    if skipped_js or skipped_poh:
+        warn(f'{skipped_js} job site + {skipped_poh} POH sudah ada (skip).')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MENU — SEED OFFERING TEMPLATE (Recruitment)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def menu_seed_offering_template():
+    header('SEED OFFERING TEMPLATE (Recruitment)')
+    from apps.recruitment.models import OfferingTemplate, CompanySetting
+
+    if OfferingTemplate.objects.exists():
+        warn(f'Sudah ada {OfferingTemplate.objects.count()} template.')
+        if not confirm('Tetap buat template default baru?'):
+            warn('Dibatalkan.'); return
+
+    OfferingTemplate.objects.get_or_create(
+        nama='Standard PKWT Mining',
+        defaults={
+            'is_default': True,
+            'deskripsi': 'Template standar untuk karyawan PKWT di site pertambangan',
+            'working_day_text': 'Roster Working Day, every day working including National Holiday/Red Calendar day, able to take Rest one day after two weeks work at Site, 07.30 – 16.00 (base on field working time)',
+            'employment_status_text': 'First Contract (PKWT I) : 6 (Six) months, If your evaluation is good/excellent, company will be consider to extend your working agreement to (PKWT II)',
+            'meal_allowance_text': 'Provided by Company (breakfast, lunch, & dinner)',
+            'residence_allowance_text': 'Provided by Company (mess/dormitory)',
+            'roster_leave_text': '10 : 2 (working 10 weeks)',
+            'annual_leave_text': '12 months work continually, 12 working days Leave',
+            'overtime_text': 'Job Position Assignment Responsibility',
+            'bpjs_kes_text': 'Health Care (Employee dues obligation by regulation)',
+            'bpjs_tk_text': 'JHT,JKK,JK,JP (JHT&JP; Employee dues obligation by regulation)',
+            'bpjs_potongan_text': 'Deducted 2% JHT, 1% JP, 1% Kes From Salary for BPJS TK & Kes.',
+            'pph21_text': 'Income Tax is covered by Company',
+            'footer_text': 'The mentioned statement above as our agreement previous, so please sign the letter and submit the letter back to us as your acceptance to the term & condition in the agreement as soon as possible.\n\nThanks you for your attention and cooperation.',
+        }
+    )
+    OfferingTemplate.objects.get_or_create(
+        nama='Standard PKWTT Office',
+        defaults={
+            'is_default': False,
+            'deskripsi': 'Template standar untuk karyawan tetap (PKWTT) di kantor',
+            'working_day_text': 'Monday to Friday, 08.00 – 17.00 WIB (1 hour break)',
+            'employment_status_text': 'Permanent Employee (PKWTT) effective from joining date',
+            'meal_allowance_text': 'Meal allowance included in salary package',
+            'residence_allowance_text': 'Not provided',
+            'roster_leave_text': 'Monday – Friday (5 working days)',
+            'annual_leave_text': 'After 12 months of continuous employment, 12 working days per year',
+            'overtime_text': 'Based on Government Regulation No. 36/2021',
+            'bpjs_kes_text': 'BPJS Kesehatan — Employee contribution 1%, Company 4%',
+            'bpjs_tk_text': 'JHT 3.7% (company) + 2% (employee); JKK, JK by company; JP 2% (company) + 1% (employee)',
+            'bpjs_potongan_text': 'Deducted from salary as per BPJS regulation',
+            'pph21_text': 'Income Tax (PPh 21) deducted from salary as per applicable tax regulation',
+            'footer_text': 'We look forward to your positive response. Please sign and return this letter as your acceptance.\n\nThank you.',
+        }
+    )
+
+    # Seed CompanySetting jika belum ada
+    CompanySetting.objects.get_or_create(pk=1, defaults={
+        'nama_perusahaan': 'PT. Nama Perusahaan',
+        'hrd_manager': 'HRD Manager',
+        'format_nomor_ol': 'OL/{YYYY}{MM}/{SEQ:04d}',
+    })
+
+    ok('2 offering template + company setting berhasil dibuat.')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MENU — SEED SITE ALLOWANCE RULE (Payroll)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def menu_seed_site_allowance():
+    header('SEED SITE ALLOWANCE RULE')
+    from apps.payroll.models import SiteAllowanceRule
+    from apps.employees.models import JobSite
+
+    targets = pilih_companies('Seed site allowance untuk company')
+    if not targets:
+        return
+
+    created = skipped = 0
+    for company in targets:
+        sites = JobSite.objects.filter(company=company, aktif=True)
+        if not sites.exists():
+            warn(f'{company.nama}: belum ada job site. Jalankan seed job site dulu.')
+            continue
+
+        for site in sites:
+            # Tunjangan site flat per site
+            tunjangan_flat = 2_000_000 if 'HO' in site.kode else 5_000_000
+            _, is_new = SiteAllowanceRule.objects.get_or_create(
+                company=company, job_site=site, jabatan=None,
+                nama_komponen='Tunjangan Site',
+                defaults={'nilai': tunjangan_flat, 'jenis': 'flat', 'aktif': True}
+            )
+            if is_new: created += 1
+            else:      skipped += 1
+
+    ok(f'{created} site allowance rule berhasil dibuat, {skipped} sudah ada.')
+
+
 def menu_seed_lengkap():
     header('SEED LENGKAP — ALL IN ONE')
     info('Jalankan semua seed secara berurutan untuk test menyeluruh.')
@@ -2481,17 +2946,25 @@ def menu_seed_lengkap():
         warn('Dibatalkan.'); return
 
     steps = [
-        ('Company',           menu_tambah_company),
-        ('Department',        menu_tambah_department),
-        ('Jabatan Preset',    menu_jabatan_preset),
-        ('Sync Dept→Jabatan', menu_sync_department_jabatan),
-        ('Karyawan Dummy',    menu_generate_dummy_karyawan),
-        ('Absensi',           menu_generate_absensi),
-        ('Salary Benefit',    menu_seed_salary_benefit),
-        ('Kontrak',           menu_seed_kontrak),
-        ('Kandidat',          menu_seed_kandidat),
-        ('Profil Kandidat',   menu_seed_candidate_profile),
-        ('Asset',             menu_seed_asset),
+        ('Company',               menu_tambah_company),
+        ('Department',            menu_tambah_department),
+        ('Jabatan Preset',        menu_jabatan_preset),
+        ('Sync Dept→Jabatan',     menu_sync_department_jabatan),
+        ('Job Site & POH',        menu_seed_jobsite),
+        ('Shift Kerja',           menu_seed_shift),
+        ('Karyawan Dummy',        menu_generate_dummy_karyawan),
+        ('Absensi',               menu_generate_absensi),
+        ('Salary Benefit',        menu_seed_salary_benefit),
+        ('Site Allowance Rule',   menu_seed_site_allowance),
+        ('Kontrak',               menu_seed_kontrak),
+        ('KPI Template',          menu_seed_kpi_template),
+        ('Periode Penilaian',     menu_seed_periode_penilaian),
+        ('Kompetensi OD',         menu_seed_kompetensi_od),
+        ('Soal Psikotes',         menu_seed_soal_psikotes),
+        ('Offering Template',     menu_seed_offering_template),
+        ('Kandidat',              menu_seed_kandidat),
+        ('Profil Kandidat',       menu_seed_candidate_profile),
+        ('Asset',                 menu_seed_asset),
     ]
     for label, fn in steps:
         print(f'\n{B}══ STEP: {label} ══{RST}')
@@ -2531,6 +3004,16 @@ def main_menu():
             'Seed Profil Lengkap Kandidat',
             'Seed Kontrak Karyawan',
             'Seed Asset Management',
+            '─── Add-On & Master Data ───',
+            'Seed Shift Kerja',
+            'Seed KPI Template (Performance)',
+            'Seed Periode Penilaian (Performance)',
+            'Seed Soal Psikotes (SoalBank)',
+            'Seed Kompetensi OD',
+            'Seed Job Site & Point of Hire',
+            'Seed Offering Template (Recruitment)',
+            'Seed Site Allowance Rule (Payroll)',
+            '─── ─────────────────────── ───',
             'Lihat semua data',
             'SEED LENGKAP (All-in-One)',
             'Keluar',
@@ -2549,9 +3032,19 @@ def main_menu():
         elif menu == 10: menu_seed_candidate_profile()
         elif menu == 11: menu_seed_kontrak()
         elif menu == 12: menu_seed_asset()
-        elif menu == 13: menu_lihat_data()
-        elif menu == 14: menu_seed_lengkap()
-        elif menu == 15:
+        elif menu == 13: pass  # separator
+        elif menu == 14: menu_seed_shift()
+        elif menu == 16: menu_seed_kpi_template()
+        elif menu == 17: menu_seed_periode_penilaian()
+        elif menu == 18: menu_seed_soal_psikotes()
+        elif menu == 19: menu_seed_kompetensi_od()
+        elif menu == 20: menu_seed_jobsite()
+        elif menu == 21: menu_seed_offering_template()
+        elif menu == 23: menu_seed_site_allowance()
+        elif menu == 24: pass  # separator
+        elif menu == 25: menu_lihat_data()
+        elif menu == 26: menu_seed_lengkap()
+        elif menu == 27:
             print(f'\n{G}  Selesai. Sampai jumpa!{RST}\n')
             break
 
@@ -3058,7 +3551,15 @@ if __name__ == '__main__':
     parser.add_argument('--dept-preset',  action='store_true', help='Preset department & jabatan per industri')
     parser.add_argument('--salary',     action='store_true', help='Seed salary benefit karyawan')
     parser.add_argument('--profil-kandidat', action='store_true', help='Seed profil lengkap kandidat')
-    parser.add_argument('--seed-all',   action='store_true', help='Seed lengkap all-in-one')
+    parser.add_argument('--seed-all',        action='store_true', help='Seed lengkap all-in-one')
+    parser.add_argument('--shift',            action='store_true', help='Seed shift kerja')
+    parser.add_argument('--kpi-template',     action='store_true', help='Seed KPI template performance')
+    parser.add_argument('--periode-penilaian',action='store_true', help='Seed periode penilaian')
+    parser.add_argument('--soal-psikotes',    action='store_true', help='Seed soal bank psikotes')
+    parser.add_argument('--kompetensi',       action='store_true', help='Seed kompetensi OD')
+    parser.add_argument('--jobsite',          action='store_true', help='Seed job site & point of hire')
+    parser.add_argument('--offering-template',action='store_true', help='Seed offering template rekrutmen')
+    parser.add_argument('--site-allowance',   action='store_true', help='Seed site allowance rule payroll')
     args = parser.parse_args()
 
     try:
@@ -3075,6 +3576,14 @@ if __name__ == '__main__':
         elif getattr(args, 'profil_kandidat', False): menu_seed_candidate_profile()
         elif args.kontrak:    menu_seed_kontrak()
         elif args.asset:      menu_seed_asset()
+        elif args.shift:      menu_seed_shift()
+        elif getattr(args, 'kpi_template', False):    menu_seed_kpi_template()
+        elif getattr(args, 'periode_penilaian', False): menu_seed_periode_penilaian()
+        elif getattr(args, 'soal_psikotes', False):   menu_seed_soal_psikotes()
+        elif args.kompetensi: menu_seed_kompetensi_od()
+        elif args.jobsite:    menu_seed_jobsite()
+        elif getattr(args, 'offering_template', False): menu_seed_offering_template()
+        elif getattr(args, 'site_allowance', False):  menu_seed_site_allowance()
         elif getattr(args, 'seed_all', False): menu_seed_lengkap()
         elif args.list:       menu_lihat_data()
         else:                 main_menu()
