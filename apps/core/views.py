@@ -90,7 +90,7 @@ def profile(request):
 
 @login_required
 def company_profile(request):
-    if not request.user.is_hr:
+    if not (request.user.is_hr or request.user.is_superuser):
         return redirect('dashboard')
     company = _get_company(request)
     if request.method == 'POST' and company:
