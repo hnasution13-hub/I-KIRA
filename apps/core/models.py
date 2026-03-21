@@ -264,7 +264,6 @@ class AddonLicense(models.Model):
         ('psychotest',          'Psikotes'),
         ('advanced_psychotest', 'Advanced Psychotest (OCEAN)'),
         ('od',                  'Organisation Development'),
-        ('performance',         'Performance & KPI'),
     ]
     company         = models.ForeignKey('Company', on_delete=models.CASCADE,
                                          related_name='addon_licenses')

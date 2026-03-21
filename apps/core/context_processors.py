@@ -55,6 +55,8 @@ def global_context(request):
     context['addon_psychotest']          = check_addon(request, 'psychotest')
     context['addon_advanced_psychotest'] = check_addon(request, 'advanced_psychotest')
     context['addon_od']                  = check_addon(request, 'od')
+    # Performance adalah bagian dari OD — sama nilainya
+    context['addon_performance']         = context['addon_od']
 
     # ── License expiry warnings ───────────────────────────────────────────────
     if company and request.user.is_hr:

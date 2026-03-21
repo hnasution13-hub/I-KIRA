@@ -21,7 +21,6 @@ ADDON_CODES = {
     'psychotest':          'PSY',
     'advanced_psychotest': 'APY',
     'od':                  'OD0',
-    'performance':         'PFM',
 }
 CODE_TO_ADDON = {v: k for k, v in ADDON_CODES.items()}
 
@@ -30,8 +29,7 @@ ADDON_LABELS = {
     'recruitment':         'Rekrutmen',
     'psychotest':          'Psikotes',
     'advanced_psychotest': 'Advanced Psychotest (OCEAN)',
-    'od':                  'Organisation Development',
-    'performance':         'Performance & KPI',
+    'od':                  'Organisation Development (+ Performance & KPI)',
 }
 
 DURATION_CHOICES = [

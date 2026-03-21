@@ -19,8 +19,7 @@ ADDON_LABELS = {
     'recruitment':         'Rekrutmen',
     'psychotest':          'Psikotes',
     'advanced_psychotest': 'Advanced Psychotest (OCEAN)',
-    'od':                  'Organisation Development',
-    'performance':         'Performance & KPI',
+    'od':                  'Organisation Development (+ Performance & KPI)',
 }
 
 
@@ -67,7 +66,9 @@ def addon_required(addon_name):
                 return view_func(request, *args, **kwargs)
 
             company = getattr(request, 'company', None)
-            if _is_addon_active(company, addon_name):
+            # Performance adalah bagian dari OD
+            check_name = 'od' if addon_name == 'performance' else addon_name
+            if _is_addon_active(company, check_name):
                 return view_func(request, *args, **kwargs)
 
             return render(request, 'core/addon_locked.html', {
@@ -82,9 +83,13 @@ def check_addon(request, addon_name):
     """
     Helper — return True jika addon aktif (valid atau grace).
     Developer: selalu True.
+    Performance adalah bagian dari OD — fallback ke addon_od.
     """
     if getattr(request, 'is_developer', False):
         return True
+    # Performance adalah bagian dari OD
+    if addon_name == 'performance':
+        addon_name = 'od'
     company = getattr(request, 'company', None)
     return _is_addon_active(company, addon_name)
 
@@ -109,7 +114,7 @@ def get_addon_license_context(company):
     licenses = AddonLicense.objects.filter(company=company, aktif=True)
     lic_map  = {l.addon: l for l in licenses}
 
-    for addon_name in ADDON_LABELS:
+    for addon_name in [k for k in ADDON_LABELS if k != 'performance']:
         lic = lic_map.get(addon_name)
         if lic:
             result[addon_name] = {
