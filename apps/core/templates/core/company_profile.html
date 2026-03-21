@@ -351,7 +351,7 @@
   var defaultLng = 118.0;
   var defaultZoom = 5;
 
-  var map = L.map('geo-map').setView(
+  var map = L.map('geo-map', {preferCanvas: true}).setView(
     initLat && initLng ? [initLat, initLng] : [defaultLat, defaultLng],
     initLat && initLng ? 16 : defaultZoom
   );
@@ -360,6 +360,9 @@
     attribution: '© OpenStreetMap contributors',
     maxZoom: 19
   }).addTo(map);
+
+  // Paksa Leaflet recalculate ukuran container setelah Bootstrap layout selesai
+  setTimeout(function(){ map.invalidateSize(); }, 300);
 
   var marker = null;
   var circle = null;
