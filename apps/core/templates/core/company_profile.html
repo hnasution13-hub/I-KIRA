@@ -180,160 +180,7 @@
             </div>
           </div>
 
-          <script>
-          (function(){
-            var initLat = {{ company.latitude|default:'null' }};
-            var initLng = {{ company.longitude|default:'null' }};
-            var initRad = {{ company.radius_meter|default:'100' }};
-            var defaultLat = -2.5;
-            var defaultLng = 118.0;
-            var defaultZoom = 5;
 
-            var map = L.map('geo-map').setView(
-              initLat && initLng ? [initLat, initLng] : [defaultLat, defaultLng],
-              initLat && initLng ? 16 : defaultZoom
-            );
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '© OpenStreetMap contributors',
-              maxZoom: 19
-            }).addTo(map);
-
-            var marker = null;
-            var circle = null;
-
-            function setLocation(lat, lng) {
-              lat = parseFloat(lat.toFixed(7));
-              lng = parseFloat(lng.toFixed(7));
-              document.getElementById('geo-lat').value = lat;
-              document.getElementById('geo-lng').value = lng;
-
-              var rad = parseInt(document.getElementById('geo-radius').value) || 100;
-
-              if (marker) { map.removeLayer(marker); }
-              if (circle)  { map.removeLayer(circle); }
-
-              marker = L.marker([lat, lng], {draggable: true}).addTo(map);
-              circle = L.circle([lat, lng], {
-                radius: rad,
-                color: '#c0392b',
-                fillColor: '#e74c3c',
-                fillOpacity: 0.15,
-                weight: 2
-              }).addTo(map);
-
-              marker.bindPopup('<b>Lokasi Kantor</b><br>' + lat + ', ' + lng).openPopup();
-
-              // Update circle saat radius berubah
-              document.getElementById('geo-radius').oninput = function(){
-                var r = parseInt(this.value) || 100;
-                if (circle) { circle.setRadius(r); }
-              };
-
-              // Drag marker → update koordinat
-              marker.on('dragend', function(e){
-                var pos = e.target.getLatLng();
-                setLocation(pos.lat, pos.lng);
-                map.setView([pos.lat, pos.lng]);
-              });
-
-              var badge = document.getElementById('geo-status-badge');
-              if (badge) { badge.style.display = 'none'; }
-            }
-
-            // Klik peta → set lokasi
-            map.on('click', function(e){ setLocation(e.latlng.lat, e.latlng.lng); map.setView(e.latlng, 17); });
-
-            // Init jika sudah ada koordinat tersimpan
-            if (initLat && initLng) { setLocation(initLat, initLng); }
-
-            // Tombol Gunakan Lokasi Saya
-            window.geoUseMyLocation = function(){
-              if (!navigator.geolocation) {
-                alert('Browser Anda tidak mendukung geolokasi.');
-                return;
-              }
-              navigator.geolocation.getCurrentPosition(
-                function(pos){
-                  var lat = pos.coords.latitude;
-                  var lng = pos.coords.longitude;
-                  setLocation(lat, lng);
-                  map.setView([lat, lng], 17);
-                },
-                function(){ alert('Gagal mendapatkan lokasi. Pastikan izin lokasi diaktifkan.'); }
-              );
-            };
-
-            // Tombol Reset
-            window.geoClear = function(){
-              document.getElementById('geo-lat').value = '';
-              document.getElementById('geo-lng').value = '';
-              if (marker) { map.removeLayer(marker); marker = null; }
-              if (circle)  { map.removeLayer(circle); circle = null; }
-            };
-
-            // ── Search alamat via Nominatim ─────────────────────────────────
-            var searchTimeout = null;
-            var searchInput   = document.getElementById('geo-search');
-            var suggestions   = document.getElementById('geo-suggestions');
-
-            function showSuggestions(results) {
-              suggestions.innerHTML = '';
-              if (!results.length) {
-                suggestions.style.display = 'none';
-                return;
-              }
-              results.forEach(function(r) {
-                var item = document.createElement('button');
-                item.type = 'button';
-                item.className = 'list-group-item list-group-item-action text-start py-2';
-                item.style.fontSize = '.85rem';
-                item.innerHTML = '<i class="fas fa-map-marker-alt me-2 text-danger opacity-50"></i>' + r.display_name;
-                item.onclick = function() {
-                  setLocation(parseFloat(r.lat), parseFloat(r.lon));
-                  map.setView([parseFloat(r.lat), parseFloat(r.lon)], 17);
-                  searchInput.value = r.display_name;
-                  suggestions.style.display = 'none';
-                };
-                suggestions.appendChild(item);
-              });
-              suggestions.style.display = 'block';
-            }
-
-            function geoDoSearch(q) {
-              if (!q || q.length < 3) { suggestions.style.display = 'none'; return; }
-              fetch('https://nominatim.openstreetmap.org/search?format=json&q=' +
-                    encodeURIComponent(q) + '&countrycodes=id&limit=6&addressdetails=1', {
-                headers: {'Accept-Language': 'id'}
-              })
-              .then(function(r){ return r.json(); })
-              .then(showSuggestions)
-              .catch(function(){ suggestions.style.display = 'none'; });
-            }
-
-            window.geoSearchAddress = function() {
-              geoDoSearch(searchInput.value.trim());
-            };
-
-            // Live search saat ketik (debounce 400ms)
-            searchInput.addEventListener('input', function() {
-              clearTimeout(searchTimeout);
-              searchTimeout = setTimeout(function(){ geoDoSearch(searchInput.value.trim()); }, 400);
-            });
-
-            // Enter untuk search
-            searchInput.addEventListener('keydown', function(e) {
-              if (e.key === 'Enter') { e.preventDefault(); geoDoSearch(searchInput.value.trim()); }
-            });
-
-            // Tutup suggestion saat klik di luar
-            document.addEventListener('click', function(e) {
-              if (!e.target.closest('#geo-search') && !e.target.closest('#geo-suggestions')) {
-                suggestions.style.display = 'none';
-              }
-            });
-          })();
-          </script>
         </form>
       </div>
     </div>
@@ -495,6 +342,160 @@
 
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+          (function(){
+            var initLat = {{ company.latitude|default:'null' }};
+            var initLng = {{ company.longitude|default:'null' }};
+            var initRad = {{ company.radius_meter|default:'100' }};
+            var defaultLat = -2.5;
+            var defaultLng = 118.0;
+            var defaultZoom = 5;
+
+            var map = L.map('geo-map').setView(
+              initLat && initLng ? [initLat, initLng] : [defaultLat, defaultLng],
+              initLat && initLng ? 16 : defaultZoom
+            );
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap contributors',
+              maxZoom: 19
+            }).addTo(map);
+
+            var marker = null;
+            var circle = null;
+
+            function setLocation(lat, lng) {
+              lat = parseFloat(lat.toFixed(7));
+              lng = parseFloat(lng.toFixed(7));
+              document.getElementById('geo-lat').value = lat;
+              document.getElementById('geo-lng').value = lng;
+
+              var rad = parseInt(document.getElementById('geo-radius').value) || 100;
+
+              if (marker) { map.removeLayer(marker); }
+              if (circle)  { map.removeLayer(circle); }
+
+              marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+              circle = L.circle([lat, lng], {
+                radius: rad,
+                color: '#c0392b',
+                fillColor: '#e74c3c',
+                fillOpacity: 0.15,
+                weight: 2
+              }).addTo(map);
+
+              marker.bindPopup('<b>Lokasi Kantor</b><br>' + lat + ', ' + lng).openPopup();
+
+              // Update circle saat radius berubah
+              document.getElementById('geo-radius').oninput = function(){
+                var r = parseInt(this.value) || 100;
+                if (circle) { circle.setRadius(r); }
+              };
+
+              // Drag marker → update koordinat
+              marker.on('dragend', function(e){
+                var pos = e.target.getLatLng();
+                setLocation(pos.lat, pos.lng);
+                map.setView([pos.lat, pos.lng]);
+              });
+
+              var badge = document.getElementById('geo-status-badge');
+              if (badge) { badge.style.display = 'none'; }
+            }
+
+            // Klik peta → set lokasi
+            map.on('click', function(e){ setLocation(e.latlng.lat, e.latlng.lng); map.setView(e.latlng, 17); });
+
+            // Init jika sudah ada koordinat tersimpan
+            if (initLat && initLng) { setLocation(initLat, initLng); }
+
+            // Tombol Gunakan Lokasi Saya
+            window.geoUseMyLocation = function(){
+              if (!navigator.geolocation) {
+                alert('Browser Anda tidak mendukung geolokasi.');
+                return;
+              }
+              navigator.geolocation.getCurrentPosition(
+                function(pos){
+                  var lat = pos.coords.latitude;
+                  var lng = pos.coords.longitude;
+                  setLocation(lat, lng);
+                  map.setView([lat, lng], 17);
+                },
+                function(){ alert('Gagal mendapatkan lokasi. Pastikan izin lokasi diaktifkan.'); }
+              );
+            };
+
+            // Tombol Reset
+            window.geoClear = function(){
+              document.getElementById('geo-lat').value = '';
+              document.getElementById('geo-lng').value = '';
+              if (marker) { map.removeLayer(marker); marker = null; }
+              if (circle)  { map.removeLayer(circle); circle = null; }
+            };
+
+            // ── Search alamat via Nominatim ─────────────────────────────────
+            var searchTimeout = null;
+            var searchInput   = document.getElementById('geo-search');
+            var suggestions   = document.getElementById('geo-suggestions');
+
+            function showSuggestions(results) {
+              suggestions.innerHTML = '';
+              if (!results.length) {
+                suggestions.style.display = 'none';
+                return;
+              }
+              results.forEach(function(r) {
+                var item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'list-group-item list-group-item-action text-start py-2';
+                item.style.fontSize = '.85rem';
+                item.innerHTML = '<i class="fas fa-map-marker-alt me-2 text-danger opacity-50"></i>' + r.display_name;
+                item.onclick = function() {
+                  setLocation(parseFloat(r.lat), parseFloat(r.lon));
+                  map.setView([parseFloat(r.lat), parseFloat(r.lon)], 17);
+                  searchInput.value = r.display_name;
+                  suggestions.style.display = 'none';
+                };
+                suggestions.appendChild(item);
+              });
+              suggestions.style.display = 'block';
+            }
+
+            function geoDoSearch(q) {
+              if (!q || q.length < 3) { suggestions.style.display = 'none'; return; }
+              fetch('https://nominatim.openstreetmap.org/search?format=json&q=' +
+                    encodeURIComponent(q) + '&countrycodes=id&limit=6&addressdetails=1', {
+                headers: {'Accept-Language': 'id'}
+              })
+              .then(function(r){ return r.json(); })
+              .then(showSuggestions)
+              .catch(function(){ suggestions.style.display = 'none'; });
+            }
+
+            window.geoSearchAddress = function() {
+              geoDoSearch(searchInput.value.trim());
+            };
+
+            // Live search saat ketik (debounce 400ms)
+            searchInput.addEventListener('input', function() {
+              clearTimeout(searchTimeout);
+              searchTimeout = setTimeout(function(){ geoDoSearch(searchInput.value.trim()); }, 400);
+            });
+
+            // Enter untuk search
+            searchInput.addEventListener('keydown', function(e) {
+              if (e.key === 'Enter') { e.preventDefault(); geoDoSearch(searchInput.value.trim()); }
+            });
+
+            // Tutup suggestion saat klik di luar
+            document.addEventListener('click', function(e) {
+              if (!e.target.closest('#geo-search') && !e.target.closest('#geo-suggestions')) {
+                suggestions.style.display = 'none';
+              }
+            });
+          })();
+          </script>
 <script>
 function copySerialText(text) {
     navigator.clipboard.writeText(text).then(() => {
